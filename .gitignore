@@ -134,6 +134,11 @@ dist
 !.yarn/sdks
 !.yarn/versions
 
+# lockfiles
+yarn.lock
+package-lock.json
+!pnpm-lock.yaml
+
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

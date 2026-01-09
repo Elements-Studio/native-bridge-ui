@@ -1,0 +1,16 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/node_modules": true,
+        "**/tsconfig.*": true,
+        "vite.config.ts": true,
+        "eslint.config.js": true,
+        "LICENSE": true,
+        "pnpm-lock.yaml": true,
+        ".gitignore": true,
+        ".husky": true,
+        ".node-version": true
+    }   
+}
