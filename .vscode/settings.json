@@ -15,6 +15,7 @@
     ".prettierignore": true,
     ".prettierrc": true,
     ".prettierrc.lint-only.json": true,
-    "src/App.css": true
+    "components.json": true,
+    "stylus-supremacy.json": true
   }
 }

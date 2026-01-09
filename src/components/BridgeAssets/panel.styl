@@ -1,0 +1,12 @@
+.i-panel {
+  &::before {
+    position: absolute
+    background: linear-gradient(270deg, #ffffff33, #ffffff0f, #ffffff0d, #ffffff1c)
+    content: ''
+    pointer-events: none
+    inset: 0
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)
+    -webkit-mask-composite: xor
+    mask-composite: exclude
+  }
+}
