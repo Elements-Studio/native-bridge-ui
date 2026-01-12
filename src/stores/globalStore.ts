@@ -1,25 +1,25 @@
+import type { WalletInfo } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
 
 interface GlobalState {
-  fromAddress: string | null
-  toAddress: string | null
-
-  setFromAddress: (address: string | null) => void
-  setToAddress: (address: string | null) => void
+  evmWalletInfo: WalletInfo | null
+  starcoinWalletInfo: WalletInfo | null
+  setEvmWalletInfo: (walletInfo: WalletInfo | null) => void
+  setStarcoinWalletInfo: (walletInfo: WalletInfo | null) => void
 }
 
 const defaults = freeze({
-  fromAddress: null,
-  toAddress: null,
+  evmWalletInfo: null,
+  starcoinWalletInfo: null,
 })
-export const useWalletDialogStore = create<GlobalState>((set, get) => ({
+export const useGlobalStore = create<GlobalState>((set, get) => ({
   ...defaults,
 
-  setFromAddress: (address: string | null) => {
-    set({ fromAddress: address })
+  setEvmWalletInfo: (walletInfo: WalletInfo | null) => {
+    set({ evmWalletInfo: walletInfo })
   },
-  setToAddress: (address: string | null) => {
-    set({ toAddress: address })
+  setStarcoinWalletInfo: (walletInfo: WalletInfo | null) => {
+    set({ starcoinWalletInfo: walletInfo })
   },
 }))
