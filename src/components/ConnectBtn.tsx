@@ -9,24 +9,49 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import WalletDialog from '@/components/WalletDialog'
-import { useWalletDialogStore } from '@/stores/walletDialogStore'
+import { getAllProviders, getMetaMask } from '@/lib/evmProvider'
+import { formatAddress } from '@/lib/format'
+import storage from '@/lib/storage'
+import { asyncMap } from '@/lib/utils'
+import { useGlobalStore } from '@/stores/globalStore'
 import { ArrowUpRight, ChevronDown, Copy, CopyCheck, Unlink } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-export interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export async function tryReconnectEvm() {
+  const mm = await getMetaMask()
+  if (!mm) return null
+  const accounts: string[] = await mm.request({ method: 'eth_accounts' })
+  if (accounts.length > 0) {
+    return accounts[0]
+  }
+
+  return null
+}
+
+interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   walletType?: 'EVM' | 'STARCOIN'
 }
 export default function ConnectBtn(props: IProps) {
   const { walletType = 'EVM' } = props
+  const { evmWalletInfo, setEvmWalletInfo, starcoinWalletInfo, setStarcoinWalletInfo } = useGlobalStore()
+  const [rehydratedAddress, setRehydratedAddress] = useState('')
 
-  const { openDialog } = useWalletDialogStore()
-  const selectEvmWallet = useCallback(async () => {
-    const result = await openDialog({
-      title: 'Select EVM wallet',
-    })
-    setIsConnected(true)
-    console.log('Selected EVM wallet:', result)
-  }, [openDialog])
+  useEffect(() => {
+    ;(async () => {
+      if (walletType !== 'EVM') return
+
+      const localAddress = storage.getItem('evm_rehydrated_address')
+      if (!localAddress) return
+      setRehydratedAddress(localAddress || '')
+      setIsConnected(true)
+      const address = await tryReconnectEvm()
+      if (address) {
+        setRehydratedAddress(address)
+        setIsConnected(true)
+        storage.setItem('evm_rehydrated_address', address)
+      }
+    })()
+  }, [walletType])
 
   const [isConnected, setIsConnected] = useState(false)
   const Icon = useMemo(() => {
@@ -43,6 +68,44 @@ export default function ConnectBtn(props: IProps) {
     }, 1000)
   }, [])
 
+  const address = useMemo(() => {
+    if (walletType === 'EVM') {
+      return evmWalletInfo?.address || rehydratedAddress || ''
+    } else {
+      return starcoinWalletInfo?.address || ''
+    }
+  }, [walletType, evmWalletInfo, starcoinWalletInfo, rehydratedAddress])
+  const explorerUrl = useMemo(() => {
+    if (walletType === 'EVM') {
+      return `https://etherscan.io/address/${address}`
+    } else {
+      return `https://stcscan.io/main/transactions/detail/${address}`
+    }
+  }, [walletType, address])
+  const disconnect = useCallback(async () => {
+    if (walletType === 'EVM') {
+      const { providers } = await getAllProviders()
+      await asyncMap(providers, async provider => {
+        try {
+          await provider.request({
+            method: 'wallet_revokePermissions',
+            params: [
+              {
+                eth_accounts: {},
+              },
+            ],
+          })
+        } catch {}
+      })
+      setEvmWalletInfo(null)
+      setRehydratedAddress('')
+      storage.removeItem('evm_rehydrated_address')
+    } else {
+      setStarcoinWalletInfo(null)
+    }
+    setIsConnected(false)
+  }, [walletType, setEvmWalletInfo, setStarcoinWalletInfo])
+
   const [isOpen, setIsOpen] = useState(false)
   if (!isConnected) {
     return (
@@ -53,7 +116,13 @@ export default function ConnectBtn(props: IProps) {
             setIsOpen(false)
           }}
           onOk={data => {
-            console.log(8888, data)
+            if (walletType === 'EVM') {
+              setEvmWalletInfo(data.walletInfo)
+              storage.setItem('evm_rehydrated_address', data.walletInfo?.address || '')
+            } else {
+              setStarcoinWalletInfo(data.walletInfo)
+            }
+            setIsConnected(true)
             setIsOpen(false)
           }}
         />
@@ -64,7 +133,7 @@ export default function ConnectBtn(props: IProps) {
         >
           <div className="flex items-center gap-2">
             {Icon}
-            <div className="text-md text-content-primary font-medium break-words">Connect</div>
+            <div className="text-md text-content-primary font-medium wrap-break-word">Connect</div>
           </div>
         </button>
       </>
@@ -74,40 +143,42 @@ export default function ConnectBtn(props: IProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          className="ring-offset-background focus-visible:ring-ring border-stroke-primary hover:bg-background-tertiaryHover text-content-primary flex h-10 items-center justify-center gap-1 rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-          onClick={selectEvmWallet}
-        >
+        <button className="ring-offset-background focus-visible:ring-ring border-stroke-primary hover:bg-background-tertiaryHover text-content-primary flex h-10 items-center justify-center gap-1 rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
           <div className="flex items-center gap-2">
+            {/* { walletType === 'EVM' ? JSON.stringify(evmWalletInfo) : JSON.stringify(starcoinWalletInfo) } */}
             {Icon}
 
-            <div className="text-md text-content-primary font-medium break-words">0x403F…734c</div>
+            <div className="text-md text-content-primary font-medium wrap-break-word">{formatAddress(address)}</div>
 
             <ChevronDown width={18} height={18} />
           </div>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[186px]">
+      <DropdownMenuContent align="start" className="w-46.5">
         <Tooltip>
           <TooltipTrigger asChild>
-            <DropdownMenuItem className="cursor-pointer" onClick={() => copyAddress('0x403F734c734c734c734c734c734c734c734c734c734c')}>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => copyAddress(address)}>
               Copy
-              <DropdownMenuShortcut>{copied ? <CopyCheck /> : <Copy />}</DropdownMenuShortcut>
+              <DropdownMenuShortcut>{copied ? <CopyCheck color="green" /> : <Copy />}</DropdownMenuShortcut>
             </DropdownMenuItem>
           </TooltipTrigger>
-          <TooltipContent>0x403F734c734c734c734c734c734c734c734c734c734c</TooltipContent>
+          <TooltipContent>{address}</TooltipContent>
         </Tooltip>
         <DropdownMenuItem className="cursor-pointer">
-          Explorer
-          <DropdownMenuShortcut>
-            <ArrowUpRight />
-          </DropdownMenuShortcut>
+          <a href={explorerUrl} className="flex w-full cursor-pointer" target="_blank" rel="noopener noreferrer">
+            Explorer
+            <DropdownMenuShortcut>
+              <ArrowUpRight />
+            </DropdownMenuShortcut>
+          </a>
         </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer">
-          Disconnect
-          <DropdownMenuShortcut>
-            <Unlink />
-          </DropdownMenuShortcut>
+          <button className="flex w-full cursor-pointer" onClick={disconnect}>
+            Disconnect
+            <DropdownMenuShortcut>
+              <Unlink />
+            </DropdownMenuShortcut>
+          </button>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
+import type { WalletInfo } from '@/types/domain'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -7,8 +8,7 @@ import { z } from 'zod'
 import MetaMask from './MetaMask'
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  username: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
+  walletInfo: z.custom<WalletInfo>().nullable(),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -25,8 +25,7 @@ export default function WalletDialog(props: IProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: 'Pedro Duarte',
-      username: '@peduarte',
+      walletInfo: null,
     },
   })
 
@@ -34,8 +33,7 @@ export default function WalletDialog(props: IProps) {
   useEffect(() => {
     if (isOpen) {
       form.reset({
-        name: 'Pedro Duarte',
-        username: '@peduarte',
+        walletInfo: null,
       })
     }
   }, [isOpen, form])
@@ -67,15 +65,12 @@ export default function WalletDialog(props: IProps) {
             <div className="grid gap-4 py-10">
               <FormField
                 control={form.control}
-                name="name"
+                name="walletInfo"
                 render={({ field }) => (
                   <FormItem>
-                    {/* <FormLabel></FormLabel> */}
                     <FormControl>
-                      <MetaMask {...field} onDialogOk={() => handleSubmit(form.getValues())} />
+                      <MetaMask onChange={walletInfo => field.onChange(walletInfo)} onDialogOk={() => handleSubmit(form.getValues())} />
                     </FormControl>
-                    {/* <FormDescription>Your full name</FormDescription> */}
-                    {/* <FormMessage /> */}
                   </FormItem>
                 )}
               />
