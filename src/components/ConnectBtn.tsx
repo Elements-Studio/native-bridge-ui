@@ -9,46 +9,22 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import WalletDialog from '@/components/WalletDialog'
-import { getAllProviders, tryReconnectMetaMask as tryReconnectEvm } from '@/lib/evmProvider'
+import { getAllProviders } from '@/lib/evmProvider'
 import { formatAddress } from '@/lib/format'
 import storage from '@/lib/storage'
 import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
-import type { WalletInfo } from '@/types/domain'
+import type { WalletType } from '@/types/domain'
 import { ArrowUpRight, ChevronDown, Copy, CopyCheck, Unlink } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  walletType?: 'EVM' | 'STARCOIN'
+  walletType: WalletType
 }
 export default function ConnectBtn(props: IProps) {
   const { walletType = 'EVM' } = props
-  const { evmWalletInfo, setEvmWalletInfo, starcoinWalletInfo, setStarcoinWalletInfo } = useGlobalStore()
+  const { evmWalletInfo, setEvmWalletInfo, starcoinWalletInfo, setStarcoinWalletInfo, isEvmConnected } = useGlobalStore()
 
-  useEffect(() => {
-    ;(async () => {
-      if (walletType !== 'EVM') return
-
-      const localCachedInfo = await storage.getItem<Partial<WalletInfo>>('evm_rehydrated')
-
-      if (!localCachedInfo) return
-      setEvmWalletInfo(localCachedInfo as WalletInfo)
-      setIsConnected(true)
-
-      const walletInfo = await tryReconnectEvm()
-      if (walletInfo) {
-        setEvmWalletInfo(walletInfo)
-        setIsConnected(true)
-        await storage.setItem('evm_rehydrated', { ...walletInfo, balanceBigInt: undefined })
-      } else {
-        setEvmWalletInfo(null)
-        setIsConnected(false)
-        await storage.removeItem('evm_rehydrated')
-      }
-    })()
-  }, [walletType, setEvmWalletInfo])
-
-  const [isConnected, setIsConnected] = useState(false)
   const Icon = useMemo(() => {
     const src = walletType === 'EVM' ? evmIcon : starcoinIcon
     return <img alt="Connect" loading="lazy" width="24" height="24" className="h-6 w-6 rounded-full object-cover" src={src} />
@@ -98,11 +74,10 @@ export default function ConnectBtn(props: IProps) {
       setStarcoinWalletInfo(null)
       await storage.removeItem('starcoin_rehydrated')
     }
-    setIsConnected(false)
   }, [walletType, setEvmWalletInfo, setStarcoinWalletInfo])
 
   const [isOpen, setIsOpen] = useState(false)
-  if (!isConnected) {
+  if (!isEvmConnected) {
     return (
       <>
         <WalletDialog
@@ -110,14 +85,7 @@ export default function ConnectBtn(props: IProps) {
           onCancel={() => {
             setIsOpen(false)
           }}
-          onOk={async data => {
-            if (walletType === 'EVM') {
-              setEvmWalletInfo(data.walletInfo)
-              await storage.setItem('evm_rehydrated', { ...data.walletInfo, balanceBigInt: undefined })
-            } else {
-              setStarcoinWalletInfo(data.walletInfo)
-            }
-            setIsConnected(true)
+          onOk={() => {
             setIsOpen(false)
           }}
         />

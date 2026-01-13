@@ -1,5 +1,3 @@
-import type { Network } from 'ethers'
-
 export type EIP1193Provider = {
   request: (args: { method: string; params?: any[] | object }) => Promise<any>
   on?: (event: string, handler: (...args: any[]) => void) => void
@@ -9,7 +7,11 @@ export type EIP1193Provider = {
 
 export type WalletInfo = {
   address: string
-  network: Network
-  balanceBigInt: bigint
+  network: {
+    name: string
+    chainId: string
+  }
   balance: string
 }
+
+export type WalletType = 'EVM' | 'STARCOIN'
