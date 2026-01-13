@@ -1,10 +1,11 @@
 import metamaskLogo from '@/assets/img/metamask.svg'
-import { connectMetaMask, getAllProviders, getMetaMask } from '@/lib/evmProvider'
+import { connectMetaMask, getAllProviders } from '@/lib/evmProvider'
 import { normalizeEip1193Error } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import type { EIP1193Provider, WalletInfo } from '@/types/domain'
+import { useGlobalStore } from '@/stores/globalStore'
+import type { WalletInfo } from '@/types/domain'
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // type MetaMaskConnectedPayload = {
 //   address: string
@@ -23,21 +24,14 @@ type MetaMaskProps = {
 export default function MetaMask({ className, onError, onDialogOk, onChange, ...props }: MetaMaskProps) {
   console.log('MetaMask component rendered')
   const [connecting, setConnecting] = useState(false)
-  const providerRef = useRef<EIP1193Provider | null>(null)
-
-  useEffect(() => {
-    ;(async () => {
-      const mm = await getMetaMask()
-      providerRef.current = mm
-    })()
-  }, [])
+  const { currentCoin } = useGlobalStore()
 
   const handleClick = useCallback(async () => {
     if (connecting) return
     try {
       setConnecting(true)
-
-      const info = await connectMetaMask()
+      const chainId = currentCoin.network.chainId
+      const info = await connectMetaMask(chainId)
       if (!info) throw new Error('Failed to connect to MetaMask')
       // onConnected?.({
       //   address: info.address,
@@ -53,7 +47,7 @@ export default function MetaMask({ className, onError, onDialogOk, onChange, ...
     } finally {
       setConnecting(false)
     }
-  }, [connecting, onError, onDialogOk, onChange])
+  }, [connecting, onError, onDialogOk, onChange, currentCoin.network.chainId])
 
   const [hasInstalled, setHasInstalled] = useState(true)
   useEffect(() => {

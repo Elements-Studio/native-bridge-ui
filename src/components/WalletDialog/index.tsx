@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
+import { Form, FormField, FormItem } from '@/components/ui/form'
+import storage from '@/lib/storage'
+import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletInfo } from '@/types/domain'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
@@ -8,6 +10,7 @@ import { z } from 'zod'
 import MetaMask from './MetaMask'
 
 const formSchema = z.object({
+  walletType: z.enum(['EVM', 'STARCOIN']).optional(),
   walletInfo: z.custom<WalletInfo>().nullable(),
 })
 
@@ -21,7 +24,7 @@ interface IProps {
 }
 export default function WalletDialog(props: IProps) {
   const { open: isOpen, title, onCancel, onOk } = props
-
+  const { setEvmWalletInfo } = useGlobalStore()
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,12 +41,35 @@ export default function WalletDialog(props: IProps) {
     }
   }, [isOpen, form])
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = async (values: FormValues) => {
+    if (values.walletType === 'EVM') {
+      if (values.walletInfo) {
+        console.log(234, values)
+        setEvmWalletInfo(values.walletInfo)
+        await storage.setItem('evm_rehydrated', values.walletInfo)
+      }
+    }
     onOk && onOk(values)
   }
 
   const handleCancel = () => {
+    form.reset({ walletInfo: null })
     onCancel && onCancel()
+  }
+
+  const handleError = (error: Error) => {
+    console.error('Wallet connection error:', error)
+    // 对于 4100 错误（spam filter），不关闭弹窗，让用户可以重试
+    const errorMessage = error.message || ''
+    if (errorMessage.includes('4100')) {
+      // 保持弹窗打开，用户可以重试
+      return
+    }
+
+    // 其他错误：清空数据并关闭弹窗
+    form.reset({ walletInfo: null })
+    setEvmWalletInfo(null)
+    handleCancel()
   }
 
   const handleOpenChange = (open: boolean) => {
@@ -68,9 +94,16 @@ export default function WalletDialog(props: IProps) {
                 name="walletInfo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormControl>
-                      <MetaMask onChange={walletInfo => field.onChange(walletInfo)} onDialogOk={() => handleSubmit(form.getValues())} />
-                    </FormControl>
+                    <MetaMask
+                      onChange={walletInfo => field.onChange(walletInfo)}
+                      onError={handleError as any}
+                      onDialogOk={() =>
+                        handleSubmit({
+                          ...form.getValues(),
+                          walletType: 'EVM',
+                        })
+                      }
+                    />
                   </FormItem>
                 )}
               />
