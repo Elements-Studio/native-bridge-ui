@@ -1,6 +1,6 @@
-import ethIcon from '@/assets/img/eth.svg'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, ArrowRightLeft, ChevronDown } from 'lucide-react'
+import { ArrowRight, ArrowRightLeft } from 'lucide-react'
+import CoinSelector from './CoinSelector'
 import './panel.styl'
 
 export default () => {
@@ -10,11 +10,8 @@ export default () => {
       <div className="m-4 flex flex-col justify-between gap-4 rounded-2xl border border-gray-500 p-6">
         <div className="flex justify-between">
           {/* Selector */}
-          <button className="flex items-center gap-2">
-            <img src={ethIcon} alt="ETH" width={24} height={24} />
-            ETH
-            <ChevronDown size={20} color="#ccc" />
-          </button>
+          <CoinSelector />
+
           {/* max */}
           <button
             className="ring-offset-background focus-visible:ring-ring inline-flex h-10 cursor-pointer items-center justify-center rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"

@@ -1,5 +1,8 @@
-import type { EIP1193Provider } from '@/types/domain'
+import type { EIP1193Provider, WalletInfo } from '@/types/domain'
+import { BrowserProvider, formatEther } from 'ethers'
+import idmp from 'idmp'
 import { getInjectedProvidersFromWindow } from './_tools'
+
 type AnyProvider = EIP1193Provider & {
   isMetaMask?: boolean
   isBraveWallet?: boolean
@@ -141,6 +144,47 @@ async function discoverMetaMaskProvider(timeout = 1200): Promise<EIP1193Provider
     }, timeout)
   })
 }
-export const getProvider = async (): Promise<EIP1193Provider | null> => {
+const _getProvider = async (): Promise<EIP1193Provider | null> => {
   return (await discoverMetaMaskProvider()) || (await getMetaMaskProviderFromWindow())
+}
+export const getProvider = () =>
+  idmp('getMetaMaskProvider', _getProvider, {
+    maxAge: Infinity,
+    maxRetry: 1,
+    minRetryDelay: 3000,
+    onBeforeRetry() {
+      console.log('Retrying to get MetaMask provider...')
+    },
+  })
+
+export const connect = async (): Promise<WalletInfo | null> => {
+  const mm = await getProvider()
+  if (!mm) throw new Error('MetaMask not detected')
+  // 获取完整的 WalletInfo
+  const ethersProvider = new BrowserProvider(mm as any)
+  const signer = await ethersProvider.getSigner()
+  const address = await signer.getAddress()
+  const network = await ethersProvider.getNetwork()
+  const balanceBigInt = await ethersProvider.getBalance(address)
+  const balance = formatEther(balanceBigInt)
+
+  return {
+    network,
+    address,
+    balanceBigInt,
+    balance,
+  }
+}
+export const tryReconnect = async (): Promise<WalletInfo | null> => {
+  const mm = await getProvider()
+  if (!mm) return null
+
+  try {
+    const accounts: string[] = await mm.request({ method: 'eth_accounts' })
+    if (accounts.length === 0) return null
+
+    return connect()
+  } catch (e) {
+    return null
+  }
 }

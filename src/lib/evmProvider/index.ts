@@ -1,6 +1,6 @@
 import type { EIP1193Provider } from '@/types/domain'
 import { getProvider as getDefault } from './default'
-import { getProvider as getMetaMask } from './metaMask'
+import { connect as connectMetaMask, getProvider as getMetaMask, tryReconnect as tryReconnectMetaMask } from './metaMask'
 
 export const getAllProviders = async (): Promise<{
   hasMetaMask: boolean
@@ -12,4 +12,5 @@ export const getAllProviders = async (): Promise<{
     providers: [mm, def].filter(Boolean) as EIP1193Provider[],
   }
 }
-export { getMetaMask }
+
+export { connectMetaMask, getMetaMask, tryReconnectMetaMask }
