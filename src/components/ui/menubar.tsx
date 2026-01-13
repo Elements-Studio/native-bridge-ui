@@ -153,7 +153,7 @@ function MenubarSeparator({ className, ...props }: React.ComponentProps<typeof M
 }
 
 function MenubarShortcut({ className, ...props }: React.ComponentProps<'span'>) {
-  return <span data-slot="menubar-shortcut" className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)} {...props} />
+  return <span data-slot="menubar-shortcut" className={cn('text-muted-foreground ms-auto text-xs tracking-widest', className)} {...props} />
 }
 
 function MenubarSub({ ...props }: React.ComponentProps<typeof MenubarPrimitive.Sub>) {
@@ -179,7 +179,7 @@ function MenubarSubTrigger({
       {...props}
     >
       {children}
-      <ChevronRightIcon className="ml-auto h-4 w-4" />
+      <ChevronRightIcon className="ms-auto h-4 w-4" />
     </MenubarPrimitive.SubTrigger>
   )
 }

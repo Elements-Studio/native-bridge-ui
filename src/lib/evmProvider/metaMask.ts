@@ -1,5 +1,5 @@
 import type { EIP1193Provider, WalletInfo } from '@/types/domain'
-import { BrowserProvider, formatEther } from 'ethers'
+import { BrowserProvider, formatEther, toBeHex } from 'ethers'
 import idmp from 'idmp'
 import { getInjectedProvidersFromWindow } from './_tools'
 
@@ -147,21 +147,48 @@ async function discoverMetaMaskProvider(timeout = 1200): Promise<EIP1193Provider
 const _getProvider = async (): Promise<EIP1193Provider | null> => {
   return (await discoverMetaMaskProvider()) || (await getMetaMaskProviderFromWindow())
 }
-export const getProvider = () =>
-  idmp('getMetaMaskProvider', _getProvider, {
-    maxAge: Infinity,
-    maxRetry: 1,
-    minRetryDelay: 3000,
-    onBeforeRetry() {
-      console.log('Retrying to get MetaMask provider...')
-    },
-  })
 
-export const connect = async (): Promise<WalletInfo | null> => {
+const key = Symbol('getMetaMaskProvider')
+export const getProvider = () =>
+  idmp(
+    key,
+    async () => {
+      const mm = await _getProvider()
+      if (mm) return mm
+
+      // 避免 idmp 缓存 null
+      idmp.flush(key)
+      return null
+    },
+    {
+      maxAge: Infinity,
+      maxRetry: 0,
+      onBeforeRetry() {
+        console.log('Retrying to get MetaMask provider...')
+      },
+    },
+  )
+
+export const connect = async (targetChainId?: string): Promise<WalletInfo | null> => {
   const mm = await getProvider()
   if (!mm) throw new Error('MetaMask not detected')
-  // 获取完整的 WalletInfo
-  const ethersProvider = new BrowserProvider(mm as any)
+
+  // 如果指定了 chainId，先切换网络
+  if (targetChainId) {
+    try {
+      await mm.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: targetChainId }],
+      })
+    } catch (e: any) {
+      if (e?.code === -32603) {
+        throw new Error(`Network ${targetChainId} not found in wallet`)
+      }
+      throw e
+    }
+  }
+
+  const ethersProvider = new BrowserProvider(mm)
   const signer = await ethersProvider.getSigner()
   const address = await signer.getAddress()
   const network = await ethersProvider.getNetwork()
@@ -169,9 +196,11 @@ export const connect = async (): Promise<WalletInfo | null> => {
   const balance = formatEther(balanceBigInt)
 
   return {
-    network,
+    network: {
+      name: network.name,
+      chainId: toBeHex(network.chainId),
+    } as WalletInfo['network'],
     address,
-    balanceBigInt,
     balance,
   }
 }
