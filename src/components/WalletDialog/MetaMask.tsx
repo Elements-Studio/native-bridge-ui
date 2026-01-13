@@ -1,27 +1,26 @@
 import metamaskLogo from '@/assets/img/metamask.svg'
-import { getAllProviders, getMetaMask } from '@/lib/evmProvider'
+import { connectMetaMask, getAllProviders, getMetaMask } from '@/lib/evmProvider'
 import { normalizeEip1193Error } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { EIP1193Provider, WalletInfo } from '@/types/domain'
-import { BrowserProvider, formatEther } from 'ethers'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-type MetaMaskConnectedPayload = {
-  address: string
-  chainId: number
-  balance: string
-  eip1193Provider: EIP1193Provider
-}
+// type MetaMaskConnectedPayload = {
+//   address: string
+//   chainId: number
+//   balance: string
+//   eip1193Provider: EIP1193Provider
+// }
 
 type MetaMaskProps = {
   onDialogOk?: () => void
   onChange?: (walletInfo: WalletInfo) => void
-  onConnected?: (payload: MetaMaskConnectedPayload) => void
+  // onConnected?: (payload: MetaMaskConnectedPayload) => void
   onError?: (error: Error) => void
 } & React.ComponentProps<'button'>
 
-export default function MetaMask({ className, onConnected, onError, onDialogOk, onChange, ...props }: MetaMaskProps) {
+export default function MetaMask({ className, onError, onDialogOk, onChange, ...props }: MetaMaskProps) {
   console.log('MetaMask component rendered')
   const [connecting, setConnecting] = useState(false)
   const providerRef = useRef<EIP1193Provider | null>(null)
@@ -38,42 +37,23 @@ export default function MetaMask({ className, onConnected, onError, onDialogOk, 
     try {
       setConnecting(true)
 
-      const mm = providerRef.current || (await getMetaMask())
-      if (!mm) throw new Error('MetaMask not detected')
-      providerRef.current = mm
+      const info = await connectMetaMask()
+      if (!info) throw new Error('Failed to connect to MetaMask')
+      // onConnected?.({
+      //   address: info.address,
+      //   chainId: Number(info.network.chainId),
+      //   balance: info.balance,
+      //   eip1193Provider: info.eip1193Provider,
+      // })
 
-      const accounts: string[] = await mm.request({ method: 'eth_accounts' })
-      if (!accounts || accounts.length === 0) {
-        await mm.request({ method: 'eth_requestAccounts' })
-      }
-
-      const ethersProvider = new BrowserProvider(mm as any)
-      const signer = await ethersProvider.getSigner()
-      const address = await signer.getAddress()
-      const network = await ethersProvider.getNetwork()
-      const balanceBigInt = await ethersProvider.getBalance(address)
-      const balance = formatEther(balanceBigInt)
-
-      onConnected?.({
-        address,
-        chainId: Number(network.chainId),
-        balance,
-        eip1193Provider: mm,
-      })
-
-      onChange?.({
-        network,
-        address,
-        balanceBigInt,
-        balance,
-      })
+      onChange?.(info)
       onDialogOk?.()
     } catch (err) {
       onError?.(normalizeEip1193Error(err))
     } finally {
       setConnecting(false)
     }
-  }, [connecting, onConnected, onError, onDialogOk, onChange])
+  }, [connecting, onError, onDialogOk, onChange])
 
   const [hasInstalled, setHasInstalled] = useState(true)
   useEffect(() => {

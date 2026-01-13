@@ -9,24 +9,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import WalletDialog from '@/components/WalletDialog'
-import { getAllProviders, getMetaMask } from '@/lib/evmProvider'
+import { getAllProviders, tryReconnectMetaMask as tryReconnectEvm } from '@/lib/evmProvider'
 import { formatAddress } from '@/lib/format'
 import storage from '@/lib/storage'
 import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
+import type { WalletInfo } from '@/types/domain'
 import { ArrowUpRight, ChevronDown, Copy, CopyCheck, Unlink } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-
-export async function tryReconnectEvm() {
-  const mm = await getMetaMask()
-  if (!mm) return null
-  const accounts: string[] = await mm.request({ method: 'eth_accounts' })
-  if (accounts.length > 0) {
-    return accounts[0]
-  }
-
-  return null
-}
 
 interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   walletType?: 'EVM' | 'STARCOIN'
@@ -34,24 +24,29 @@ interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export default function ConnectBtn(props: IProps) {
   const { walletType = 'EVM' } = props
   const { evmWalletInfo, setEvmWalletInfo, starcoinWalletInfo, setStarcoinWalletInfo } = useGlobalStore()
-  const [rehydratedAddress, setRehydratedAddress] = useState('')
 
   useEffect(() => {
     ;(async () => {
       if (walletType !== 'EVM') return
 
-      const localAddress = storage.getItem('evm_rehydrated_address')
-      if (!localAddress) return
-      setRehydratedAddress(localAddress || '')
+      const localCachedInfo = await storage.getItem<Partial<WalletInfo>>('evm_rehydrated')
+
+      if (!localCachedInfo) return
+      setEvmWalletInfo(localCachedInfo as WalletInfo)
       setIsConnected(true)
-      const address = await tryReconnectEvm()
-      if (address) {
-        setRehydratedAddress(address)
+
+      const walletInfo = await tryReconnectEvm()
+      if (walletInfo) {
+        setEvmWalletInfo(walletInfo)
         setIsConnected(true)
-        storage.setItem('evm_rehydrated_address', address)
+        await storage.setItem('evm_rehydrated', { ...walletInfo, balanceBigInt: undefined })
+      } else {
+        setEvmWalletInfo(null)
+        setIsConnected(false)
+        await storage.removeItem('evm_rehydrated')
       }
     })()
-  }, [walletType])
+  }, [walletType, setEvmWalletInfo])
 
   const [isConnected, setIsConnected] = useState(false)
   const Icon = useMemo(() => {
@@ -70,11 +65,11 @@ export default function ConnectBtn(props: IProps) {
 
   const address = useMemo(() => {
     if (walletType === 'EVM') {
-      return evmWalletInfo?.address || rehydratedAddress || ''
+      return evmWalletInfo?.address || ''
     } else {
       return starcoinWalletInfo?.address || ''
     }
-  }, [walletType, evmWalletInfo, starcoinWalletInfo, rehydratedAddress])
+  }, [walletType, evmWalletInfo, starcoinWalletInfo])
   const explorerUrl = useMemo(() => {
     if (walletType === 'EVM') {
       return `https://etherscan.io/address/${address}`
@@ -98,10 +93,10 @@ export default function ConnectBtn(props: IProps) {
         } catch {}
       })
       setEvmWalletInfo(null)
-      setRehydratedAddress('')
-      storage.removeItem('evm_rehydrated_address')
+      await storage.removeItem('evm_rehydrated')
     } else {
       setStarcoinWalletInfo(null)
+      await storage.removeItem('starcoin_rehydrated')
     }
     setIsConnected(false)
   }, [walletType, setEvmWalletInfo, setStarcoinWalletInfo])
@@ -115,10 +110,10 @@ export default function ConnectBtn(props: IProps) {
           onCancel={() => {
             setIsOpen(false)
           }}
-          onOk={data => {
+          onOk={async data => {
             if (walletType === 'EVM') {
               setEvmWalletInfo(data.walletInfo)
-              storage.setItem('evm_rehydrated_address', data.walletInfo?.address || '')
+              await storage.setItem('evm_rehydrated', { ...data.walletInfo, balanceBigInt: undefined })
             } else {
               setStarcoinWalletInfo(data.walletInfo)
             }
