@@ -1,7 +1,8 @@
 import logoIcon from '@/assets/img/logo.png'
-import ConnectBtn from '@/components/ConnectBtn'
 import { cn } from '@/lib/utils'
 import { Link, useLocation } from 'react-router-dom'
+import EvmConnectBtn from './EvmConnectBtn'
+import StartconConnectBtn from './StarcoinConnectBtn'
 
 const menuItems = [
   {
@@ -20,7 +21,7 @@ export default function Header() {
   return (
     <header className="relative z-50">
       <nav>
-        <div className="bg-background-primaryBleedthrough2 border-stroke-primary flex items-center justify-between border-b px-6 py-4 backdrop-blur-md">
+        <div className="flex items-center justify-between border-b px-6 py-4 backdrop-blur-md">
           <h1 className="background-image:">
             <Link to="/">
               <img src={logoIcon} alt="Logo" width={140} />
@@ -31,18 +32,15 @@ export default function Header() {
               <Link
                 to={item.path}
                 key={item.path}
-                className={cn(
-                  'text-content-primary font-inter text-sm leading-4 break-words',
-                  item.path === location.pathname ? 'font-bold' : 'font-normal',
-                )}
+                className={cn('wrap-break-words text-sm leading-4', item.path === location.pathname ? 'font-bold' : 'font-normal')}
               >
                 {item.title}
               </Link>
             ))}
           </div>
           <div className="hidden gap-4 lg:flex">
-            <ConnectBtn walletType="EVM" />
-            <ConnectBtn walletType="STARCOIN" />
+            <EvmConnectBtn />
+            <StartconConnectBtn />
           </div>
         </div>
       </nav>
