@@ -9,10 +9,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import WalletDialog from '@/components/WalletDialog'
-import { getAllProviders } from '@/lib/evmProvider'
+import useEvmTools from '@/hooks/useEvmTools'
 import { formatAddress } from '@/lib/format'
-import storage from '@/lib/storage'
-import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletType } from '@/types/domain'
 import { ArrowUpRight, ChevronDown, Copy, CopyCheck, Unlink } from 'lucide-react'
@@ -22,8 +20,9 @@ interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   walletType: WalletType
 }
 export default function ConnectBtn(props: IProps) {
+  const { disconnect } = useEvmTools()
   const { walletType = 'EVM' } = props
-  const { evmWalletInfo, setEvmWalletInfo, starcoinWalletInfo, setStarcoinWalletInfo, isEvmConnected } = useGlobalStore()
+  const { evmWalletInfo, starcoinWalletInfo } = useGlobalStore()
 
   const Icon = useMemo(() => {
     const src = walletType === 'EVM' ? evmIcon : starcoinIcon
@@ -53,31 +52,9 @@ export default function ConnectBtn(props: IProps) {
       return `https://stcscan.io/main/transactions/detail/${address}`
     }
   }, [walletType, address])
-  const disconnect = useCallback(async () => {
-    if (walletType === 'EVM') {
-      const { providers } = await getAllProviders()
-      await asyncMap(providers, async provider => {
-        try {
-          await provider.request({
-            method: 'wallet_revokePermissions',
-            params: [
-              {
-                eth_accounts: {},
-              },
-            ],
-          })
-        } catch {}
-      })
-      setEvmWalletInfo(null)
-      await storage.removeItem('evm_rehydrated')
-    } else {
-      setStarcoinWalletInfo(null)
-      await storage.removeItem('starcoin_rehydrated')
-    }
-  }, [walletType, setEvmWalletInfo, setStarcoinWalletInfo])
 
   const [isOpen, setIsOpen] = useState(false)
-  if (!isEvmConnected) {
+  if (!evmWalletInfo) {
     return (
       <>
         <WalletDialog

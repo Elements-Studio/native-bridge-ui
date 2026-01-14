@@ -67,8 +67,6 @@ interface GlobalState {
   starcoinWalletInfo: WalletInfo | null
   setStarcoinWalletInfo: (walletInfo: WalletInfo | null) => void
 
-  isEvmConnected: boolean
-
   inputBalance: string
   setInputBalance: (balance: string) => void
 }
@@ -81,7 +79,6 @@ const defaults = freeze(
     currentCoin: process.env.NODE_ENV === 'development' ? mappings.SepoliaETH : mappings.ETH,
     evmWalletInfo: null,
     starcoinWalletInfo: null,
-    isEvmConnected: false,
     inputBalance: '',
   },
   true,
@@ -103,7 +100,7 @@ export const useGlobalStore = create<GlobalState>(set => ({
   },
 
   setEvmWalletInfo: (walletInfo: WalletInfo | null) => {
-    set({ evmWalletInfo: walletInfo, isEvmConnected: !!walletInfo, inputBalance: '' })
+    set({ evmWalletInfo: walletInfo, inputBalance: '' })
   },
   setStarcoinWalletInfo: (walletInfo: WalletInfo | null) => {
     set({ starcoinWalletInfo: walletInfo })

@@ -1,8 +1,13 @@
+import useEvmTools from '@/hooks/useEvmTools'
+import { formatAddress } from '@/lib/format'
+import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletType } from '@/types/domain'
-import { ArrowRight, ArrowRightLeft } from 'lucide-react'
+import { ArrowRight, ArrowRightLeft, Unlink } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
 export default () => {
+  const { contextHolder, openConnectDialog, disconnect: disconnectEVM } = useEvmTools()
+  const { evmWalletInfo } = useGlobalStore()
   const [from, setFrom] = useState<WalletType>('EVM')
   const toggleCard = useCallback(() => {
     setFrom(prev => (prev === 'EVM' ? 'STARCOIN' : 'EVM'))
@@ -13,17 +18,25 @@ export default () => {
         <div className="relative flex w-full flex-1 items-center justify-between">
           <div className="text-sm leading-4 font-medium tracking-[0.6px]">{from === 'EVM' ? 'FROM' : 'TO'} ETHEREUM</div>
         </div>
-        <button
-          className="ring-offset-background focus-visible:ring-ring flex w-full items-center justify-between space-y-4 rounded-full text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-          type="button"
-        >
-          <div className="text-2xl font-medium">Connect wallet</div>
-
-          <ArrowRight />
-        </button>
+        {evmWalletInfo?.address ? (
+          <div className="ring-offset-background focus-visible:ring-ring flex w-full items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
+            <span className="text-2xl font-medium">{formatAddress(evmWalletInfo.address)}</span>
+            <button onClick={disconnectEVM} className="cursor-pointer hover:text-red-500">
+              <Unlink />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={openConnectDialog}
+            className="ring-offset-background focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors hover:text-blue-400 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+          >
+            <span className="text-2xl font-medium">Connect wallet</span>
+            <ArrowRight />
+          </button>
+        )}
       </div>
     )
-  }, [from])
+  }, [from, evmWalletInfo?.address, openConnectDialog, disconnectEVM])
 
   const StarcoinCard = useMemo(() => {
     return (
@@ -37,12 +50,8 @@ export default () => {
             <div className="rounded-2xl bg-gray-500 px-4 py-1 font-medium">Enter manually</div>
           </button>
         </div>
-        <button
-          className="ring-offset-background focus-visible:ring-ring flex w-full items-center justify-between space-y-4 rounded-full text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-          type="button"
-        >
+        <button className="ring-offset-background focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors hover:text-blue-400 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
           <div className="text-2xl font-medium">Connect wallet</div>
-
           <ArrowRight />
         </button>
       </div>
@@ -50,6 +59,7 @@ export default () => {
   }, [from])
   return (
     <div className="relative m-4 overflow-hidden rounded-4xl">
+      {contextHolder}
       {from === 'EVM' ? [EvmCard, StarcoinCard] : [StarcoinCard, EvmCard]}
 
       <button
