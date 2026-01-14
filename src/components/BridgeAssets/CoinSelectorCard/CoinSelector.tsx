@@ -5,15 +5,15 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import useEvmTools from '@/hooks/useEvmTools'
 import { connectMetaMask } from '@/lib/evmProvider'
 import { useGlobalStore, type CoinItem } from '@/stores/globalStore'
 import { ChevronDown } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
-import useUtils from './utils.hook'
 
 export default () => {
   const { currentCoin, setCurrentCoin, mappings, fromWalletType, setEvmWalletInfo, setInputBalance } = useGlobalStore()
-  const { contextHolder, getBalance } = useUtils()
+  const { contextHolder, getBalance } = useEvmTools()
 
   const items = useMemo(() => {
     return Object.values(mappings).filter(item => item.walletType === fromWalletType && item.name !== currentCoin.name)

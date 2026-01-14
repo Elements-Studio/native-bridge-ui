@@ -1,26 +1,26 @@
 import walletIcon from '@/assets/img/wallet.svg'
+import useEvmTools from '@/hooks/useEvmTools'
 import { useGlobalStore } from '@/stores/globalStore'
 import { useCallback, useEffect, useState } from 'react'
 import CoinSelector from './CoinSelector'
-import useUtils from './utils.hook'
 
 export default () => {
-  const { currentCoin, isEvmConnected, inputBalance, setInputBalance } = useGlobalStore()
-  const { getBalance, contextHolder } = useUtils()
+  const { currentCoin, evmWalletInfo, inputBalance, setInputBalance } = useGlobalStore()
+  const { getBalance, contextHolder } = useEvmTools()
   const [totalBalance, setTotalBalance] = useState<string>('')
 
   useEffect(() => {
-    if (!isEvmConnected) return
+    if (!evmWalletInfo) return
     ;(async () => {
       const { balance } = (await getBalance(currentCoin.network.chainId)) ?? {}
       balance && setTotalBalance(Number(balance).toFixed(6).toString())
     })()
-  }, [isEvmConnected, currentCoin])
+  }, [evmWalletInfo, currentCoin])
 
   const setMax = useCallback(async () => {
     const { balance } = (await getBalance(currentCoin.network.chainId)) ?? {}
     balance && setInputBalance(Number(balance).toFixed(6).toString())
-  }, [currentCoin, isEvmConnected])
+  }, [currentCoin])
 
   return (
     <div className="m-4 flex flex-col justify-between gap-4 rounded-2xl border border-gray-500 py-6">
@@ -48,8 +48,7 @@ export default () => {
       />
 
       {/* balance */}
-
-      {isEvmConnected && (
+      {evmWalletInfo && (
         <div className="ms-6 flex w-full items-center gap-2">
           <img src={walletIcon} width={12} height={12} />
 

@@ -1,15 +1,17 @@
 import WalletDialog from '@/components/WalletDialog'
-import { getMetaMask } from '@/lib/evmProvider'
+import { getAllProviders, getMetaMask } from '@/lib/evmProvider'
+import storage from '@/lib/storage'
+import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, formatEther } from 'ethers'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export default () => {
-  const { isEvmConnected } = useGlobalStore()
-  const currentIsEvmConnected = useRef(isEvmConnected)
+  const { evmWalletInfo, setEvmWalletInfo } = useGlobalStore()
+  const currentIsEvmConnected = useRef(!!evmWalletInfo)
   useEffect(() => {
-    currentIsEvmConnected.current = isEvmConnected
-  }, [isEvmConnected])
+    currentIsEvmConnected.current = !!evmWalletInfo
+  }, [evmWalletInfo])
   const [isOpen, setIsOpen] = useState(false)
 
   const openConnectDialog = useCallback(async () => {
@@ -19,6 +21,24 @@ export default () => {
     }
     setIsOpen(false)
   }, [])
+
+  const disconnect = useCallback(async () => {
+    const { providers } = await getAllProviders()
+    await asyncMap(providers, async provider => {
+      try {
+        await provider.request({
+          method: 'wallet_revokePermissions',
+          params: [
+            {
+              eth_accounts: {},
+            },
+          ],
+        })
+      } catch {}
+    })
+    setEvmWalletInfo(null)
+    await storage.removeItem('evm_rehydrated')
+  }, [setEvmWalletInfo])
 
   const getBalance = useCallback(async (chainId: string) => {
     if (!currentIsEvmConnected.current) {
@@ -50,5 +70,5 @@ export default () => {
     return <WalletDialog open={isOpen} onCancel={() => setIsOpen(false)} onOk={() => setIsOpen(false)} />
   }, [isOpen])
 
-  return { getBalance, openConnectDialog, contextHolder }
+  return { contextHolder, getBalance, openConnectDialog, disconnect }
 }
