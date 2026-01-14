@@ -1,25 +1,20 @@
 import WalletDialog from '@/components/WalletDialog'
-import { getAllProviders, getMetaMask } from '@/lib/evmProvider'
+import { getAllProviders, getMetaMask, tryReconnectMetaMask } from '@/lib/evmProvider'
 import storage from '@/lib/storage'
 import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
+import type { WalletInfo } from '@/types/domain'
 import { BrowserProvider, formatEther } from 'ethers'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
+const STORAGE_KEY = 'evm_rehydrated'
 export default () => {
-  const { evmWalletInfo, setEvmWalletInfo } = useGlobalStore()
-  const currentIsEvmConnected = useRef(!!evmWalletInfo)
-  useEffect(() => {
-    currentIsEvmConnected.current = !!evmWalletInfo
-  }, [evmWalletInfo])
+  const { setEvmWalletInfo } = useGlobalStore()
+
   const [isOpen, setIsOpen] = useState(false)
 
-  const openConnectDialog = useCallback(async () => {
-    if (!currentIsEvmConnected.current) {
-      setIsOpen(true)
-      return
-    }
-    setIsOpen(false)
+  const openConnectDialog = useCallback(() => {
+    setIsOpen(true)
   }, [])
 
   const disconnect = useCallback(async () => {
@@ -36,16 +31,29 @@ export default () => {
         })
       } catch {}
     })
+
     setEvmWalletInfo(null)
-    await storage.removeItem('evm_rehydrated')
+    await storage.removeItem(STORAGE_KEY)
+  }, [setEvmWalletInfo])
+
+  const tryReconnect = useCallback(async () => {
+    const localCachedInfo = await storage.getItem<Partial<WalletInfo>>(STORAGE_KEY)
+
+    if (!localCachedInfo) return
+    setEvmWalletInfo(localCachedInfo as WalletInfo)
+    const walletInfo = await tryReconnectMetaMask()
+    if (walletInfo) {
+      setEvmWalletInfo(walletInfo)
+
+      await storage.setItem(STORAGE_KEY, walletInfo)
+    } else {
+      setEvmWalletInfo(null)
+
+      await storage.removeItem(STORAGE_KEY)
+    }
   }, [setEvmWalletInfo])
 
   const getBalance = useCallback(async (chainId: string) => {
-    if (!currentIsEvmConnected.current) {
-      setIsOpen(true)
-      return
-    }
-    setIsOpen(false)
     const mm = await getMetaMask()
     if (!mm) return { balance: '0' }
 
@@ -66,9 +74,25 @@ export default () => {
     return { balance: formatEther(balance) }
   }, [])
 
-  const contextHolder = useMemo(() => {
-    return <WalletDialog open={isOpen} onCancel={() => setIsOpen(false)} onOk={() => setIsOpen(false)} />
-  }, [isOpen])
+  const handleCancel = useCallback(() => {
+    console.log('canceled')
+    setIsOpen(false)
+  }, [])
 
-  return { contextHolder, getBalance, openConnectDialog, disconnect }
+  const handleOk = useCallback(
+    ({ walletInfo, walletType }: any) => {
+      if (walletType === 'EVM' && walletInfo) {
+        setEvmWalletInfo(walletInfo)
+        storage.setItem(STORAGE_KEY, walletInfo)
+      }
+      setIsOpen(false)
+    },
+    [setEvmWalletInfo],
+  )
+
+  const contextHolder = useMemo(() => {
+    return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} />
+  }, [isOpen, handleCancel, handleOk])
+
+  return { contextHolder, getBalance, openConnectDialog, disconnect, tryReconnect }
 }

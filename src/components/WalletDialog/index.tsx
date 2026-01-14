@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormField, FormItem } from '@/components/ui/form'
-import storage from '@/lib/storage'
+
 import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletInfo } from '@/types/domain'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,6 +8,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import MetaMask from './MetaMask'
+import StarMask from './StarMask'
 
 const formSchema = z.object({
   walletType: z.enum(['EVM', 'STARCOIN']).optional(),
@@ -42,13 +43,6 @@ export default function WalletDialog(props: IProps) {
   }, [isOpen, form])
 
   const handleSubmit = async (values: FormValues) => {
-    if (values.walletType === 'EVM') {
-      if (values.walletInfo) {
-        console.log(234, values)
-        setEvmWalletInfo(values.walletInfo)
-        await storage.setItem('evm_rehydrated', values.walletInfo)
-      }
-    }
     onOk && onOk(values)
   }
 
@@ -101,6 +95,25 @@ export default function WalletDialog(props: IProps) {
                         handleSubmit({
                           ...form.getValues(),
                           walletType: 'EVM',
+                        })
+                      }
+                    />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="walletInfo"
+                render={({ field }) => (
+                  <FormItem>
+                    <StarMask
+                      onChange={walletInfo => field.onChange(walletInfo)}
+                      onError={handleError as any}
+                      onDialogOk={() =>
+                        handleSubmit({
+                          ...form.getValues(),
+                          walletType: 'STARCOIN',
                         })
                       }
                     />

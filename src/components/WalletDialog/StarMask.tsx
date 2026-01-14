@@ -1,28 +1,20 @@
-import metamaskLogo from '@/assets/img/metamask.svg'
-import { connectMetaMask, getAllProviders } from '@/lib/evmProvider'
+import starmaskLogo from '@/assets/img/starmask.svg'
 import { normalizeEip1193Error } from '@/lib/format'
+import { connectStarMask, getStarMaskProvider } from '@/lib/starcoinProvider/starMask'
 import { cn } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletInfo } from '@/types/domain'
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
-// type MetaMaskConnectedPayload = {
-//   address: string
-//   chainId: number
-//   balance: string
-//   eip1193Provider: EIP1193Provider
-// }
-
-type MetaMaskProps = {
+type StarMaskProps = {
   onDialogOk?: () => void
   onChange?: (walletInfo: WalletInfo) => void
-  // onConnected?: (payload: MetaMaskConnectedPayload) => void
   onError?: (error: Error) => void
 } & React.ComponentProps<'button'>
 
-export default function MetaMask({ className, onError, onDialogOk, onChange, ...props }: MetaMaskProps) {
-  console.log('MetaMask component rendered')
+export default function StarMask({ className, onError, onDialogOk, onChange, ...props }: StarMaskProps) {
+  console.log('StarMask component rendered')
   const [connecting, setConnecting] = useState(false)
   const { currentCoin } = useGlobalStore()
 
@@ -30,15 +22,10 @@ export default function MetaMask({ className, onError, onDialogOk, onChange, ...
     if (connecting) return
     try {
       setConnecting(true)
-      const chainId = currentCoin.network.chainId
-      const info = await connectMetaMask(chainId)
-      if (!info) throw new Error('Failed to connect to MetaMask')
-      // onConnected?.({
-      //   address: info.address,
-      //   chainId: Number(info.network.chainId),
-      //   balance: info.balance,
-      //   eip1193Provider: info.eip1193Provider,
-      // })
+      // Convert chainId from hex string to number
+      const chainId = parseInt(currentCoin.network.chainId, 16)
+      const info = await connectStarMask(chainId)
+      if (!info) throw new Error('Failed to connect to StarMask')
 
       onChange?.(info)
       onDialogOk?.()
@@ -51,20 +38,20 @@ export default function MetaMask({ className, onError, onDialogOk, onChange, ...
 
   const [hasInstalled, setHasInstalled] = useState(true)
   useEffect(() => {
-    getAllProviders().then(providers => {
-      setHasInstalled(!!providers.hasMetaMask)
-    })
+    const provider = getStarMaskProvider()
+    setHasInstalled(!!provider)
   }, [])
+
   if (!hasInstalled) {
     return (
       <a
-        href="https://metamask.io/"
+        href="https://starcoin.org/zh/developer/sdk_wallet/starmask/"
         target="_blank"
         rel="noreferrer noopener"
         className={cn('flex items-center space-x-4 rounded-md border p-2 disabled:cursor-not-allowed disabled:opacity-60', className)}
       >
-        <img width={34} height={34} src={metamaskLogo} alt="MetaMask Logo" className="grayscale" />
-        <span>MetaMask</span>
+        <img width={34} height={34} src={starmaskLogo} alt="StarMask Logo" className="grayscale" />
+        <span>StarMask</span>
       </a>
     )
   }
@@ -80,8 +67,8 @@ export default function MetaMask({ className, onError, onDialogOk, onChange, ...
       )}
       {...props}
     >
-      <img width={34} height={34} src={metamaskLogo} alt="MetaMask Logo" />
-      <div>{connecting ? 'Connecting…' : 'MetaMask'}</div>
+      <img width={34} height={34} src={starmaskLogo} alt="StarMask Logo" />
+      <div>{connecting ? 'Connecting…' : 'StarMask'}</div>
     </button>
   )
 }
