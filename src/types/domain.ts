@@ -1,7 +1,7 @@
 export type EIP1193Provider = {
-  request: (args: { method: string; params?: any[] | object }) => Promise<any>
-  on?: (event: string, handler: (...args: any[]) => void) => void
-  removeListener?: (event: string, handler: (...args: any[]) => void) => void
+  request: (args: { method: string; params?: (string | number | object)[] | object }) => Promise<string | number | object>
+  on?: (event: string, handler: (...args: unknown[]) => void) => void
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void
   isMetaMask?: boolean
 }
 

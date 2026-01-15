@@ -43,12 +43,12 @@ export default function WalletDialog(props: IProps) {
   }, [isOpen, form])
 
   const handleSubmit = async (values: FormValues) => {
-    onOk && onOk(values)
+    onOk?.(values)
   }
 
   const handleCancel = () => {
     form.reset({ walletInfo: null })
-    onCancel && onCancel()
+    onCancel?.()
   }
 
   const handleError = (error: Error) => {
@@ -89,8 +89,8 @@ export default function WalletDialog(props: IProps) {
                 render={({ field }) => (
                   <FormItem>
                     <MetaMask
-                      onChange={walletInfo => field.onChange(walletInfo)}
-                      onError={handleError as any}
+                      onChange={(walletInfo: WalletInfo) => field.onChange(walletInfo)}
+                      onError={handleError}
                       onDialogOk={() =>
                         handleSubmit({
                           ...form.getValues(),
@@ -108,8 +108,8 @@ export default function WalletDialog(props: IProps) {
                 render={({ field }) => (
                   <FormItem>
                     <StarMask
-                      onChange={walletInfo => field.onChange(walletInfo)}
-                      onError={handleError as any}
+                      onChange={(walletInfo: WalletInfo) => field.onChange(walletInfo)}
+                      onError={handleError}
                       onDialogOk={() =>
                         handleSubmit({
                           ...form.getValues(),

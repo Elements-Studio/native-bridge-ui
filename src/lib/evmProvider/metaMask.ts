@@ -15,7 +15,7 @@ type AnyProvider = EIP1193Provider & {
   _metamask?: unknown
   _isMetaMask?: boolean
   providers?: AnyProvider[]
-  request: (args: { method: string; params?: any[] | object }) => Promise<any>
+  request: (args: { method: string; params?: (string | object)[] | object }) => Promise<string | number | object>
 }
 
 async function getMetaMaskProviderFromWindow(): Promise<EIP1193Provider | null> {
@@ -26,7 +26,8 @@ async function getMetaMaskProviderFromWindow(): Promise<EIP1193Provider | null> 
     try {
       await p.request({ method: 'wallet_getPermissions' })
       return p
-    } catch (e) {
+    } catch {
+      // Provider doesn't support wallet_getPermissions, continue
       return null
     }
   }
@@ -82,9 +83,12 @@ export async function resolveMetaMaskProviderFromWindow(opts?: {
       if (Array.isArray(res)) return true
 
       return true
-    } catch (e: any) {
-      if (e?.code === -32601) {
+    } catch (error: unknown) {
+      const err = error as { code?: number }
+      if (err?.code === -32601) {
+        // Method not supported
       } else {
+        // Other error
       }
     }
 
@@ -97,8 +101,9 @@ export async function resolveMetaMaskProviderFromWindow(opts?: {
           }),
         )
         return true
-      } catch (e: any) {
-        if (e?.code === -32601) return false
+      } catch (error: unknown) {
+        const err = error as Record<string, unknown>
+        if (err?.code === -32601) return false
 
         return true
       }
@@ -121,18 +126,22 @@ export async function resolveMetaMaskProviderFromWindow(opts?: {
   for (const p of filtered) {
     try {
       if (await supports(p)) return p
-    } catch {}
+    } catch (error: unknown) {
+      // Continue to next provider
+      console.debug('Provider check failed:', error)
+    }
   }
 
-  return (first as any) ?? null
+  return (first as EIP1193Provider) ?? null
 }
 
 async function discoverMetaMaskProvider(timeout = 1200): Promise<EIP1193Provider | null> {
-  return new Promise(async resolve => {
-    let picked: any | null = null
-    const handler = (event: any) => {
-      const info = event?.detail?.info
-      const provider = event?.detail?.provider
+  return new Promise(resolve => {
+    let picked: EIP1193Provider | null = null
+    const handler = (event: unknown) => {
+      const evt = event as { detail?: { info?: { rdns?: string }; provider?: EIP1193Provider } }
+      const info = evt?.detail?.info
+      const provider = evt?.detail?.provider
       if (!info || !provider) return
       if (info.rdns === 'io.metamask') picked = provider
     }
@@ -180,8 +189,9 @@ export const connect = async (targetChainId?: string): Promise<WalletInfo | null
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: targetChainId }],
       })
-    } catch (e: any) {
-      if (e?.code === -32603) {
+    } catch (error: unknown) {
+      const err = error as Record<string, unknown>
+      if (err?.code === -32603) {
         throw new Error(`Network ${targetChainId} not found in wallet`)
       }
       throw e
@@ -213,7 +223,7 @@ export const tryReconnect = async (): Promise<WalletInfo | null> => {
     if (accounts.length === 0) return null
 
     return connect()
-  } catch (e) {
+  } catch {
     return null
   }
 }

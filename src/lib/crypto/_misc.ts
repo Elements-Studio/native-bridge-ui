@@ -102,7 +102,7 @@ export async function decrypt(
     const decryptedBuf = await crypto.subtle.decrypt(gcmParams, key, ciphertext as BufferSource)
 
     return td.decode(new Uint8Array(decryptedBuf))
-  } catch (error) {
+  } catch {
     throw new Error('Decryption failed - invalid password or AAD mismatch')
   }
 }

@@ -12,23 +12,27 @@ type AnyProvider = EIP1193Provider & {
   _metamask?: unknown
   _isMetaMask?: boolean
   providers?: AnyProvider[]
-  request: (args: { method: string; params?: any[] | object }) => Promise<any>
+  request: (args: { method: string; params?: (string | object)[] | object }) => Promise<string | number | object>
 }
 
-function asProvider(x: any): AnyProvider | null {
-  if (!x || typeof x !== 'object') return null
-  if (typeof x.request !== 'function') return null
-  return x as AnyProvider
+function asProvider(x: unknown): AnyProvider | null {
+  const provider = x as Record<string, unknown> | null
+  if (!provider || typeof provider !== 'object') return null
+  if (typeof provider.request !== 'function') return null
+  return provider as AnyProvider
 }
 
 export function getInjectedProvidersFromWindow(): AnyProvider[] {
-  const eth = asProvider((window as any)?.ethereum)
+  const eth = asProvider((window as Record<string, unknown>)?.ethereum)
   if (!eth) return []
 
+  const providers = (eth as Record<string, unknown>).providers
   const list =
-    Array.isArray((eth as any).providers) && (eth as any).providers.length ? (eth as any).providers.map(asProvider).filter(Boolean) : [eth]
+    Array.isArray(providers) && (providers as unknown[]).length
+      ? (providers as unknown[]).map(asProvider).filter((p): p is AnyProvider => p !== null)
+      : [eth]
 
-  const seen = new Set<any>()
+  const seen = new Set<AnyProvider>()
   const uniq: AnyProvider[] = []
   for (const p of list) {
     if (!p) continue

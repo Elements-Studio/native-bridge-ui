@@ -11,7 +11,7 @@ import { useGlobalStore, type CoinItem } from '@/stores/globalStore'
 import { ChevronDown } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 
-export default () => {
+export default function CoinSelector() {
   const { currentCoin, setCurrentCoin, mappings, fromWalletType, setEvmWalletInfo, setInputBalance } = useGlobalStore()
   const { contextHolder, getBalance } = useEvmTools()
 
@@ -19,15 +19,18 @@ export default () => {
     return Object.values(mappings).filter(item => item.walletType === fromWalletType && item.name !== currentCoin.name)
   }, [mappings, fromWalletType, currentCoin.name])
 
-  const switchCoin = useCallback(async (coin: CoinItem) => {
-    await getBalance(coin.network.chainId)
-    if (coin.walletType === 'EVM') {
-      const info = await connectMetaMask()
-      setEvmWalletInfo(info)
-    }
-    setCurrentCoin(coin)
-    setInputBalance('')
-  }, [])
+  const switchCoin = useCallback(
+    async (coin: CoinItem) => {
+      await getBalance(coin.network.chainId)
+      if (coin.walletType === 'EVM') {
+        const info = await connectMetaMask()
+        setEvmWalletInfo(info)
+      }
+      setCurrentCoin(coin)
+      setInputBalance('')
+    },
+    [getBalance, setCurrentCoin, setEvmWalletInfo, setInputBalance],
+  )
 
   if (!items.length) {
     return (

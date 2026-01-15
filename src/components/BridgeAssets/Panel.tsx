@@ -3,7 +3,7 @@ import CoinSelectorCard from './CoinSelectorCard'
 import FromToCard from './FromToCard'
 import './panel.styl'
 
-export default () => {
+export default function BridgeAssetPanel() {
   return (
     <div className="i-panel relative min-h-149 max-w-117.5 min-w-100 rounded-3xl bg-[rgba(44,41,88,0.8)]">
       {/* card1 */}

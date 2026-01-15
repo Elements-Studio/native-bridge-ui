@@ -8,7 +8,7 @@ import type { WalletType } from '@/types/domain'
 import { ArrowRight, ArrowRightLeft, Unlink } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
-export default () => {
+export default function FromToCard() {
   const [iEvmPending, setIsEvmPending] = useState(false)
   const [iStarcoinPending, setIsStarcoinPending] = useState(false)
 
@@ -60,7 +60,7 @@ export default () => {
         )}
       </div>
     )
-  }, [from, evmWalletInfo?.address, openEvmConnectDialog, disconnectEVM, iEvmPending])
+  }, [from, evmWalletInfo, openEvmConnectDialog, disconnectEVM, iEvmPending])
 
   const StarcoinCard = useMemo(() => {
     return (
@@ -107,7 +107,7 @@ export default () => {
         )}
       </div>
     )
-  }, [from, starcoinWalletInfo?.address, openStarcoinConnectDialog, disconnectStarcoin, iStarcoinPending])
+  }, [from, starcoinWalletInfo, openStarcoinConnectDialog, disconnectStarcoin, iStarcoinPending])
 
   return (
     <>

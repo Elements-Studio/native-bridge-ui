@@ -10,7 +10,7 @@ export default function GlobalInitial() {
     getMetaMask() // 初始化并缓存 MetaMask 实例到 idmp，加快后续速度
     tryReconnectEvm()
     tryReconnectStarcoin()
-  }, [])
+  }, [tryReconnectEvm, tryReconnectStarcoin])
 
   return null
 }

@@ -8,7 +8,7 @@ import { BrowserProvider, formatEther } from 'ethers'
 import { useCallback, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'evm_rehydrated'
-export default () => {
+export default function useEvmTools() {
   const { setEvmWalletInfo } = useGlobalStore()
 
   const [isOpen, setIsOpen] = useState(false)
@@ -29,7 +29,10 @@ export default () => {
             },
           ],
         })
-      } catch {}
+      } catch (error: unknown) {
+        // wallet_revokePermissions not supported, continue
+        console.debug('wallet_revokePermissions failed:', error)
+      }
     })
 
     setEvmWalletInfo(null)
@@ -80,7 +83,7 @@ export default () => {
   }, [])
 
   const handleOk = useCallback(
-    ({ walletInfo, walletType }: any) => {
+    ({ walletInfo, walletType }: { walletInfo: WalletInfo | null; walletType: string }) => {
       if (walletType === 'EVM' && walletInfo) {
         setEvmWalletInfo(walletInfo)
         storage.setItem(STORAGE_KEY, walletInfo)

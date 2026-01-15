@@ -4,23 +4,30 @@ import { useGlobalStore } from '@/stores/globalStore'
 import { useCallback, useEffect, useState } from 'react'
 import CoinSelector from './CoinSelector'
 
-export default () => {
+export default function CoinSelectorCard() {
   const { currentCoin, evmWalletInfo, inputBalance, setInputBalance } = useGlobalStore()
   const { getBalance, contextHolder } = useEvmTools()
   const [totalBalance, setTotalBalance] = useState<string>('')
 
   useEffect(() => {
     if (!evmWalletInfo) return
-    ;(async () => {
-      const { balance } = (await getBalance(currentCoin.network.chainId)) ?? {}
-      balance && setTotalBalance(Number(balance).toFixed(6).toString())
-    })()
-  }, [evmWalletInfo, currentCoin])
+    const fetchBalance = async () => {
+      const result = await getBalance(currentCoin.network.chainId)
+      const balance = result?.balance
+      if (balance) {
+        setTotalBalance(Number(balance).toFixed(6).toString())
+      }
+    }
+    fetchBalance()
+  }, [evmWalletInfo, currentCoin, getBalance])
 
   const setMax = useCallback(async () => {
-    const { balance } = (await getBalance(currentCoin.network.chainId)) ?? {}
-    balance && setInputBalance(Number(balance).toFixed(6).toString())
-  }, [currentCoin])
+    const result = await getBalance(currentCoin.network.chainId)
+    const balance = result?.balance
+    if (balance) {
+      setInputBalance(Number(balance).toFixed(6).toString())
+    }
+  }, [currentCoin, getBalance, setInputBalance])
 
   return (
     <div className="m-4 flex flex-col justify-between gap-4 rounded-2xl border border-gray-500 py-6">

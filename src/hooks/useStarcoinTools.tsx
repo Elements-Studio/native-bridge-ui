@@ -7,18 +7,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const STORAGE_KEY = 'starcoin_rehydrated'
 
-async function getStarcoinBalance(provider: any, address: string): Promise<string> {
+async function getStarcoinBalance(
+  provider: { request: (args: { method: string; params: unknown[] }) => Promise<unknown> },
+  address: string,
+): Promise<string> {
   try {
-    const resource = await provider.request({
+    const resource = (await provider.request({
       method: 'contract.get_resource',
       params: [address, '0x1::Account::Balance<0x1::STC::STC>'],
-    })
+    })) as { value?: Array<{ name: string; value?: { Vector?: Array<{ U128?: string }> } }> } | undefined
 
     if (!resource || !resource.value) {
       return '0.0000'
     }
 
-    const tokenField = resource.value.find((field: any) => field.name === 'token')
+    const tokenField = resource.value.find(field => field.name === 'token')
     if (!tokenField || !tokenField.value || !tokenField.value.Vector) {
       return '0.0000'
     }
@@ -35,7 +38,7 @@ async function getStarcoinBalance(provider: any, address: string): Promise<strin
   }
 }
 
-export default () => {
+export default function useStarcoinTools() {
   const { setStarcoinWalletInfo, starcoinWalletInfo } = useGlobalStore()
 
   const [isOpen, setIsOpen] = useState(false)
@@ -61,8 +64,9 @@ export default () => {
             },
           ],
         })
-      } catch (error: any) {
-        console.log('StarMask wallet_revokePermissions not supported or failed:', error.message)
+      } catch (error: unknown) {
+        const err = error as { message?: string }
+        console.log('StarMask wallet_revokePermissions not supported or failed:', err?.message)
       }
     }
 
@@ -107,7 +111,7 @@ export default () => {
   }, [])
 
   const handleOk = useCallback(
-    ({ walletInfo, walletType }: any) => {
+    ({ walletInfo, walletType }: { walletInfo: WalletInfo | null; walletType: string }) => {
       if (walletType === 'STARCOIN' && walletInfo) {
         setStarcoinWalletInfo(walletInfo)
         storage.setItem(STORAGE_KEY, walletInfo)

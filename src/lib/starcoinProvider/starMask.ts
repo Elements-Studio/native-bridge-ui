@@ -2,9 +2,9 @@ import type { WalletInfo } from '@/types/domain'
 
 type StarcoinProvider = {
   isStarMask?: boolean
-  request: (args: { method: string; params?: any[] | object }) => Promise<any>
-  on?: (event: string, handler: (...args: any[]) => void) => void
-  removeListener?: (event: string, handler: (...args: any[]) => void) => void
+  request: (args: { method: string; params?: (string | object)[] | object }) => Promise<string | number | object>
+  on?: (event: string, handler: (...args: unknown[]) => void) => void
+  removeListener?: (event: string, handler: (...args: unknown[]) => void) => void
 }
 
 const NETWORK_LABELS: Record<number, string> = {
@@ -15,7 +15,7 @@ const NETWORK_LABELS: Record<number, string> = {
 }
 
 export function getStarMaskProvider(): StarcoinProvider | null {
-  const p = (window as any).starcoin as StarcoinProvider | undefined
+  const p = (window as Record<string, unknown>).starcoin as StarcoinProvider | undefined
   if (!p || typeof p.request !== 'function') return null
 
   if (p.isStarMask === false) return null
@@ -24,16 +24,16 @@ export function getStarMaskProvider(): StarcoinProvider | null {
 
 async function getStarcoinBalance(provider: StarcoinProvider, address: string): Promise<string> {
   try {
-    const resource = await provider.request({
+    const resource = (await provider.request({
       method: 'contract.get_resource',
       params: [address, '0x1::Account::Balance<0x1::STC::STC>'],
-    })
+    })) as { value?: Array<{ name: string; value?: { Vector?: Array<{ U128?: string }> } }> } | undefined
 
     if (!resource || !resource.value) {
       return '0.0000'
     }
 
-    const tokenField = resource.value.find((field: any) => field.name === 'token')
+    const tokenField = resource.value.find(field => field.name === 'token')
     if (!tokenField || !tokenField.value || !tokenField.value.Vector) {
       return '0.0000'
     }
@@ -122,11 +122,14 @@ export async function tryReconnectStarMask(): Promise<WalletInfo | null> {
   }
 }
 
-export function subscribeStarMask(provider: StarcoinProvider, onUpdate: (x: any) => void) {
+export function subscribeStarMask(
+  provider: StarcoinProvider,
+  onUpdate: (update: { type: string; accounts?: string[]; chainId?: unknown }) => void,
+) {
   const handleAccountsChanged = (accounts: string[]) => {
     onUpdate({ type: 'accountsChanged', accounts })
   }
-  const handleChainChanged = (cid: any) => {
+  const handleChainChanged = (cid: unknown) => {
     onUpdate({ type: 'chainChanged', chainId: cid })
   }
 
