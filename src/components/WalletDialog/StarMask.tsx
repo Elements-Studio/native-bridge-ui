@@ -4,16 +4,16 @@ import { connectStarMask, getStarMaskProvider } from '@/lib/starcoinProvider/sta
 import { cn } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletInfo } from '@/types/domain'
-import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
 type StarMaskProps = {
   onDialogOk?: () => void
   onChange?: (walletInfo: WalletInfo) => void
   onError?: (error: Error) => void
-} & React.ComponentProps<'button'>
+  className?: string
+}
 
-export default function StarMask({ className, onError, onDialogOk, onChange, ...props }: StarMaskProps) {
+export default function StarMask({ className, onError, onDialogOk, onChange }: StarMaskProps) {
   console.log('StarMask component rendered')
   const [connecting, setConnecting] = useState(false)
   const { currentCoin } = useGlobalStore()
@@ -65,7 +65,6 @@ export default function StarMask({ className, onError, onDialogOk, onChange, ...
         'flex items-center space-x-4 rounded-md border p-2 hover:border-gray-300 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
         className,
       )}
-      {...props}
     >
       <img width={34} height={34} src={starmaskLogo} alt="StarMask Logo" />
       <div>{connecting ? 'Connecting…' : 'StarMask'}</div>

@@ -128,7 +128,7 @@ export default function useEvmTools() {
   }, [])
 
   const handleOk = useCallback(
-    ({ walletInfo, walletType }: { walletInfo: WalletInfo | null; walletType: string }) => {
+    ({ walletInfo, walletType }: { walletInfo: WalletInfo | null; walletType?: 'EVM' | 'STARCOIN' }) => {
       if (walletType === 'EVM' && walletInfo) {
         setEvmWalletInfo(walletInfo)
         storage.setItem(STORAGE_KEY, walletInfo)

@@ -194,7 +194,7 @@ export const connect = async (targetChainId?: string): Promise<WalletInfo | null
       if (err?.code === -32603) {
         throw new Error(`Network ${targetChainId} not found in wallet`)
       }
-      throw e
+      throw error
     }
   }
 
@@ -219,7 +219,7 @@ export const tryReconnect = async (): Promise<WalletInfo | null> => {
   if (!mm) return null
 
   try {
-    const accounts: string[] = await mm.request({ method: 'eth_accounts' })
+    const accounts = (await mm.request({ method: 'eth_accounts' })) as string[]
     if (accounts.length === 0) return null
 
     return connect()

@@ -23,7 +23,7 @@ function asProvider(x: unknown): AnyProvider | null {
 }
 
 export function getInjectedProvidersFromWindow(): AnyProvider[] {
-  const eth = asProvider((window as Record<string, unknown>)?.ethereum)
+  const eth = asProvider((window as unknown as Record<string, unknown>)?.ethereum)
   if (!eth) return []
 
   const providers = (eth as Record<string, unknown>).providers

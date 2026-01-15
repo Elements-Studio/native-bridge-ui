@@ -120,7 +120,7 @@ export default function useStarcoinTools() {
 
     console.log('Getting balance for chainId:', chainId)
 
-    const accounts: string[] = await provider.request({ method: 'stc_accounts' })
+    const accounts = (await provider.request({ method: 'stc_accounts' })) as string[]
     const address = accounts?.[0]
     if (!address) return { balance: '0' }
 
@@ -136,7 +136,7 @@ export default function useStarcoinTools() {
   }, [])
 
   const handleOk = useCallback(
-    ({ walletInfo, walletType }: { walletInfo: WalletInfo | null; walletType: string }) => {
+    ({ walletInfo, walletType }: { walletInfo: WalletInfo | null; walletType?: 'EVM' | 'STARCOIN' }) => {
       if (walletType === 'STARCOIN' && walletInfo) {
         setStarcoinWalletInfo(walletInfo)
         storage.setItem(STORAGE_KEY, walletInfo)

@@ -4,7 +4,6 @@ import { normalizeEip1193Error } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletInfo } from '@/types/domain'
-import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
 // type MetaMaskConnectedPayload = {
@@ -17,11 +16,11 @@ import { useCallback, useEffect, useState } from 'react'
 type MetaMaskProps = {
   onDialogOk?: () => void
   onChange?: (walletInfo: WalletInfo) => void
-  // onConnected?: (payload: MetaMaskConnectedPayload) => void
   onError?: (error: Error) => void
-} & React.ComponentProps<'button'>
+  className?: string
+}
 
-export default function MetaMask({ className, onError, onDialogOk, onChange, ...props }: MetaMaskProps) {
+export default function MetaMask({ className, onError, onDialogOk, onChange }: MetaMaskProps) {
   console.log('MetaMask component rendered')
   const [connecting, setConnecting] = useState(false)
   const { currentCoin } = useGlobalStore()
@@ -78,7 +77,6 @@ export default function MetaMask({ className, onError, onDialogOk, onChange, ...
         'flex items-center space-x-4 rounded-md border p-2 hover:border-gray-300 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
         className,
       )}
-      {...props}
     >
       <img width={34} height={34} src={metamaskLogo} alt="MetaMask Logo" />
       <div>{connecting ? 'Connecting…' : 'MetaMask'}</div>

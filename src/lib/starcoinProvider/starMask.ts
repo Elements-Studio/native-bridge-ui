@@ -16,7 +16,7 @@ const NETWORK_LABELS: Record<number, string> = {
 }
 
 export function getStarMaskProvider(): StarcoinProvider | null {
-  const p = (window as Record<string, unknown>).starcoin as StarcoinProvider | undefined
+  const p = (window as unknown as Record<string, unknown>).starcoin as StarcoinProvider | undefined
   if (!p || typeof p.request !== 'function') return null
 
   if (p.isStarMask === false) return null
@@ -57,13 +57,13 @@ export async function connectStarMask(targetChainId?: number): Promise<WalletInf
     throw new Error('StarMask not found: window.starcoin is missing')
   }
 
-  const accounts: string[] = await provider.request({ method: 'stc_requestAccounts' })
+  const accounts = (await provider.request({ method: 'stc_requestAccounts' })) as string[]
   const account = accounts?.[0]
   if (!account) throw new Error('No account returned from StarMask')
 
   let chainId: string | number | null = null
   try {
-    chainId = await provider.request({ method: 'chain.id' })
+    chainId = (await provider.request({ method: 'chain.id' })) as string | number | null
   } catch (error) {
     console.warn('Failed to get chain.id, using default:', error)
     chainId = 1
@@ -93,14 +93,14 @@ export async function tryReconnectStarMask(): Promise<WalletInfo | null> {
   if (!provider) return null
 
   try {
-    const accounts: string[] = await provider.request({ method: 'stc_accounts' })
+    const accounts = (await provider.request({ method: 'stc_accounts' })) as string[]
     if (!accounts || accounts.length === 0) return null
 
     const account = accounts[0]
 
     let chainId: string | number | null = null
     try {
-      chainId = await provider.request({ method: 'chain.id' })
+      chainId = (await provider.request({ method: 'chain.id' })) as string | number | null
     } catch (error) {
       console.warn('Failed to get chain.id in reconnect:', error)
       chainId = 1
@@ -127,8 +127,8 @@ export function subscribeStarMask(
   provider: StarcoinProvider,
   onUpdate: (update: { type: string; accounts?: string[]; chainId?: unknown }) => void,
 ) {
-  const handleAccountsChanged = (accounts: string[]) => {
-    onUpdate({ type: 'accountsChanged', accounts })
+  const handleAccountsChanged = (accounts: unknown) => {
+    onUpdate({ type: 'accountsChanged', accounts: accounts as string[] })
   }
   const handleChainChanged = (cid: unknown) => {
     onUpdate({ type: 'chainChanged', chainId: cid })
