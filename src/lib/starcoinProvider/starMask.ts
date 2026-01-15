@@ -1,10 +1,11 @@
 import type { WalletInfo } from '@/types/domain'
 
-type StarcoinProvider = {
+export type StarcoinProvider = {
   isStarMask?: boolean
   request: (args: { method: string; params?: (string | object)[] | object }) => Promise<string | number | object>
   on?: (event: string, handler: (...args: unknown[]) => void) => void
   removeListener?: (event: string, handler: (...args: unknown[]) => void) => void
+  addListener?: (event: string, handler: (...args: unknown[]) => void) => void
 }
 
 const NETWORK_LABELS: Record<number, string> = {

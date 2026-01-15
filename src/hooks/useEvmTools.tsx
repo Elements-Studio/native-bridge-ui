@@ -3,11 +3,15 @@ import { getAllProviders, getMetaMask, tryReconnectMetaMask } from '@/lib/evmPro
 import storage from '@/lib/storage'
 import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
-import type { WalletInfo } from '@/types/domain'
+import type { Callbacks, EIP1193Provider, WalletInfo } from '@/types/domain'
 import { BrowserProvider, formatEther } from 'ethers'
 import { useCallback, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'evm_rehydrated'
+
+let evmListenerInitialized = false
+const boundEvmProviders = new WeakSet<EIP1193Provider>()
+
 export default function useEvmTools() {
   const { setEvmWalletInfo } = useGlobalStore()
 
@@ -15,6 +19,47 @@ export default function useEvmTools() {
 
   const openConnectDialog = useCallback(() => {
     setIsOpen(true)
+  }, [])
+
+  const initListener = useCallback(async (callbacks: Callbacks = {}) => {
+    if (evmListenerInitialized) return
+    evmListenerInitialized = true
+
+    try {
+      const { providers } = await getAllProviders()
+
+      const handleAccountsChanged = (accounts: unknown) => {
+        try {
+          if (!accounts || (Array.isArray(accounts) && accounts.length === 0)) {
+            callbacks.onUnauthenticated?.()
+          }
+        } catch (err) {
+          console.debug('handleAccountsChanged error', err)
+        }
+      }
+
+      const handleDisconnect = () => {
+        callbacks.onUnauthenticated?.()
+      }
+
+      providers.forEach(provider => {
+        if (!provider || boundEvmProviders.has(provider)) return
+        try {
+          if (typeof provider.on === 'function') {
+            provider.on('accountsChanged', handleAccountsChanged)
+            provider.on('disconnect', handleDisconnect)
+          } else if (typeof provider.addListener === 'function') {
+            provider.addListener('accountsChanged', handleAccountsChanged)
+            provider.addListener('disconnect', handleDisconnect)
+          }
+          boundEvmProviders.add(provider)
+        } catch (err) {
+          console.debug('bind EVM provider listeners failed:', err)
+        }
+      })
+    } catch (err) {
+      console.debug('initListener failed:', err)
+    }
   }, [])
 
   const disconnect = useCallback(async () => {
@@ -97,5 +142,5 @@ export default function useEvmTools() {
     return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} />
   }, [isOpen, handleCancel, handleOk])
 
-  return { contextHolder, getBalance, openConnectDialog, disconnect, tryReconnect }
+  return { contextHolder, initListener, getBalance, openConnectDialog, disconnect, tryReconnect }
 }

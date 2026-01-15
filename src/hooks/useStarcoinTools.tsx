@@ -1,16 +1,17 @@
 import WalletDialog from '@/components/WalletDialog'
-import { getStarMaskProvider, tryReconnectStarMask } from '@/lib/starcoinProvider/starMask'
+import { getStarMaskProvider, tryReconnectStarMask, type StarcoinProvider } from '@/lib/starcoinProvider/starMask'
 import storage from '@/lib/storage'
 import { useGlobalStore } from '@/stores/globalStore'
-import type { WalletInfo } from '@/types/domain'
+import type { Callbacks, WalletInfo } from '@/types/domain'
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const STORAGE_KEY = 'starcoin_rehydrated'
 
-async function getStarcoinBalance(
-  provider: { request: (args: { method: string; params: unknown[] }) => Promise<unknown> },
-  address: string,
-): Promise<string> {
+let starcoinListenerInitialized = false
+const boundStarcoinProviders = new WeakSet<StarcoinProvider>()
+
+async function getStarcoinBalance(provider: StarcoinProvider, address: string): Promise<string> {
   try {
     const resource = (await provider.request({
       method: 'contract.get_resource',
@@ -52,24 +53,48 @@ export default function useStarcoinTools() {
     setIsOpen(true)
   }, [])
 
-  const disconnect = useCallback(async () => {
-    const provider = getStarMaskProvider()
-    if (provider) {
-      try {
-        await provider.request({
-          method: 'wallet_revokePermissions',
-          params: [
-            {
-              eth_accounts: {},
-            },
-          ],
-        })
-      } catch (error: unknown) {
-        const err = error as { message?: string }
-        console.log('StarMask wallet_revokePermissions not supported or failed:', err?.message)
-      }
-    }
+  const initListener = useCallback(async (callbacks: Callbacks = {}) => {
+    if (starcoinListenerInitialized) return
+    starcoinListenerInitialized = true
 
+    try {
+      const provider = getStarMaskProvider()
+      if (!provider) return
+
+      const handleAccountsChanged = (accounts: unknown) => {
+        try {
+          if (!accounts || (Array.isArray(accounts) && accounts.length === 0)) {
+            callbacks.onUnauthenticated?.()
+          }
+        } catch (err) {
+          console.debug('handleAccountsChanged error', err)
+        }
+      }
+
+      const handleDisconnect = () => {
+        callbacks.onUnauthenticated?.()
+      }
+
+      if (boundStarcoinProviders.has(provider)) return
+
+      try {
+        if (typeof provider.on === 'function') {
+          provider.on('accountsChanged', handleAccountsChanged)
+          provider.on('disconnect', handleDisconnect)
+        } else if (typeof provider.addListener === 'function') {
+          provider.addListener('accountsChanged', handleAccountsChanged)
+          provider.addListener('disconnect', handleDisconnect)
+        }
+        boundStarcoinProviders.add(provider)
+      } catch (err) {
+        console.debug('bind Starcoin provider listeners failed:', err)
+      }
+    } catch (err) {
+      console.debug('initListener failed:', err)
+    }
+  }, [])
+
+  const disconnect = useCallback(async () => {
     setStarcoinWalletInfo(null)
     await storage.removeItem(STORAGE_KEY)
   }, [setStarcoinWalletInfo])
@@ -125,5 +150,5 @@ export default function useStarcoinTools() {
     return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} />
   }, [isOpen, handleCancel, handleOk])
 
-  return { contextHolder, getBalance, openConnectDialog, disconnect, tryReconnect }
+  return { contextHolder, getBalance, openConnectDialog, initListener, disconnect, tryReconnect }
 }
