@@ -17,6 +17,18 @@
     "preview": "vite preview",
     "ssl": "mkcert -key-file key.pem -cert-file cert.pem bridge.starswap.xyz"
   },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --config .prettierrc.lint-only.json --write"
+    ],
+    "*.styl": [
+      "stylus-supremacy format --options ./stylus-supremacy.json --replace"
+    ],
+    "*.{json,md}": [
+      "prettier --config .prettierrc.lint-only.json --write"
+    ]
+  },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -54,6 +66,7 @@
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^17.0.0",
     "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "npm-check-updates": "^19.3.1",
     "prettier": "^3.8.0",
     "prettier-plugin-organize-imports": "^4.3.0",
