@@ -16,6 +16,7 @@
     ".prettierrc": true,
     ".prettierrc.lint-only.json": true,
     "components.json": true,
-    "stylus-supremacy.json": true
+    "stylus-supremacy.json": true,
+    ".npmrc": true
   }
 }
