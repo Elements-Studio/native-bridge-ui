@@ -1,5 +1,5 @@
 import WalletDialog from '@/components/WalletDialog'
-import { getStarMaskProvider, tryReconnectStarMask, type StarcoinProvider } from '@/lib/starcoinProvider/starMask'
+import { getStarMaskProvider, tryReconnectStarMask, type StarcoinProvider } from '@/lib/starcoinProvider'
 import storage from '@/lib/storage'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { Callbacks, WalletInfo } from '@/types/domain'
@@ -147,7 +147,7 @@ export default function useStarcoinTools() {
   )
 
   const contextHolder = useMemo(() => {
-    return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} />
+    return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} walletType="STARCOIN" />
   }, [isOpen, handleCancel, handleOk])
 
   return { contextHolder, getBalance, openConnectDialog, initListener, disconnect, tryReconnect }

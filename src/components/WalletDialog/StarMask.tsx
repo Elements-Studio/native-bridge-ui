@@ -1,6 +1,6 @@
 import starmaskLogo from '@/assets/img/starmask.svg'
 import { normalizeEip1193Error } from '@/lib/format'
-import { connectStarMask, getStarMaskProvider } from '@/lib/starcoinProvider/starMask'
+import { connectStarMask, getStarMaskProvider } from '@/lib/starcoinProvider'
 import { cn } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { WalletInfo } from '@/types/domain'

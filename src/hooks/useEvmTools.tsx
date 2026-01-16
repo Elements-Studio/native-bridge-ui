@@ -139,7 +139,7 @@ export default function useEvmTools() {
   )
 
   const contextHolder = useMemo(() => {
-    return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} />
+    return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} walletType="EVM" />
   }, [isOpen, handleCancel, handleOk])
 
   return { contextHolder, initListener, getBalance, openConnectDialog, disconnect, tryReconnect }

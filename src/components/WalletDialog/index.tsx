@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Form, FormField, FormItem } from '@/components/ui/form'
 
 import { useGlobalStore } from '@/stores/globalStore'
-import type { WalletInfo } from '@/types/domain'
+import type { WalletInfo, WalletType } from '@/types/domain'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -18,13 +18,14 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 interface IProps {
+  walletType: WalletType
   open: boolean
   onCancel?: () => void
   onOk?: (data: FormValues) => void
   title?: string
 }
 export default function WalletDialog(props: IProps) {
-  const { open: isOpen, title, onCancel, onOk } = props
+  const { open: isOpen, title, onCancel, onOk, walletType } = props
   const { setEvmWalletInfo } = useGlobalStore()
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -83,43 +84,47 @@ export default function WalletDialog(props: IProps) {
             </DialogHeader>
 
             <div className="grid gap-4 py-10">
-              <FormField
-                control={form.control}
-                name="walletInfo"
-                render={({ field }) => (
-                  <FormItem>
-                    <MetaMask
-                      onChange={(walletInfo: WalletInfo) => field.onChange(walletInfo)}
-                      onError={handleError}
-                      onDialogOk={() =>
-                        handleSubmit({
-                          ...form.getValues(),
-                          walletType: 'EVM',
-                        })
-                      }
-                    />
-                  </FormItem>
-                )}
-              />
+              {walletType === 'EVM' && (
+                <FormField
+                  control={form.control}
+                  name="walletInfo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <MetaMask
+                        onChange={(walletInfo: WalletInfo) => field.onChange(walletInfo)}
+                        onError={handleError}
+                        onDialogOk={() =>
+                          handleSubmit({
+                            ...form.getValues(),
+                            walletType: 'EVM',
+                          })
+                        }
+                      />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-              <FormField
-                control={form.control}
-                name="walletInfo"
-                render={({ field }) => (
-                  <FormItem>
-                    <StarMask
-                      onChange={(walletInfo: WalletInfo) => field.onChange(walletInfo)}
-                      onError={handleError}
-                      onDialogOk={() =>
-                        handleSubmit({
-                          ...form.getValues(),
-                          walletType: 'STARCOIN',
-                        })
-                      }
-                    />
-                  </FormItem>
-                )}
-              />
+              {walletType === 'STARCOIN' && (
+                <FormField
+                  control={form.control}
+                  name="walletInfo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <StarMask
+                        onChange={(walletInfo: WalletInfo) => field.onChange(walletInfo)}
+                        onError={handleError}
+                        onDialogOk={() =>
+                          handleSubmit({
+                            ...form.getValues(),
+                            walletType: 'STARCOIN',
+                          })
+                        }
+                      />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
           </form>
         </Form>
