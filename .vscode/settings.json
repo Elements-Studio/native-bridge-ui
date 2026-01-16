@@ -18,5 +18,8 @@
     "components.json": true,
     "stylus-supremacy.json": true,
     ".npmrc": true
+  },
+  "chat.tools.terminal.autoApprove": {
+    "pnpm": true
   }
 }
