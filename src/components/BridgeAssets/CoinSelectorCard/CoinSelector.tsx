@@ -5,13 +5,15 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Spinner } from '@/components/ui/spinner'
 import useEvmTools from '@/hooks/useEvmTools'
 import { connectMetaMask } from '@/lib/evmProvider'
 import { useGlobalStore, type CoinItem } from '@/stores/globalStore'
 import { ChevronDown } from 'lucide-react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 export default function CoinSelector() {
+  const [isPending, setIsPending] = useState(false)
   const { currentCoin, setCurrentCoin, mappings, fromWalletType, setEvmWalletInfo, setInputBalance } = useGlobalStore()
   const { contextHolder, getBalance } = useEvmTools()
 
@@ -21,13 +23,18 @@ export default function CoinSelector() {
 
   const switchCoin = useCallback(
     async (coin: CoinItem) => {
-      await getBalance(coin.network.chainId)
-      if (coin.walletType === 'EVM') {
-        const info = await connectMetaMask()
-        setEvmWalletInfo(info)
+      setIsPending(true)
+      try {
+        await getBalance(coin.network.chainId, coin.ca)
+        if (coin.walletType === 'EVM') {
+          const info = await connectMetaMask()
+          setEvmWalletInfo(info)
+        }
+        setCurrentCoin(coin)
+        setInputBalance('')
+      } finally {
+        setIsPending(false)
       }
-      setCurrentCoin(coin)
-      setInputBalance('')
     },
     [getBalance, setCurrentCoin, setEvmWalletInfo, setInputBalance],
   )
@@ -35,7 +42,8 @@ export default function CoinSelector() {
   if (!items.length) {
     return (
       <div className="ms-3 flex items-center gap-2 rounded-full px-3 py-2">
-        <img src={currentCoin.icon} alt={currentCoin.name} width={24} height={24} />
+        {isPending ? <Spinner /> : <img src={currentCoin.icon} alt={currentCoin.name} width={24} height={24} />}
+
         {currentCoin.name}
       </div>
     )
@@ -43,9 +51,9 @@ export default function CoinSelector() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild disabled={isPending}>
           <button className="ms-3 flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 hover:bg-white/10">
-            <img src={currentCoin.icon} alt={currentCoin.name} width={24} height={24} />
+            {isPending ? <Spinner /> : <img src={currentCoin.icon} alt={currentCoin.name} width={24} height={24} />}
             {currentCoin.name}
             <ChevronDown size={20} color="#ccc" />
           </button>

@@ -1,12 +1,13 @@
 import ethIcon from '@/assets/img/eth.svg'
 import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
+import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 import wbtcIcon from '@/assets/img/wbtc.svg'
 import type { WalletInfo, WalletType } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
 
-type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH'
+type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT'
 export type CoinItem = {
   icon: string
   name: CoinsName
@@ -15,7 +16,7 @@ export type CoinItem = {
     name: 'mainnet' | 'sepolia'
     chainId: string // '0x1' | '0xfb' | '0x6a'
   }
-  ca: string
+  ca?: string | null
 }
 const mappings: Record<CoinsName, CoinItem> = {
   ETH: {
@@ -23,14 +24,21 @@ const mappings: Record<CoinsName, CoinItem> = {
     name: 'ETH',
     walletType: 'EVM',
     network: { name: 'mainnet', chainId: '0x1' },
-    ca: '0x0000000000000000000000000000000000000000',
+    ca: null,
   },
   SepoliaETH: {
     icon: sepoliaEthIcon,
     name: 'SepoliaETH',
     walletType: 'EVM',
     network: { name: 'sepolia', chainId: '0xaa36a7' },
-    ca: '0x0000000000000000000000000000000000000000',
+    ca: null,
+  },
+  SepoliaUSDT: {
+    icon: sepoliaUsdtIcon,
+    name: 'SepoliaUSDT',
+    walletType: 'EVM',
+    network: { name: 'sepolia', chainId: '0xaa36a7' },
+    ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
   },
   USDT: {
     icon: usdtIcon,
@@ -45,7 +53,7 @@ const mappings: Record<CoinsName, CoinItem> = {
     name: 'WBTC',
     walletType: 'STARCOIN',
     network: { name: 'mainnet', chainId: '0x1' },
-    ca: '0x0000000000000000000000000000000000000000',
+    ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
   },
 }
 

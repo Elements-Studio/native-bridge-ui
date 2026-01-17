@@ -4,7 +4,8 @@ import storage from '@/lib/storage'
 import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { Callbacks, EIP1193Provider, WalletInfo } from '@/types/domain'
-import { BrowserProvider, formatEther } from 'ethers'
+import { BrowserProvider, Contract, formatEther, formatUnits } from 'ethers'
+import idmp from 'idmp'
 import { useCallback, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'evm_rehydrated'
@@ -75,7 +76,6 @@ export default function useEvmTools() {
           ],
         })
       } catch (error: unknown) {
-        // wallet_revokePermissions not supported, continue
         console.debug('wallet_revokePermissions failed:', error)
       }
     })
@@ -101,9 +101,9 @@ export default function useEvmTools() {
     }
   }, [setEvmWalletInfo])
 
-  const getBalance = useCallback(async (chainId: string) => {
+  const _getBalance = useCallback(async (chainId: string, ca?: string | null) => {
     const mm = await getMetaMask()
-    if (!mm) return { balance: '0' }
+    if (!mm) return { balance: '0', rawBalance: 0n }
 
     await mm.request({
       method: 'wallet_switchEthereumChain',
@@ -115,12 +115,31 @@ export default function useEvmTools() {
     })
     const provider = new BrowserProvider(mm)
     const signer = await provider.getSigner()
-    const address = await signer.getAddress() // 原生代币余额
-    const network = await provider.getNetwork()
-    console.log('Switched to network:', network)
-    const balance = await provider.getBalance(address)
-    return { balance: formatEther(balance) }
+    const address = await signer.getAddress()
+
+    if (!ca) {
+      const rawBalance = await provider.getBalance(address)
+      return { balance: formatEther(rawBalance), rawBalance }
+    }
+
+    const erc20 = new Contract(
+      ca,
+      ['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)'],
+      provider,
+    )
+
+    const [rawBalance, decimals] = await Promise.all([erc20.balanceOf(address), erc20.decimals()])
+    return { balance: formatUnits(rawBalance, decimals), rawBalance, decimals: decimals }
   }, [])
+
+  const getBalance = (chainId: string, ca?: string | null) => {
+    const key = `getBalance:${chainId}:${ca || 'native'}`
+    return idmp(key, async () => {
+      const res = await _getBalance(chainId, ca)
+      if (res) return res
+      idmp.flush(key)
+    })
+  }
 
   const handleCancel = useCallback(() => {
     console.log('canceled')

@@ -1,28 +1,42 @@
 import walletIcon from '@/assets/img/wallet.svg'
+import { Spinner } from '@/components/ui/spinner'
 import useEvmTools from '@/hooks/useEvmTools'
+import { toFixedWithoutRounding } from '@/lib/format'
 import { useGlobalStore } from '@/stores/globalStore'
 import { useCallback, useEffect, useState } from 'react'
 import CoinSelector from './CoinSelector'
 
 export default function CoinSelectorCard() {
-  const { currentCoin, evmWalletInfo, inputBalance, setInputBalance } = useGlobalStore()
+  const [isPending, setIsPending] = useState(false)
+  const { currentCoin, evmWalletInfo, starcoinWalletInfo, inputBalance, setInputBalance } = useGlobalStore()
   const { getBalance, contextHolder } = useEvmTools()
   const [totalBalance, setTotalBalance] = useState<string>('')
 
   useEffect(() => {
-    if (!evmWalletInfo) return
+    if (!currentCoin) return
+
+    if (currentCoin.walletType === 'EVM' && !evmWalletInfo) return
+
+    if (currentCoin.walletType === 'STARCOIN' && !starcoinWalletInfo) return
+
     const fetchBalance = async () => {
-      const result = await getBalance(currentCoin.network.chainId)
+      setTotalBalance('')
+      setIsPending(true)
+      const result = await getBalance(currentCoin.network.chainId, currentCoin.ca)
       const balance = result?.balance
       if (balance) {
-        setTotalBalance(Number(balance).toFixed(6).toString())
+        console.log(11111, balance)
+        setTotalBalance(balance)
+      } else {
+        setTotalBalance('')
       }
+      setIsPending(false)
     }
     fetchBalance()
-  }, [evmWalletInfo, currentCoin, getBalance])
+  }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getBalance])
 
   const setMax = useCallback(async () => {
-    const result = await getBalance(currentCoin.network.chainId)
+    const result = await getBalance(currentCoin.network.chainId, currentCoin.ca)
     const balance = result?.balance
     if (balance) {
       setInputBalance(Number(balance).toFixed(6).toString())
@@ -55,16 +69,18 @@ export default function CoinSelectorCard() {
       />
 
       {/* balance */}
-      {evmWalletInfo && (
+      {
         <div className="ms-6 flex w-full items-center gap-2">
           <img src={walletIcon} width={12} height={12} />
 
           <div className="flex font-mono text-sm font-normal text-[#9f9aae] uppercase">
-            <span className="wrap-break-words me-[0.5em] max-w-70 truncate">{totalBalance ? totalBalance : '--'}</span>
+            <span className="wrap-break-words me-[0.5em] max-w-70 truncate">
+              {isPending ? <Spinner /> : toFixedWithoutRounding(totalBalance, 3)}
+            </span>
             {currentCoin.name}
           </div>
         </div>
-      )}
+      }
 
       {contextHolder}
       {/* {JSON.stringify(evmWalletInfo)} {JSON.stringify(starcoinWalletInfo)} */}
