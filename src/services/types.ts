@@ -1,4 +1,4 @@
-export type ChainId = 1 | 11
+export type ChainId = 0 | 1 | 2 | 10 | 11 | 12
 export type TransferStatus = 'deposited' | 'approved' | 'claimed'
 export type DataSource = 'STARCOIN' | 'ETH'
 
@@ -60,8 +60,8 @@ export interface QuotaResponse {
   starcoin_claim: number
 }
 
-export type StarcoinChainId = 'StarcoinTestnet' | 'StarcoinMainnet'
-export type EthChainId = 'EthSepolia' | 'EthMainnet'
+export type StarcoinChainId = 'StarcoinTestnet' | 'StarcoinMainnet' | 'StarcoinCustom'
+export type EthChainId = 'EthSepolia' | 'EthMainnet' | 'EthCustom'
 
 export interface StarcoinBridgeEvent {
   nonce: number
@@ -79,15 +79,35 @@ export interface StarcoinToEthBridgeAction {
   starcoin_bridge_event: StarcoinBridgeEvent
 }
 
+export interface EthBridgeEvent {
+  nonce: number
+  source_chain_id: EthChainId
+  starcoin_bridge_chain_id: StarcoinChainId
+  eth_sender_address: string
+  starcoin_bridge_recipient_address: string
+  token_id: number
+  starcoin_bridge_adjusted_amount: number
+}
+
+export interface EthToStarcoinBridgeAction {
+  eth_tx_hash: number[]
+  eth_event_index: number
+  eth_bridge_event: EthBridgeEvent
+}
+
 export interface AuthSignature {
   authority_pub_key: string
   signature: string
 }
 
 export interface SignatureResponse {
-  data: {
-    StarcoinToEthBridgeAction: StarcoinToEthBridgeAction
-  }
+  data:
+    | {
+        StarcoinToEthBridgeAction: StarcoinToEthBridgeAction
+      }
+    | {
+        EthToStarcoinBridgeAction: EthToStarcoinBridgeAction
+      }
   auth_signature: AuthSignature
 }
 
@@ -95,4 +115,33 @@ export interface TransferListParams {
   address: string
   page?: number
   page_size?: number
+}
+
+export type EstimateDirection = 'starcoin_to_eth' | 'eth_to_starcoin'
+
+export interface EstimateFeesResponse {
+  source_tx_estimate: string
+  combined_approve_and_claim_estimate: string
+  approve_estimate: string
+  claim_estimate: string
+}
+
+export type BridgeRecordStatus = 'INITIATED' | 'VERIFYING' | 'CLAIM' | 'DELIVER'
+
+export interface BridgeRecord {
+  id: string
+  from_chain: string
+  to_chain: string
+  token: string
+  amount: number
+  sender: string
+  recipient: string
+  initiated_at: string
+  status: BridgeRecordStatus
+  tx_hash_from?: string
+  tx_hash_to?: string
+  seq_num?: string
+  verified_signatures?: string[]
+  claimed: boolean
+  backend_status?: BridgeRecordStatus
 }

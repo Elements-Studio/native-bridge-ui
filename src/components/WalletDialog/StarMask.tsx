@@ -45,7 +45,7 @@ export default function StarMask({ className, onError, onDialogOk, onChange }: S
   if (!hasInstalled) {
     return (
       <a
-        href="https://starcoin.org/zh/developer/sdk_wallet/starmask/"
+        href="https://chromewebstore.google.com/detail/starmask/kmheclfnfmpacglnpegeohempmedhiaf"
         target="_blank"
         rel="noreferrer noopener"
         className={cn('flex items-center space-x-4 rounded-md border p-2 disabled:cursor-not-allowed disabled:opacity-60', className)}

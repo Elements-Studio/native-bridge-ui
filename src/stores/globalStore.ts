@@ -7,7 +7,7 @@ import type { WalletInfo, WalletType } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
 
-type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT'
+type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT' | 'StarUSDT'
 export type CoinItem = {
   icon: string
   name: CoinsName
@@ -16,6 +16,7 @@ export type CoinItem = {
     name: 'mainnet' | 'sepolia'
     chainId: string // '0x1' | '0xfb' | '0x6a'
   }
+  gas: 'ETH' | 'SepoliaETH' | 'STC'
   ca?: string | null
 }
 const mappings: Record<CoinsName, CoinItem> = {
@@ -24,6 +25,7 @@ const mappings: Record<CoinsName, CoinItem> = {
     name: 'ETH',
     walletType: 'EVM',
     network: { name: 'mainnet', chainId: '0x1' },
+    gas: 'ETH',
     ca: null,
   },
   SepoliaETH: {
@@ -31,6 +33,7 @@ const mappings: Record<CoinsName, CoinItem> = {
     name: 'SepoliaETH',
     walletType: 'EVM',
     network: { name: 'sepolia', chainId: '0xaa36a7' },
+    gas: 'SepoliaETH',
     ca: null,
   },
   SepoliaUSDT: {
@@ -38,6 +41,7 @@ const mappings: Record<CoinsName, CoinItem> = {
     name: 'SepoliaUSDT',
     walletType: 'EVM',
     network: { name: 'sepolia', chainId: '0xaa36a7' },
+    gas: 'SepoliaETH',
     ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
   },
   USDT: {
@@ -45,6 +49,7 @@ const mappings: Record<CoinsName, CoinItem> = {
     name: 'USDT',
     walletType: 'EVM',
     network: { name: 'mainnet', chainId: '0x1' },
+    gas: 'ETH',
     ca: '0xdac17f958d2ee523a2206206994597c13d831ec7',
   },
 
@@ -53,7 +58,17 @@ const mappings: Record<CoinsName, CoinItem> = {
     name: 'WBTC',
     walletType: 'STARCOIN',
     network: { name: 'mainnet', chainId: '0x1' },
+    gas: 'ETH',
     ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+  },
+
+  StarUSDT: {
+    icon: usdtIcon,
+    name: 'StarUSDT',
+    walletType: 'STARCOIN',
+    network: { name: 'mainnet', chainId: '0x1' },
+    gas: 'STC',
+    ca: '0xdac17f958d2ee523a2206206994597c13d831ec7',
   },
 }
 

@@ -1,2 +1,2 @@
-export { bridgeIndexerApi, bridgeIndexerClient, signatureServiceApi, signatureServiceClient } from './api'
+export * from './api'
 export type * from './types'
