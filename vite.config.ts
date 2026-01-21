@@ -10,22 +10,30 @@ export default defineConfig(({ mode }) => ({
   server: {
     https: {},
     proxy: {
-      '/api/indexer': {
+      '/api/transfers': {
         target: 'http://143.198.220.234:9800',
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api\/indexer/, ''),
+        rewrite: (path: string) => {
+          console.log(111111111, path)
+          return path.replace(/^\/api/, '')
+        },
       },
-
       '/api/sign': {
-        target: 'http://143.198.220.234:60002',
+        target: 'http://143.198.220.234:9800',
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api\/sign/, ''),
+        rewrite: (path: string) => {
+          console.log(222222222, path)
+          return path.replace(/^\/api/, '')
+        },
       },
 
-      '/api/estimate_fees': {
+      '/api': {
         target: 'http://143.198.220.234:60002',
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api\//, ''),
+        rewrite: (path: string) => {
+          console.log(333333, path.replace(/^\/api/, ''))
+          return path.replace(/^\/api/, '')
+        },
       },
     },
   },

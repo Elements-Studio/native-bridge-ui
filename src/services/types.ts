@@ -1,4 +1,4 @@
-export type ChainId = 0 | 1 | 2 | 10 | 11 | 12
+export type ChainId = number
 export type TransferStatus = 'deposited' | 'approved' | 'claimed'
 export type DataSource = 'STARCOIN' | 'ETH'
 
@@ -113,6 +113,9 @@ export interface SignatureResponse {
 
 export interface TransferListParams {
   address: string
+  status?: TransferStatus
+  finalized_only?: boolean
+  chain_id?: ChainId
   page?: number
   page_size?: number
 }
