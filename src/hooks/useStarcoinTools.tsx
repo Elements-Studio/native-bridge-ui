@@ -130,6 +130,40 @@ export default function useStarcoinTools() {
     return { balance }
   }, [])
 
+  type ScriptFunctionPayload = {
+    type: 'script_function'
+    function_id: string
+    type_args?: string[]
+    args?: Array<string | number | boolean | object>
+  }
+
+  type StarcoinSendTxParams = {
+    sender?: string
+    payload: ScriptFunctionPayload
+    max_gas_amount?: string | number
+    gas_unit_price?: string | number
+    gas_token_code?: string
+    expiration_timestamp_secs?: string | number
+  }
+
+  const sendTransaction = useCallback(async (params: StarcoinSendTxParams) => {
+    const provider = getStarMaskProvider()
+    if (!provider) throw new Error('StarMask not found: window.starcoin is missing')
+
+    const accounts = (await provider.request({ method: 'stc_accounts' })) as string[]
+    const sender = params.sender ?? accounts?.[0]
+    if (!sender) throw new Error('No Starcoin account')
+
+    const tx = { ...params, sender }
+    return provider.request({ method: 'stc_sendTransaction', params: [tx] })
+  }, [])
+
+  const submitHexTransaction = useCallback(async (rawTxHex: string) => {
+    const provider = getStarMaskProvider()
+    if (!provider) throw new Error('StarMask not found: window.starcoin is missing')
+    return provider.request({ method: 'txpool.submit_hex_transaction', params: [rawTxHex] })
+  }, [])
+
   const handleCancel = useCallback(() => {
     console.log('canceled')
     setIsOpen(false)
@@ -150,5 +184,14 @@ export default function useStarcoinTools() {
     return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} walletType="STARCOIN" />
   }, [isOpen, handleCancel, handleOk])
 
-  return { contextHolder, getBalance, openConnectDialog, initListener, disconnect, tryReconnect }
+  return {
+    contextHolder,
+    getBalance,
+    openConnectDialog,
+    initListener,
+    disconnect,
+    tryReconnect,
+    sendTransaction,
+    submitHexTransaction,
+  }
 }

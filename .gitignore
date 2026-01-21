@@ -1,4 +1,4 @@
-# Logs
+ll# Logs
 logs
 *.log
 npm-debug.log*
@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 .DS_Store
 
 *.pem
+
+.notes/
