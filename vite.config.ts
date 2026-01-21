@@ -14,16 +14,29 @@ export default defineConfig(({ mode }) => ({
         target: 'http://143.198.220.234:9800',
         changeOrigin: true,
         rewrite: (path: string) => {
-          console.log(111111111, path)
           return path.replace(/^\/api/, '')
         },
       },
-      '/api/sign': {
-        target: 'http://143.198.220.234:9800',
+
+      '/api0/sign': {
+        target: 'http://143.198.220.234:60002',
         changeOrigin: true,
         rewrite: (path: string) => {
-          console.log(222222222, path)
-          return path.replace(/^\/api/, '')
+          return path.replace(/^\/api0/, '')
+        },
+      },
+      '/api1/sign': {
+        target: 'http://143.198.220.234:60003',
+        changeOrigin: true,
+        rewrite: (path: string) => {
+          return path.replace(/^\/api1/, '')
+        },
+      },
+      '/api2/sign': {
+        target: 'http://143.198.220.234:60004',
+        changeOrigin: true,
+        rewrite: (path: string) => {
+          return path.replace(/^\/api2/, '')
         },
       },
 

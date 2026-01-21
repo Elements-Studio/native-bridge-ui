@@ -138,8 +138,9 @@ export default function useStarcoinTools() {
   }
 
   type StarcoinSendTxParams = {
-    sender?: string
-    payload: ScriptFunctionPayload
+    from?: string
+    payload?: ScriptFunctionPayload
+    data?: string
     max_gas_amount?: string | number
     gas_unit_price?: string | number
     gas_token_code?: string
@@ -150,11 +151,18 @@ export default function useStarcoinTools() {
     const provider = getStarMaskProvider()
     if (!provider) throw new Error('StarMask not found: window.starcoin is missing')
 
-    const accounts = (await provider.request({ method: 'stc_accounts' })) as string[]
-    const sender = params.sender ?? accounts?.[0]
-    if (!sender) throw new Error('No Starcoin account')
+    let accounts = (await provider.request({ method: 'stc_accounts' })) as string[]
+    if (!accounts || accounts.length === 0) {
+      accounts = (await provider.request({ method: 'stc_requestAccounts' })) as string[]
+    }
+    const from = params.from ?? accounts?.[0]
+    if (!from) throw new Error('No Starcoin account')
 
-    const tx = { ...params, sender }
+    const tx = { ...params, from }
+    console.info('[StarMask][sendTransaction] sender:', from)
+    console.info('[StarMask][sendTransaction] data:', tx.data)
+    console.info('[StarMask][sendTransaction] payload:', tx.payload)
+    console.info('[StarMask][sendTransaction] payload(json):', JSON.stringify(tx.payload))
     return provider.request({ method: 'stc_sendTransaction', params: [tx] })
   }, [])
 

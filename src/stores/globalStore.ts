@@ -99,7 +99,7 @@ const defaults = freeze(
     mappings,
     fromWalletType: 'EVM' as WalletType,
     toWalletType: 'STARCOIN' as WalletType,
-    currentCoin: process.env.NODE_ENV === 'development' ? mappings.SepoliaETH : mappings.ETH,
+    currentCoin: process.env.NODE_ENV === 'development' ? mappings.SepoliaUSDT : mappings.ETH,
     evmWalletInfo: null,
     starcoinWalletInfo: null,
     inputBalance: '',

@@ -114,7 +114,6 @@ export default function BridgeAssetPanel() {
       const bridge = new Contract(bridgeAddress, BRIDGE_ABI, signer)
       const tx = await bridge.bridgeERC20(tokenConfig.tokenId, amount, recipientBytes, BRIDGE_CONFIG.evm.destinationChainId)
       const txHash = tx.hash as string
-      alert(txHash)
       setBridgeStatus('Transaction submitted. Redirecting...')
       navigate(`/transactions/${txHash}`)
       return

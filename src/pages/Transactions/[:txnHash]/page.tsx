@@ -1,9 +1,11 @@
 import ethIcon from '@/assets/img/eth.svg'
 import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
+import { Progress } from '@/components/ui/progress'
 import { Spinner } from '@/components/ui/spinner'
 import useStarcoinTools from '@/hooks/useStarcoinTools'
 import { BRIDGE_ABI, BRIDGE_CONFIG, normalizeHash, normalizeHex } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
+import { bytesToHex, hexToBytes, serializeBytes, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { collectSignatures, getTransferDetail, getTransferList, type SignatureResponse } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Interface } from 'ethers'
@@ -12,14 +14,63 @@ import { useParams } from 'react-router-dom'
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-async function waitForReceipt(provider: BrowserProvider, txHash: string, timeoutMs: number) {
-  const start = Date.now()
-  while (Date.now() - start < timeoutMs) {
-    const receipt = await provider.getTransactionReceipt(txHash)
-    if (receipt) return receipt
-    await sleep(6000)
+function getEthSenderAddress(event: Record<string, unknown>) {
+  return (
+    (event.eth_sender_address as string | undefined) ??
+    (event.eth_address as string | undefined) ??
+    (event.ethAddress as string | undefined)
+  )
+}
+
+function getStarcoinRecipientAddress(event: Record<string, unknown>) {
+  return (
+    (event.starcoin_bridge_recipient_address as string | undefined) ??
+    (event.starcoin_bridge_address as string | undefined) ??
+    (event.starcoinBridgeRecipientAddress as string | undefined)
+  )
+}
+
+function base64ToHex(input: string): string {
+  const normalized = input.trim().replace(/-/g, '+').replace(/_/g, '/')
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4))
+  const binary = atob(`${normalized}${padding}`)
+  const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0))
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+  return `0x${hex}`
+}
+
+function base64ToBytes(input: string): Uint8Array {
+  return hexToBytes(base64ToHex(input))
+}
+
+async function getEthEventIndex(txHash: string): Promise<number> {
+  const todo = async () => {
+    const normalizedTxHash = txHash.startsWith('0x') ? txHash : `0x${txHash}`
+    const mm = await getMetaMask()
+    if (!mm) throw new Error('MetaMask not detected')
+
+    const provider = new BrowserProvider(mm)
+
+    const receipt = await provider.getTransactionReceipt(normalizedTxHash)
+
+    if (!receipt) throw new Error('Transaction receipt not found')
+
+    const iface = new Interface(BRIDGE_ABI)
+    const event = iface.getEvent('TokensDeposited')
+    const eventTopic = event?.topicHash
+    if (!eventTopic) throw new Error('TokensDeposited topic not found')
+
+    const bridgeAddress = BRIDGE_CONFIG.evm.bridgeAddress.toLowerCase()
+    const logs = receipt.logs || []
+    for (let i = 0; i < logs.length; i += 1) {
+      const log = logs[i]
+      if (!log?.address || log.address.toLowerCase() !== bridgeAddress) continue
+      if (log.topics?.[0] === eventTopic) return i
+    }
+    throw new Error('TokensDeposited event not found in receipt logs')
   }
-  return null
+  const res = await todo()
+  return res
 }
 
 export default function TransactionsDetailPage() {
@@ -30,7 +81,6 @@ export default function TransactionsDetailPage() {
   const [bridgeError, setBridgeError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const startedRef = useRef<string | null>(null)
-
   useEffect(() => {
     if (!txnHash) return
     if (!evmWalletInfo?.address) {
@@ -54,87 +104,35 @@ export default function TransactionsDetailPage() {
 
     const run = async () => {
       setBridgeError(null)
-      setBridgeStatus('Waiting for Ethereum receipt...')
+      setBridgeStatus('Waiting for indexer finalization...')
       setIsProcessing(true)
       try {
-        const mm = await getMetaMask()
-        if (!mm) throw new Error('MetaMask not detected')
-
-        await mm.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: BRIDGE_CONFIG.evm.chainIdHex }],
-        })
-
-        const provider = new BrowserProvider(mm)
-        const receiptTimeoutMs = 10 * 60 * 1000
-        const receipt = await waitForReceipt(provider, txnHash, receiptTimeoutMs)
-        if (!receipt) throw new Error('Failed to fetch deposit receipt')
-
-        const bridgeAddress = BRIDGE_CONFIG.evm.bridgeAddress.toLowerCase()
-        const iface = new Interface(BRIDGE_ABI)
-        const event = iface.getEvent('TokensDeposited')
-        const eventTopic = event?.topicHash
-        const receiptLogs = receipt.logs.filter(log => log.address?.toLowerCase() === bridgeAddress)
-        const matchedLogs = eventTopic ? receiptLogs.filter(log => log.topics?.[0] === eventTopic) : receiptLogs
-        const parsedLog = matchedLogs
-          .map(log => {
-            try {
-              return iface.parseLog(log)
-            } catch {
-              return null
-            }
-          })
-          .find(log => log?.name === 'TokensDeposited')
-
         let nonce: number | null = null
-        if (parsedLog) {
-          nonce = Number(parsedLog.args?.nonce ?? 0)
-        }
+        const pollStart = Date.now()
+        const pollTimeoutMs = 10 * 60 * 1000
+        let transferStatus: string | null = null
+        let isFinalized = false
+        const normalizedTxHash = normalizeHash(txnHash)
 
-        if (!Number.isFinite(nonce) || nonce === null) {
-          setBridgeStatus('Resolving nonce from indexer...')
-          const normalizedTxHash = normalizeHash(txnHash)
-          const listStart = Date.now()
-          const listTimeoutMs = 10 * 60 * 1000
-          while (Date.now() - listStart < listTimeoutMs) {
-            if (cancelled) return
+        while (Date.now() - pollStart < pollTimeoutMs) {
+          if (cancelled) return
+          try {
             const list = await getTransferList({
               address: evmWalletInfo.address,
               chain_id: BRIDGE_CONFIG.evm.chainId,
-              status: 'deposited',
-              finalized_only: true,
               page_size: 20,
             })
             const matched = list.transfers.find(t => normalizeHash(t.txn_hash ?? '') === normalizedTxHash)
             if (matched) {
               nonce = Number(matched.nonce)
-              break
-            }
-            await sleep(6000)
-          }
-        }
-
-        if (nonce === null || !Number.isFinite(nonce)) {
-          throw new Error(`TokensDeposited event not found, txHash=${txnHash}`)
-        }
-
-        setBridgeStatus('Waiting for indexer finalization...')
-        const pollStart = Date.now()
-        const pollTimeoutMs = 10 * 60 * 1000
-        let transferStatus: string | null = null
-        let isFinalized = false
-
-        while (Date.now() - pollStart < pollTimeoutMs) {
-          if (cancelled) return
-          try {
-            const detail = await getTransferDetail(BRIDGE_CONFIG.evm.chainId, nonce)
-            transferStatus = detail.transfer.status
-            if (detail.transfer.is_finalized) {
-              isFinalized = true
-              break
+              transferStatus = matched.status
+              if (matched.is_finalized) {
+                isFinalized = true
+                break
+              }
             }
           } catch (err) {
-            console.debug('Transfer detail not ready:', err)
+            console.debug('Transfer list not ready:', err)
           }
           await sleep(6000)
         }
@@ -143,8 +141,13 @@ export default function TransactionsDetailPage() {
           throw new Error('Transfer not finalized yet')
         }
 
+        if (nonce === null || !Number.isFinite(nonce)) {
+          throw new Error('Indexer did not return transfer nonce')
+        }
+
         if (transferStatus === null) {
-          throw new Error('Indexer did not return transfer details')
+          const detail = await getTransferDetail(BRIDGE_CONFIG.evm.chainId, nonce)
+          transferStatus = detail.transfer.status
         }
 
         if (transferStatus === 'claimed') {
@@ -155,57 +158,83 @@ export default function TransactionsDetailPage() {
         let signatures: SignatureResponse[] = []
         if (transferStatus !== 'approved') {
           setBridgeStatus('Collecting validator signatures...')
-          signatures = await collectSignatures('eth_to_starcoin', txnHash, 0)
+          const eventIndex = await getEthEventIndex(txnHash)
+          signatures = await collectSignatures('eth_to_starcoin', txnHash, eventIndex, {
+            validatorCount: 3,
+            quorumStake: 3334,
+          })
         }
-
         if (transferStatus !== 'approved') {
           setBridgeStatus('Submitting approve on Starcoin...')
-          const first = signatures[0]?.data
+
+          const uniqueSignatures = signatures.filter((sig, index, list) => {
+            const key = sig.auth_signature.authority_pub_key
+            return list.findIndex(item => item.auth_signature.authority_pub_key === key) === index
+          })
+          if (uniqueSignatures.length < 3) {
+            console.log('Signatures collected:', uniqueSignatures)
+            throw new Error('Need signatures from 3 distinct validators.')
+          }
+
+          const first = uniqueSignatures[0]?.data
           if (!first || !('EthToStarcoinBridgeAction' in first)) {
             throw new Error('Invalid signature response')
           }
           const action = first.EthToStarcoinBridgeAction
           const event = action.eth_bridge_event
+          const ethSenderAddress = getEthSenderAddress(event as Record<string, unknown>) ?? evmWalletInfo.address
+          const starcoinRecipientAddress = getStarcoinRecipientAddress(event as Record<string, unknown>) ?? starcoinWalletInfo.address
+          if (!ethSenderAddress || !starcoinRecipientAddress) {
+            throw new Error('Signature response missing sender or recipient address')
+          }
 
-          const sigBytes = signatures.map(sig => normalizeHex(sig.auth_signature.signature))
-          const approveFn =
-            sigBytes.length >= 3
-              ? 'approve_bridge_token_transfer_three'
-              : sigBytes.length === 2
-                ? 'approve_bridge_token_transfer_two'
-                : 'approve_bridge_token_transfer_single'
+          const sigBytes = uniqueSignatures.map(sig => base64ToBytes(sig.auth_signature.signature))
+          const approveFn = 'approve_bridge_token_transfer_three'
+
+          const senderAddressBytes = hexToBytes(normalizeHex(ethSenderAddress, 20))
+          const recipientAddressBytes = hexToBytes(normalizeHex(starcoinRecipientAddress, 16))
+          const signatureBytes = sigBytes.slice(0, 3)
 
           const approveArgs = [
-            BRIDGE_CONFIG.evm.chainId,
-            String(event.nonce),
-            normalizeHex(event.eth_sender_address, 20),
-            BRIDGE_CONFIG.evm.destinationChainId,
-            normalizeHex(event.starcoin_bridge_recipient_address, 16),
-            event.token_id,
-            String(event.starcoin_bridge_adjusted_amount),
-            ...sigBytes.slice(0, 3),
+            serializeU8(BRIDGE_CONFIG.evm.chainId),
+            serializeU64(event.nonce),
+            serializeBytes(senderAddressBytes),
+            serializeU8(BRIDGE_CONFIG.evm.destinationChainId),
+            serializeBytes(recipientAddressBytes),
+            serializeU8(event.token_id),
+            serializeU64(event.starcoin_bridge_adjusted_amount),
+            ...signatureBytes.map(sig => serializeBytes(sig)),
           ]
 
+          const approvePayload = serializeScriptFunctionPayload({
+            moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
+            moduleName: 'Bridge',
+            functionName: approveFn,
+            typeArgs: [],
+            args: approveArgs,
+          })
+
           await sendTransaction({
-            payload: {
-              type: 'script_function',
-              function_id: `${BRIDGE_CONFIG.starcoin.packageAddress}::Bridge::${approveFn}`,
-              args: approveArgs,
-            },
+            data: bytesToHex(approvePayload),
           })
         }
 
         setBridgeStatus('Submitting claim on Starcoin...')
+        const claimArgs = [serializeU64(Date.now()), serializeU8(BRIDGE_CONFIG.evm.chainId), serializeU64(nonce)]
+        const claimPayload = serializeScriptFunctionPayload({
+          moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
+          moduleName: 'Bridge',
+          functionName: tokenConfig.claimFunction,
+          typeArgs: [],
+          args: claimArgs,
+        })
         await sendTransaction({
-          payload: {
-            type: 'script_function',
-            function_id: `${BRIDGE_CONFIG.starcoin.packageAddress}::Bridge::${tokenConfig.claimFunction}`,
-            args: [String(Date.now()), BRIDGE_CONFIG.evm.chainId, String(nonce)],
-          },
+          data: bytesToHex(claimPayload),
         })
 
         setBridgeStatus('Bridge completed.')
       } catch (err) {
+        console.error('Bridge error:', err)
         if (!cancelled) setBridgeError(err instanceof Error ? err.message : 'Bridge failed')
       } finally {
         if (!cancelled) setIsProcessing(false)
@@ -220,9 +249,28 @@ export default function TransactionsDetailPage() {
 
   const statusLabel = useMemo(() => {
     if (bridgeError) return 'Failed'
-    if (bridgeStatus) return 'Processing'
+    if (bridgeStatus) return bridgeStatus
     return 'Pending'
   }, [bridgeError, bridgeStatus])
+
+  const progressValue = useMemo(() => {
+    if (bridgeError) return 100
+    if (!bridgeStatus) return 0
+    if (bridgeStatus.includes('Waiting for indexer')) return 20
+    if (bridgeStatus.includes('Collecting validator signatures')) return 40
+    if (bridgeStatus.includes('Submitting approve')) return 60
+    if (bridgeStatus.includes('Submitting claim')) return 80
+    if (bridgeStatus.includes('completed') || bridgeStatus.includes('Already claimed')) return 100
+    return 0
+  }, [bridgeError, bridgeStatus])
+
+  const progressSteps = [
+    { label: 'Waiting for finalization', value: 20 },
+    { label: 'Collecting signatures', value: 40 },
+    { label: 'Approving transfer', value: 60 },
+    { label: 'Claiming tokens', value: 80 },
+    { label: 'Completed', value: 100 },
+  ]
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center rounded-4xl bg-gray-700">
@@ -231,6 +279,31 @@ export default function TransactionsDetailPage() {
           <div className="text-2xl font-semibold wrap-break-word">Transaction details</div>
         </div>
         {txnHash ? <div className="w-full text-xs wrap-break-word text-gray-200">Tx Hash: {txnHash}</div> : null}
+
+        {/* Progress Bar Section */}
+        <div className="w-full space-y-4 rounded-2xl bg-gray-600 p-6">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-100">{bridgeError ? 'Transaction Failed' : statusLabel}</span>
+            <span className="text-sm font-semibold text-gray-100">{progressValue}%</span>
+          </div>
+
+          <Progress value={progressValue} className={bridgeError ? 'bg-gray-600' : ''} />
+
+          {/* Progress Steps */}
+          <div className="grid grid-cols-5 gap-2 pt-2">
+            {progressSteps.map((step, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div
+                  className={`mb-1 h-2 w-2 rounded-full transition-colors ${
+                    progressValue >= step.value ? (bridgeError && progressValue === 100 ? 'bg-red-500' : 'bg-purple-500') : 'bg-gray-500'
+                  }`}
+                />
+                <span className="text-2xs text-center text-gray-300">{step.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {bridgeStatus ? <div className="w-full text-xs text-gray-200">{bridgeStatus}</div> : null}
         {bridgeError ? <div className="w-full text-xs text-red-300">{bridgeError}</div> : null}
         <div className="w-full rounded-3xl bg-gray-500 backdrop-blur-xl">
