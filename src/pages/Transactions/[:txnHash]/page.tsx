@@ -164,7 +164,9 @@ export default function TransactionsDetailPage() {
             quorumStake: 3334,
           })
         }
+
         if (transferStatus !== 'approved') {
+          console.info('[Bridge][Approve] start')
           setBridgeStatus('Submitting approve on Starcoin...')
 
           const uniqueSignatures = signatures.filter((sig, index, list) => {
@@ -214,13 +216,22 @@ export default function TransactionsDetailPage() {
             args: approveArgs,
           })
 
-          await sendTransaction({
+          console.log(33333, { approvePayload, hex: bytesToHex(approvePayload) })
+          const result = await sendTransaction({
             data: bytesToHex(approvePayload),
           })
+          console.info('[Bridge][Approve] done', result)
         }
 
         setBridgeStatus('Submitting claim on Starcoin...')
         const claimArgs = [serializeU64(Date.now()), serializeU8(BRIDGE_CONFIG.evm.chainId), serializeU64(nonce)]
+        console.log(11111, {
+          moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
+          moduleName: 'Bridge',
+          functionName: tokenConfig.claimFunction,
+          typeArgs: [],
+          args: claimArgs,
+        })
         const claimPayload = serializeScriptFunctionPayload({
           moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
           moduleName: 'Bridge',
@@ -228,6 +239,7 @@ export default function TransactionsDetailPage() {
           typeArgs: [],
           args: claimArgs,
         })
+        console.log(222222222, claimPayload, bytesToHex(claimPayload))
         await sendTransaction({
           data: bytesToHex(claimPayload),
         })
