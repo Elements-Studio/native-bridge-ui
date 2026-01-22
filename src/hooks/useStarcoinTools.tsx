@@ -163,7 +163,9 @@ export default function useStarcoinTools() {
     console.info('[StarMask][sendTransaction] data:', tx.data)
     console.info('[StarMask][sendTransaction] payload:', tx.payload)
     console.info('[StarMask][sendTransaction] payload(json):', JSON.stringify(tx.payload))
-    return provider.request({ method: 'stc_sendTransaction', params: [tx] })
+    const result = await provider.request({ method: 'stc_sendTransaction', params: [tx] })
+    console.log('[StarMask][sendTransaction] result:', result)
+    return result
   }, [])
 
   const submitHexTransaction = useCallback(async (rawTxHex: string) => {

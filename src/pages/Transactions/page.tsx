@@ -3,12 +3,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getTransferList } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 
 export default function TransactionsPage() {
   const { evmWalletInfo, starcoinWalletInfo } = useGlobalStore()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [evmPage, setEvmPage] = useState(1)
   const [starcoinPage, setStarcoinPage] = useState(1)
+
+  // Get current tab from URL query, default to 'evm'
+  const currentTab = searchParams.get('chain') === 'starcoin' ? 'starcoin' : 'evm'
+
+  // Handle tab change and update URL
+  const handleTabChange = (value: string) => {
+    setSearchParams({ chain: value })
+  }
 
   const { data: evmData, isLoading: evmLoading } = useSWR(
     evmWalletInfo?.address ? ['getTransferList-evm', evmWalletInfo.address, evmPage] : null,
@@ -42,7 +52,7 @@ export default function TransactionsPage() {
     <div className="w-full">
       <h1 className="mb-6 text-2xl font-bold">Transactions</h1>
 
-      <Tabs defaultValue="evm" className="w-full">
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="evm">EVM Wallet</TabsTrigger>
           <TabsTrigger value="starcoin">Starcoin Wallet</TabsTrigger>
