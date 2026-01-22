@@ -7,16 +7,16 @@ import type { WalletInfo, WalletType } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
 
-type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT' | 'StarUSDT'
+type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT' | 'StarUSDT' | 'AnvilUSDT' | 'AnvilETH'
 export type CoinItem = {
   icon: string
   name: CoinsName
   walletType: WalletType
   network: {
-    name: 'mainnet' | 'sepolia'
+    name: 'mainnet' | 'sepolia' | 'anvil'
     chainId: string // '0x1' | '0xfb' | '0x6a'
   }
-  gas: 'ETH' | 'SepoliaETH' | 'STC'
+  gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH'
   ca?: string | null
 }
 const mappings: Record<CoinsName, CoinItem> = {
@@ -43,6 +43,22 @@ const mappings: Record<CoinsName, CoinItem> = {
     network: { name: 'sepolia', chainId: '0xaa36a7' },
     gas: 'SepoliaETH',
     ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
+  },
+  AnvilETH: {
+    icon: ethIcon,
+    name: 'AnvilETH',
+    walletType: 'EVM',
+    network: { name: 'anvil', chainId: '0x7a69' },
+    gas: 'AnvilETH',
+    ca: null,
+  },
+  AnvilUSDT: {
+    icon: usdtIcon,
+    name: 'AnvilUSDT',
+    walletType: 'EVM',
+    network: { name: 'anvil', chainId: '0x7a69' },
+    gas: 'AnvilETH',
+    ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
   },
   USDT: {
     icon: usdtIcon,
@@ -99,7 +115,7 @@ const defaults = freeze(
     mappings,
     fromWalletType: 'EVM' as WalletType,
     toWalletType: 'STARCOIN' as WalletType,
-    currentCoin: process.env.NODE_ENV === 'development' ? mappings.SepoliaUSDT : mappings.ETH,
+    currentCoin: process.env.NODE_ENV === 'development' ? mappings.AnvilUSDT : mappings.ETH,
     evmWalletInfo: null,
     starcoinWalletInfo: null,
     inputBalance: '',
