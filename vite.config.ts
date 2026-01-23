@@ -43,8 +43,9 @@ export default defineConfig(({ mode }) => ({
         },
       },
 
-      '/api': {
-        target: 'http://143.198.220.234:60002',
+      '/api/estimate_fees': {
+        // target: 'http://143.198.220.234:60002',
+        target: 'http://143.198.220.234:50004', // 本地测试
         changeOrigin: true,
         rewrite: (path: string) => {
           console.log(333333, path.replace(/^\/api/, ''))
