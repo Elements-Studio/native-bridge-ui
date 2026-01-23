@@ -47,6 +47,17 @@ export function serializeU64(value: number | bigint): Uint8Array {
   return out
 }
 
+export function serializeU128(value: number | bigint): Uint8Array {
+  const v = BigInt(value)
+  const out = new Uint8Array(16)
+  let tmp = v
+  for (let i = 0; i < 16; i += 1) {
+    out[i] = Number(tmp & 0xffn)
+    tmp >>= 8n
+  }
+  return out
+}
+
 export function serializeString(value: string): Uint8Array {
   const bytes = new TextEncoder().encode(value)
   return concatBytes([uleb128(bytes.length), bytes])

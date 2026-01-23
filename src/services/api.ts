@@ -190,7 +190,7 @@ export async function collectSignatures(
   direction: 'starcoin_to_eth' | 'eth_to_starcoin',
   txHash: string,
   eventIndex = 0,
-  opts?: { validatorCount?: number },
+  opts?: { validatorCount?: number; quorumStake?: number; validatorStakes?: Record<string, number> },
 ): Promise<SignatureResponse[]> {
   const requestFn = direction === 'starcoin_to_eth' ? getStarcoinToEthSignature : getEthToStarcoinSignature
   const validatorCount = opts?.validatorCount ?? DEFAULT_VALIDATOR_COUNT
@@ -213,17 +213,34 @@ export async function collectSignatures(
   )
 
   const signatures: SignatureResponse[] = []
+  let totalStake = 0
+  let hasStakeInfo = false
   // 收集成功的签名（不提前 break，确保拿到完整数量）
-  for (const result of results) {
+  for (let i = 0; i < results.length; i += 1) {
+    const result = results[i]
     if (result.status === 'fulfilled') {
       const pubkey = result.value?.auth_signature?.authority_pub_key
       console.info(`[ValidatorSignature] index=${signatures.length} pubkey=${pubkey ?? 'unknown'}`)
       signatures.push(result.value)
+
+      const signBaseUrl = candidates[i]
+      const stakeFromConfig = signBaseUrl ? opts?.validatorStakes?.[signBaseUrl] : undefined
+      const stakeFromPayload = (result.value as SignatureResponse & { stake?: number }).stake
+      const stakeFromAuth = (result.value?.auth_signature as { stake?: number } | undefined)?.stake
+      const stake = stakeFromConfig ?? stakeFromPayload ?? stakeFromAuth
+      if (typeof stake === 'number' && Number.isFinite(stake)) {
+        totalStake += stake
+        hasStakeInfo = true
+      }
     }
   }
 
   if (signatures.length < validatorCount) {
     throw new Error(`Failed to collect enough signatures. Got ${signatures.length}, need ${validatorCount}`)
+  }
+
+  if (opts?.quorumStake !== undefined && hasStakeInfo && totalStake < opts.quorumStake) {
+    throw new Error(`Validator quorum not reached. Stake ${totalStake} < ${opts.quorumStake}`)
   }
 
   return signatures

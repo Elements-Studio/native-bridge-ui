@@ -1,6 +1,7 @@
 import walletIcon from '@/assets/img/wallet.svg'
 import { Spinner } from '@/components/ui/spinner'
 import useEvmTools from '@/hooks/useEvmTools'
+import useStarcoinTools from '@/hooks/useStarcoinTools'
 import { toFixedWithoutRounding } from '@/lib/format'
 import { useGlobalStore } from '@/stores/globalStore'
 import { useCallback, useEffect, useState } from 'react'
@@ -9,7 +10,8 @@ import CoinSelector from './CoinSelector'
 export default function CoinSelectorCard() {
   const [isPending, setIsPending] = useState(false)
   const { currentCoin, evmWalletInfo, starcoinWalletInfo, inputBalance, setInputBalance } = useGlobalStore()
-  const { getBalance, contextHolder } = useEvmTools()
+  const { getBalance: getEvmBalance, contextHolder: evmContextHolder } = useEvmTools()
+  const { getBalance: getStarcoinBalance, contextHolder: starcoinContextHolder } = useStarcoinTools()
   const [totalBalance, setTotalBalance] = useState<string>('')
 
   useEffect(() => {
@@ -22,7 +24,11 @@ export default function CoinSelectorCard() {
     const fetchBalance = async () => {
       setTotalBalance('')
       setIsPending(true)
-      const result = await getBalance(currentCoin.network.chainId, currentCoin.ca)
+      console.info('[CoinSelectorCard] fetchBalance', { currentCoin })
+      const result =
+        currentCoin.walletType === 'STARCOIN'
+          ? await getStarcoinBalance(currentCoin.network.chainId, currentCoin.ca)
+          : await getEvmBalance(currentCoin.network.chainId, currentCoin.ca)
       const balance = result?.balance
       if (balance) {
         console.log(11111, balance)
@@ -33,15 +39,19 @@ export default function CoinSelectorCard() {
       setIsPending(false)
     }
     fetchBalance()
-  }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getBalance])
+  }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getEvmBalance, getStarcoinBalance])
 
   const setMax = useCallback(async () => {
-    const result = await getBalance(currentCoin.network.chainId, currentCoin.ca)
+    console.info('[CoinSelectorCard] setMax', { currentCoin })
+    const result =
+      currentCoin.walletType === 'STARCOIN'
+        ? await getStarcoinBalance(currentCoin.network.chainId, currentCoin.ca)
+        : await getEvmBalance(currentCoin.network.chainId, currentCoin.ca)
     const balance = result?.balance
     if (balance) {
       setInputBalance(Number(balance).toFixed(6).toString())
     }
-  }, [currentCoin, getBalance, setInputBalance])
+  }, [currentCoin, getEvmBalance, getStarcoinBalance, setInputBalance])
 
   return (
     <div className="m-4 flex flex-col justify-between gap-4 rounded-2xl border border-gray-500 py-6">
@@ -82,7 +92,8 @@ export default function CoinSelectorCard() {
         </div>
       }
 
-      {contextHolder}
+      {evmContextHolder}
+      {starcoinContextHolder}
       {/* {JSON.stringify(evmWalletInfo)} {JSON.stringify(starcoinWalletInfo)} */}
     </div>
   )
