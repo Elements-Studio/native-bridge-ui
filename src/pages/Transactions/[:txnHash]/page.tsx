@@ -121,14 +121,9 @@ async function getEthEventIndex(txHash: string): Promise<number> {
 export default function TransactionsDetailPage() {
   const { txnHash } = useParams()
   const [searchParams] = useSearchParams()
-  const { currentCoin, evmWalletInfo, starcoinWalletInfo, fromWalletType, toWalletType } = useGlobalStore()
+  const { currentCoin, evmWalletInfo, starcoinWalletInfo } = useGlobalStore()
   const directionParam = searchParams.get('direction')
-  const direction =
-    directionParam === 'starcoin_to_eth' || directionParam === 'eth_to_starcoin'
-      ? directionParam
-      : fromWalletType === 'STARCOIN' && toWalletType === 'EVM'
-        ? 'starcoin_to_eth'
-        : 'eth_to_starcoin'
+  const direction = directionParam === 'starcoin_to_eth' || directionParam === 'eth_to_starcoin' ? directionParam : 'eth_to_starcoin'
   const { sendTransaction } = useStarcoinTools()
   const [bridgeStatus, setBridgeStatus] = useState<string | null>(null)
   const [bridgeError, setBridgeError] = useState<string | null>(null)

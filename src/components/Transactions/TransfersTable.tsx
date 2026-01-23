@@ -23,6 +23,12 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
     return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`
   }
 
+  const buildTxLink = (item: TransferListItem) => {
+    const direction = item.data_source === 'STARCOIN' ? 'starcoin_to_eth' : 'eth_to_starcoin'
+    const suffix = direction === 'starcoin_to_eth' ? '?direction=starcoin_to_eth' : ''
+    return `/transactions/${item.txn_hash}${suffix}`
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'deposited':
@@ -71,12 +77,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
                     </span>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
-                    <Link
-                      target="_blank"
-                      to={`/transactions/${item.txn_hash}`}
-                      title={item.txn_hash}
-                      className="text-blue-600 hover:underline"
-                    >
+                    <Link target="_blank" to={buildTxLink(item)} title={item.txn_hash} className="text-blue-600 hover:underline">
                       {formatHash(item.txn_hash)}
                     </Link>
                   </TableCell>
