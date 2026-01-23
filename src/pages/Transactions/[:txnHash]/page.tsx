@@ -8,11 +8,56 @@ import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, hexToBytes, serializeBytes, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { collectSignatures, getTransferDetail, getTransferList, type SignatureResponse } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
-import { BrowserProvider, Interface } from 'ethers'
+import { BrowserProvider, Contract, Interface, getAddress } from 'ethers'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+const CHAIN_ID_MAP: Record<string, number> = {
+  StarcoinMainnet: 0,
+  StarcoinTestnet: 1,
+  StarcoinCustom: 2,
+  EthMainnet: 10,
+  EthSepolia: 11,
+  EthCustom: 12,
+}
+
+function concatBytes(chunks: Uint8Array[]): Uint8Array {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+  const out = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) {
+    out.set(chunk, offset)
+    offset += chunk.length
+  }
+  return out
+}
+
+function serializeU64BE(value: number | bigint): Uint8Array {
+  let v = BigInt(value)
+  const out = new Uint8Array(8)
+  for (let i = 7; i >= 0; i -= 1) {
+    out[i] = Number(v & 0xffn)
+    v >>= 8n
+  }
+  return out
+}
+
+function normalizeHexLen(input: string, expectedBytes: number): string {
+  const trimmed = input.trim()
+  let hex = trimmed.startsWith('0x') ? trimmed.slice(2) : trimmed
+  if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length % 2 !== 0) {
+    throw new Error(`Invalid hex string: ${input}`)
+  }
+  if (hex.length > expectedBytes * 2) {
+    throw new Error(`Invalid hex length: expected <= ${expectedBytes} bytes, got ${hex.length / 2}`)
+  }
+  if (hex.length < expectedBytes * 2) {
+    hex = hex.padStart(expectedBytes * 2, '0')
+  }
+  return `0x${hex}`
+}
 
 function getEthSenderAddress(event: Record<string, unknown>) {
   return (
@@ -75,7 +120,10 @@ async function getEthEventIndex(txHash: string): Promise<number> {
 
 export default function TransactionsDetailPage() {
   const { txnHash } = useParams()
+  const [searchParams] = useSearchParams()
   const { currentCoin, evmWalletInfo, starcoinWalletInfo } = useGlobalStore()
+  const directionParam = searchParams.get('direction')
+  const direction = directionParam === 'starcoin_to_eth' || directionParam === 'eth_to_starcoin' ? directionParam : 'eth_to_starcoin'
   const { sendTransaction } = useStarcoinTools()
   const [bridgeStatus, setBridgeStatus] = useState<string | null>(null)
   const [bridgeError, setBridgeError] = useState<string | null>(null)
@@ -93,20 +141,161 @@ export default function TransactionsDetailPage() {
     }
 
     const tokenConfig = BRIDGE_CONFIG.tokens[currentCoin.name as keyof typeof BRIDGE_CONFIG.tokens]
-    if (!tokenConfig) {
+    if (direction === 'eth_to_starcoin' && !tokenConfig) {
       setBridgeError('Selected token is not supported for ETH → Starcoin.')
       return
     }
 
-    if (startedRef.current === txnHash) return
-    startedRef.current = txnHash
+    const runKey = `${direction}:${txnHash}`
+    if (startedRef.current === runKey) return
+    startedRef.current = runKey
     let cancelled = false
 
     const run = async () => {
       setBridgeError(null)
-      setBridgeStatus('Waiting for indexer finalization...')
       setIsProcessing(true)
       try {
+        if (direction === 'eth_to_starcoin') {
+          setBridgeStatus('Waiting for indexer finalization...')
+          let nonce: number | null = null
+          const pollStart = Date.now()
+          const pollTimeoutMs = 10 * 60 * 1000
+          let transferStatus: string | null = null
+          let isFinalized = false
+          const normalizedTxHash = normalizeHash(txnHash)
+
+          while (Date.now() - pollStart < pollTimeoutMs) {
+            if (cancelled) return
+            try {
+              const list = await getTransferList({
+                address: evmWalletInfo.address,
+                chain_id: BRIDGE_CONFIG.evm.chainId,
+                page_size: 20,
+              })
+              const matched = list.transfers.find(t => normalizeHash(t.txn_hash ?? '') === normalizedTxHash)
+              if (matched) {
+                nonce = Number(matched.nonce)
+                transferStatus = matched.status
+                if (matched.is_finalized) {
+                  isFinalized = true
+                  break
+                }
+              }
+            } catch (err) {
+              console.debug('Transfer list not ready:', err)
+            }
+            await sleep(6000)
+          }
+
+          if (!isFinalized) {
+            throw new Error('Transfer not finalized yet')
+          }
+
+          if (nonce === null || !Number.isFinite(nonce)) {
+            throw new Error('Indexer did not return transfer nonce')
+          }
+
+          if (transferStatus === null) {
+            const detail = await getTransferDetail(BRIDGE_CONFIG.evm.chainId, nonce)
+            transferStatus = detail.transfer.status
+          }
+
+          if (transferStatus === 'claimed') {
+            setBridgeStatus('Already claimed on Starcoin.')
+            return
+          }
+
+          let signatures: SignatureResponse[] = []
+          if (transferStatus !== 'approved') {
+            setBridgeStatus('Collecting validator signatures...')
+            const eventIndex = await getEthEventIndex(txnHash)
+            signatures = await collectSignatures('eth_to_starcoin', txnHash, eventIndex, { validatorCount: 3 })
+          }
+
+          if (transferStatus !== 'approved') {
+            console.info('[Bridge][Approve] start')
+            setBridgeStatus('Submitting approve on Starcoin...')
+
+            const uniqueSignatures = signatures.filter((sig, index, list) => {
+              const key = sig.auth_signature.authority_pub_key
+              return list.findIndex(item => item.auth_signature.authority_pub_key === key) === index
+            })
+            if (uniqueSignatures.length < 3) {
+              console.log('Signatures collected:', uniqueSignatures)
+              throw new Error('Need signatures from 3 distinct validators.')
+            }
+
+            const first = uniqueSignatures[0]?.data
+            if (!first || !('EthToStarcoinBridgeAction' in first)) {
+              throw new Error('Invalid signature response')
+            }
+            const action = first.EthToStarcoinBridgeAction
+            const event = action.eth_bridge_event
+            const ethSenderAddress = getEthSenderAddress(event as Record<string, unknown>) ?? evmWalletInfo.address
+            const starcoinRecipientAddress = getStarcoinRecipientAddress(event as Record<string, unknown>) ?? starcoinWalletInfo.address
+            if (!ethSenderAddress || !starcoinRecipientAddress) {
+              throw new Error('Signature response missing sender or recipient address')
+            }
+
+            const sigBytes = uniqueSignatures.map(sig => base64ToBytes(sig.auth_signature.signature))
+            const approveFn = 'approve_bridge_token_transfer_three'
+
+            const senderAddressBytes = hexToBytes(normalizeHex(ethSenderAddress, 20))
+            const recipientAddressBytes = hexToBytes(normalizeHex(starcoinRecipientAddress, 16))
+            const signatureBytes = sigBytes.slice(0, 3)
+
+            const approveArgs = [
+              serializeU8(BRIDGE_CONFIG.evm.chainId),
+              serializeU64(event.nonce),
+              serializeBytes(senderAddressBytes),
+              serializeU8(BRIDGE_CONFIG.evm.destinationChainId),
+              serializeBytes(recipientAddressBytes),
+              serializeU8(event.token_id),
+              serializeU64(event.starcoin_bridge_adjusted_amount),
+              ...signatureBytes.map(sig => serializeBytes(sig)),
+            ]
+
+            const approvePayload = serializeScriptFunctionPayload({
+              moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
+              moduleName: 'Bridge',
+              functionName: approveFn,
+              typeArgs: [],
+              args: approveArgs,
+            })
+
+            console.log(33333, { approvePayload, hex: bytesToHex(approvePayload) })
+            const result = await sendTransaction({
+              data: bytesToHex(approvePayload),
+            })
+            console.info('[Bridge][Approve] done', result)
+          }
+
+          setBridgeStatus('Submitting claim on Starcoin...')
+          const claimArgs = [serializeU64(Date.now()), serializeU8(BRIDGE_CONFIG.evm.chainId), serializeU64(nonce)]
+          console.log(11111, {
+            moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
+            moduleName: 'Bridge',
+            functionName: tokenConfig.claimFunction,
+            typeArgs: [],
+            args: claimArgs,
+          })
+          const claimPayload = serializeScriptFunctionPayload({
+            moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
+            moduleName: 'Bridge',
+            functionName: tokenConfig.claimFunction,
+            typeArgs: [],
+            args: claimArgs,
+          })
+          console.log(222222222, claimPayload, bytesToHex(claimPayload))
+          await sendTransaction({
+            data: bytesToHex(claimPayload),
+          })
+
+          setBridgeStatus('Bridge completed.')
+          return
+        }
+
+        setBridgeStatus('Waiting for indexer finalization...')
         let nonce: number | null = null
         const pollStart = Date.now()
         const pollTimeoutMs = 10 * 60 * 1000
@@ -118,8 +307,8 @@ export default function TransactionsDetailPage() {
           if (cancelled) return
           try {
             const list = await getTransferList({
-              address: evmWalletInfo.address,
-              chain_id: BRIDGE_CONFIG.evm.chainId,
+              address: starcoinWalletInfo.address,
+              chain_id: BRIDGE_CONFIG.starcoin.chainId,
               page_size: 20,
             })
             const matched = list.transfers.find(t => normalizeHash(t.txn_hash ?? '') === normalizedTxHash)
@@ -146,104 +335,82 @@ export default function TransactionsDetailPage() {
         }
 
         if (transferStatus === null) {
-          const detail = await getTransferDetail(BRIDGE_CONFIG.evm.chainId, nonce)
+          const detail = await getTransferDetail(BRIDGE_CONFIG.starcoin.chainId, nonce)
           transferStatus = detail.transfer.status
         }
 
         if (transferStatus === 'claimed') {
-          setBridgeStatus('Already claimed on Starcoin.')
+          setBridgeStatus('Already claimed on Ethereum.')
           return
         }
 
-        let signatures: SignatureResponse[] = []
-        if (transferStatus !== 'approved') {
-          setBridgeStatus('Collecting validator signatures...')
-          const eventIndex = await getEthEventIndex(txnHash)
-          signatures = await collectSignatures('eth_to_starcoin', txnHash, eventIndex, {
-            validatorCount: 3,
-            quorumStake: 3334,
-          })
+        setBridgeStatus('Collecting validator signatures...')
+        const signatures = await collectSignatures('starcoin_to_eth', txnHash, 0, { validatorCount: 3 })
+
+        const uniqueSignatures = signatures.filter((sig, index, list) => {
+          const key = sig.auth_signature.authority_pub_key
+          return list.findIndex(item => item.auth_signature.authority_pub_key === key) === index
+        })
+        if (uniqueSignatures.length < 3) {
+          throw new Error('Need signatures from 3 distinct validators.')
         }
 
-        if (transferStatus !== 'approved') {
-          console.info('[Bridge][Approve] start')
-          setBridgeStatus('Submitting approve on Starcoin...')
-
-          const uniqueSignatures = signatures.filter((sig, index, list) => {
-            const key = sig.auth_signature.authority_pub_key
-            return list.findIndex(item => item.auth_signature.authority_pub_key === key) === index
-          })
-          if (uniqueSignatures.length < 3) {
-            console.log('Signatures collected:', uniqueSignatures)
-            throw new Error('Need signatures from 3 distinct validators.')
-          }
-
-          const first = uniqueSignatures[0]?.data
-          if (!first || !('EthToStarcoinBridgeAction' in first)) {
-            throw new Error('Invalid signature response')
-          }
-          const action = first.EthToStarcoinBridgeAction
-          const event = action.eth_bridge_event
-          const ethSenderAddress = getEthSenderAddress(event as Record<string, unknown>) ?? evmWalletInfo.address
-          const starcoinRecipientAddress = getStarcoinRecipientAddress(event as Record<string, unknown>) ?? starcoinWalletInfo.address
-          if (!ethSenderAddress || !starcoinRecipientAddress) {
-            throw new Error('Signature response missing sender or recipient address')
-          }
-
-          const sigBytes = uniqueSignatures.map(sig => base64ToBytes(sig.auth_signature.signature))
-          const approveFn = 'approve_bridge_token_transfer_three'
-
-          const senderAddressBytes = hexToBytes(normalizeHex(ethSenderAddress, 20))
-          const recipientAddressBytes = hexToBytes(normalizeHex(starcoinRecipientAddress, 16))
-          const signatureBytes = sigBytes.slice(0, 3)
-
-          const approveArgs = [
-            serializeU8(BRIDGE_CONFIG.evm.chainId),
-            serializeU64(event.nonce),
-            serializeBytes(senderAddressBytes),
-            serializeU8(BRIDGE_CONFIG.evm.destinationChainId),
-            serializeBytes(recipientAddressBytes),
-            serializeU8(event.token_id),
-            serializeU64(event.starcoin_bridge_adjusted_amount),
-            ...signatureBytes.map(sig => serializeBytes(sig)),
-          ]
-
-          const approvePayload = serializeScriptFunctionPayload({
-            moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
-            moduleName: 'Bridge',
-            functionName: approveFn,
-            typeArgs: [],
-            args: approveArgs,
-          })
-
-          console.log(33333, { approvePayload, hex: bytesToHex(approvePayload) })
-          const result = await sendTransaction({
-            data: bytesToHex(approvePayload),
-          })
-          console.info('[Bridge][Approve] done', result)
+        const first = uniqueSignatures[0]?.data
+        if (!first || !('StarcoinToEthBridgeAction' in first)) {
+          throw new Error('Invalid signature response')
         }
 
-        setBridgeStatus('Submitting claim on Starcoin...')
-        const claimArgs = [serializeU64(Date.now()), serializeU8(BRIDGE_CONFIG.evm.chainId), serializeU64(nonce)]
-        console.log(11111, {
-          moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
-          moduleName: 'Bridge',
-          functionName: tokenConfig.claimFunction,
-          typeArgs: [],
-          args: claimArgs,
-        })
-        const claimPayload = serializeScriptFunctionPayload({
-          moduleAddress: BRIDGE_CONFIG.starcoin.packageAddress,
-          moduleName: 'Bridge',
-          functionName: tokenConfig.claimFunction,
-          typeArgs: [],
-          args: claimArgs,
-        })
-        console.log(222222222, claimPayload, bytesToHex(claimPayload))
-        await sendTransaction({
-          data: bytesToHex(claimPayload),
+        const action = first.StarcoinToEthBridgeAction
+        const event = action.starcoin_bridge_event
+        const starcoinSenderAddress =
+          (event.starcoin_bridge_address as string | undefined) ??
+          (event.starcoinBridgeAddress as string | undefined) ??
+          starcoinWalletInfo.address
+        const ethRecipientAddress =
+          (event.eth_address as string | undefined) ?? (event.ethAddress as string | undefined) ?? evmWalletInfo.address
+        if (!starcoinSenderAddress || !ethRecipientAddress) {
+          throw new Error('Signature response missing sender or recipient address')
+        }
+        const rawSourceChain = event.starcoin_bridge_chain_id as unknown
+        const rawTargetChain = event.eth_chain_id as unknown
+        const sourceChainId =
+          typeof rawSourceChain === 'number' ? rawSourceChain : (CHAIN_ID_MAP[String(rawSourceChain)] ?? BRIDGE_CONFIG.starcoin.chainId)
+        const targetChainId =
+          typeof rawTargetChain === 'number' ? rawTargetChain : (CHAIN_ID_MAP[String(rawTargetChain)] ?? BRIDGE_CONFIG.evm.chainId)
+
+        const starcoinAddressBytes = hexToBytes(normalizeHexLen(starcoinSenderAddress, 16))
+        const recipientBytes = hexToBytes(normalizeHexLen(ethRecipientAddress, 20))
+        const amount = BigInt(event.amount_starcoin_bridge_adjusted)
+        const bridgeNonce = BigInt(event.nonce)
+        const payload = concatBytes([
+          Uint8Array.of(starcoinAddressBytes.length),
+          starcoinAddressBytes,
+          Uint8Array.of(targetChainId),
+          Uint8Array.of(recipientBytes.length),
+          recipientBytes,
+          Uint8Array.of(Number(event.token_id)),
+          serializeU64BE(amount),
+        ])
+
+        const signatureHexes = uniqueSignatures.map(sig => bytesToHex(base64ToBytes(sig.auth_signature.signature)))
+
+        setBridgeStatus('Submitting claim on Ethereum...')
+        const mm = await getMetaMask()
+        if (!mm) throw new Error('MetaMask not detected')
+
+        await mm.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: BRIDGE_CONFIG.evm.chainIdHex }],
         })
 
+        const provider = new BrowserProvider(mm)
+        const signer = await provider.getSigner()
+        const bridgeAddress = getAddress(BRIDGE_CONFIG.evm.bridgeAddress)
+        const bridge = new Contract(bridgeAddress, BRIDGE_ABI, signer)
+
+        const message = [0, 1, bridgeNonce, sourceChainId, bytesToHex(payload)]
+        const tx = await bridge.transferBridgedTokensWithSignatures(signatureHexes, message)
+        await tx.wait()
         setBridgeStatus('Bridge completed.')
       } catch (err) {
         console.error('Bridge error:', err)
@@ -257,7 +424,7 @@ export default function TransactionsDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [currentCoin.name, evmWalletInfo, sendTransaction, starcoinWalletInfo, txnHash])
+  }, [currentCoin.name, direction, evmWalletInfo, sendTransaction, starcoinWalletInfo, txnHash])
 
   const statusLabel = useMemo(() => {
     if (bridgeError) return 'Failed'
@@ -269,20 +436,32 @@ export default function TransactionsDetailPage() {
     if (bridgeError) return 100
     if (!bridgeStatus) return 0
     if (bridgeStatus.includes('Waiting for indexer')) return 20
-    if (bridgeStatus.includes('Collecting validator signatures')) return 40
+    if (bridgeStatus.includes('Collecting validator signatures')) return direction === 'starcoin_to_eth' ? 50 : 40
     if (bridgeStatus.includes('Submitting approve')) return 60
     if (bridgeStatus.includes('Submitting claim')) return 80
     if (bridgeStatus.includes('completed') || bridgeStatus.includes('Already claimed')) return 100
     return 0
-  }, [bridgeError, bridgeStatus])
+  }, [bridgeError, bridgeStatus, direction])
 
-  const progressSteps = [
-    { label: 'Waiting for finalization', value: 20 },
-    { label: 'Collecting signatures', value: 40 },
-    { label: 'Approving transfer', value: 60 },
-    { label: 'Claiming tokens', value: 80 },
-    { label: 'Completed', value: 100 },
-  ]
+  const progressSteps = useMemo(() => {
+    if (direction === 'starcoin_to_eth') {
+      return [
+        { label: 'Waiting for finalization', value: 20 },
+        { label: 'Collecting signatures', value: 50 },
+        { label: 'Submitting claim', value: 80 },
+        { label: 'Completed', value: 100 },
+      ]
+    }
+    return [
+      { label: 'Waiting for finalization', value: 20 },
+      { label: 'Collecting signatures', value: 40 },
+      { label: 'Approving transfer', value: 60 },
+      { label: 'Claiming tokens', value: 80 },
+      { label: 'Completed', value: 100 },
+    ]
+  }, [direction])
+
+  const progressGridClass = direction === 'starcoin_to_eth' ? 'grid-cols-4' : 'grid-cols-5'
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center rounded-4xl bg-gray-700">
@@ -302,7 +481,7 @@ export default function TransactionsDetailPage() {
           <Progress value={progressValue} className={bridgeError ? 'bg-gray-600' : ''} />
 
           {/* Progress Steps */}
-          <div className="grid grid-cols-5 gap-2 pt-2">
+          <div className={`grid ${progressGridClass} gap-2 pt-2`}>
             {progressSteps.map((step, index) => (
               <div key={index} className="flex flex-col items-center">
                 <div
