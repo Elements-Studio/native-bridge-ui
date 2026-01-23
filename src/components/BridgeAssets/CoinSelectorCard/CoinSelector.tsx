@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Spinner } from '@/components/ui/spinner'
 import useEvmTools from '@/hooks/useEvmTools'
+import useStarcoinTools from '@/hooks/useStarcoinTools'
 import { connectMetaMask } from '@/lib/evmProvider'
 import { useGlobalStore, type CoinItem } from '@/stores/globalStore'
 import { ChevronDown } from 'lucide-react'
@@ -15,7 +16,8 @@ import { useCallback, useMemo, useState } from 'react'
 export default function CoinSelector() {
   const [isPending, setIsPending] = useState(false)
   const { currentCoin, setCurrentCoin, mappings, fromWalletType, setEvmWalletInfo, setInputBalance } = useGlobalStore()
-  const { contextHolder, getBalance } = useEvmTools()
+  const { contextHolder: evmContextHolder, getBalance: getEvmBalance } = useEvmTools()
+  const { contextHolder: starcoinContextHolder, getBalance: getStarcoinBalance } = useStarcoinTools()
 
   const items = useMemo(() => {
     return Object.values(mappings).filter(item => item.walletType === fromWalletType && item.name !== currentCoin.name)
@@ -25,10 +27,12 @@ export default function CoinSelector() {
     async (coin: CoinItem) => {
       setIsPending(true)
       try {
-        await getBalance(coin.network.chainId, coin.ca)
         if (coin.walletType === 'EVM') {
+          await getEvmBalance(coin.network.chainId, coin.ca)
           const info = await connectMetaMask()
           setEvmWalletInfo(info)
+        } else {
+          await getStarcoinBalance(coin.network.chainId, coin.ca)
         }
         setCurrentCoin(coin)
         setInputBalance('')
@@ -36,7 +40,7 @@ export default function CoinSelector() {
         setIsPending(false)
       }
     },
-    [getBalance, setCurrentCoin, setEvmWalletInfo, setInputBalance],
+    [getEvmBalance, getStarcoinBalance, setCurrentCoin, setEvmWalletInfo, setInputBalance],
   )
 
   if (!items.length) {
@@ -73,7 +77,8 @@ export default function CoinSelector() {
           })}
         </DropdownMenuContent>
       </DropdownMenu>
-      {contextHolder}
+      {evmContextHolder}
+      {starcoinContextHolder}
     </>
   )
 }
