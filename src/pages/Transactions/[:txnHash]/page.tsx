@@ -164,7 +164,7 @@ export default function TransactionsDetailPage() {
             quorumStake: 3334,
           })
         }
-        
+
         if (transferStatus !== 'approved') {
           console.info('[Bridge][Approve] start')
           setBridgeStatus('Submitting approve on Starcoin...')
