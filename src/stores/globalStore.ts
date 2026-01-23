@@ -2,7 +2,6 @@ import ethIcon from '@/assets/img/eth.svg'
 import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
 import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
-import wbtcIcon from '@/assets/img/wbtc.svg'
 import type { WalletInfo, WalletType } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
@@ -13,7 +12,7 @@ export type CoinItem = {
   name: CoinsName
   walletType: WalletType
   network: {
-    name: 'mainnet' | 'sepolia' | 'anvil'
+    name: 'mainnet' | 'sepolia' | 'anvil' | 'devnet'
     chainId: string // '0x1' | '0xfb' | '0x6a'
   }
   gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH'
@@ -69,22 +68,14 @@ const mappings: Record<CoinsName, CoinItem> = {
     ca: '0xdac17f958d2ee523a2206206994597c13d831ec7',
   },
 
-  WBTC: {
-    icon: wbtcIcon,
-    name: 'WBTC',
-    walletType: 'STARCOIN',
-    network: { name: 'mainnet', chainId: '0x1' },
-    gas: 'ETH',
-    ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
-  },
-
   StarUSDT: {
     icon: usdtIcon,
     name: 'StarUSDT',
     walletType: 'STARCOIN',
-    network: { name: 'mainnet', chainId: '0x1' },
+    network: { name: 'devnet', chainId: '0xfe' },
     gas: 'STC',
-    ca: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
+    // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
   },
 }
 

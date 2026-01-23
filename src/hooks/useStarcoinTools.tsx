@@ -4,6 +4,7 @@ import storage from '@/lib/storage'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { Callbacks, WalletInfo } from '@/types/domain'
 
+import idmp from 'idmp'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const STORAGE_KEY = 'starcoin_rehydrated'
@@ -11,31 +12,77 @@ const STORAGE_KEY = 'starcoin_rehydrated'
 let starcoinListenerInitialized = false
 const boundStarcoinProviders = new WeakSet<StarcoinProvider>()
 
-async function getStarcoinBalance(provider: StarcoinProvider, address: string): Promise<string> {
+function normalizeTokenCode(code: string): string {
+  const trimmed = code.trim()
+  const match = trimmed.match(/^(0x[0-9a-fA-F]+)::(.+)$/)
+  if (!match) return trimmed.toLowerCase()
+  const [, addr, rest] = match
+  const clean = addr.slice(2).toLowerCase()
+  const padded = clean.padStart(32, '0')
+  return `0x${padded}::${rest.toLowerCase()}`
+}
+
+function parseStarcoinBalanceResource(resource: unknown): bigint | null {
+  const data = resource as { value?: Array<{ name: string; value?: { Vector?: Array<{ U128?: string }> } }> } | undefined
+  if (!data || !data.value) return null
+  const tokenField = data.value.find(field => field.name === 'token')
+  if (!tokenField || !tokenField.value || !tokenField.value.Vector) return null
+  const balanceValue = tokenField.value.Vector[0]?.U128
+  if (!balanceValue) return null
   try {
-    const resource = (await provider.request({
+    return BigInt(balanceValue)
+  } catch {
+    return null
+  }
+}
+
+function parseListResourceBalance(
+  resources: Record<string, { json?: { token?: { value?: string | number | bigint } } }>,
+): Record<string, bigint> {
+  const balances: Record<string, bigint> = {}
+  for (const key of Object.keys(resources)) {
+    const normalizedKey = key.toLowerCase()
+    if (!normalizedKey.startsWith('0x00000000000000000000000000000001::account::balance<')) continue
+    const tokenCode = key.slice(key.indexOf('<') + 1, key.lastIndexOf('>'))
+    const rawValue = resources[key]?.json?.token?.value
+    if (rawValue === undefined || rawValue === null) continue
+    try {
+      const value = typeof rawValue === 'bigint' ? rawValue : BigInt(rawValue)
+      balances[normalizeTokenCode(tokenCode)] = value
+    } catch {
+      continue
+    }
+  }
+  return balances
+}
+
+function formatWithDecimals(value: bigint, decimals: number): string {
+  if (decimals <= 0) return value.toString()
+  const factor = 10n ** BigInt(decimals)
+  const integer = value / factor
+  const fraction = value % factor
+  const fractionStr = fraction.toString().padStart(decimals, '0').replace(/0+$/, '')
+  return fractionStr.length ? `${integer.toString()}.${fractionStr}` : integer.toString()
+}
+
+async function getStarcoinBalance(
+  provider: StarcoinProvider,
+  address: string,
+  typeTag?: string,
+  decimals = 9,
+): Promise<{ balance: string; rawBalance: bigint; decimals: number }> {
+  try {
+    const tag = typeTag ?? '0x1::STC::STC'
+    const resource = await provider.request({
       method: 'contract.get_resource',
-      params: [address, '0x1::Account::Balance<0x1::STC::STC>'],
-    })) as { value?: Array<{ name: string; value?: { Vector?: Array<{ U128?: string }> } }> } | undefined
-
-    if (!resource || !resource.value) {
-      return '0.0000'
-    }
-
-    const tokenField = resource.value.find(field => field.name === 'token')
-    if (!tokenField || !tokenField.value || !tokenField.value.Vector) {
-      return '0.0000'
-    }
-
-    const balanceValue = tokenField.value.Vector[0]?.U128
-    if (!balanceValue) {
-      return '0.0000'
-    }
-
-    return (Number(balanceValue) / 1e9).toFixed(4)
+      params: [address, `0x1::Account::Balance<${tag}>`],
+    })
+    const raw = parseStarcoinBalanceResource(resource)
+    if (raw === null) return { balance: '0', rawBalance: 0n, decimals }
+    return { balance: formatWithDecimals(raw, decimals), rawBalance: raw, decimals }
   } catch (error) {
     console.warn('Failed to get Starcoin balance:', error)
-    return '0.0000'
+    return { balance: '0', rawBalance: 0n, decimals }
   }
 }
 
@@ -114,21 +161,77 @@ export default function useStarcoinTools() {
     }
   }, [setStarcoinWalletInfo])
 
-  const getBalance = useCallback(async (chainId: string) => {
+  const _getBalance = useCallback(async (chainId: string, ca?: string | null) => {
     const provider = getStarMaskProvider()
-    if (!provider) return { balance: '0' }
+    if (!provider) return { balance: '0', rawBalance: 0n, decimals: 0 }
 
     console.log('Getting balance for chainId:', chainId)
 
     const accounts = (await provider.request({ method: 'stc_accounts' })) as string[]
     const address = accounts?.[0]
-    if (!address) return { balance: '0' }
+    if (!address) return { balance: '0', rawBalance: 0n, decimals: 0 }
 
-    const balance = await getStarcoinBalance(provider, address)
+    const numericChainId = parseInt(chainId, 16)
+    let currentChainId: number | null = null
+    try {
+      const chain = await provider.request({ method: 'chain.id' })
+      currentChainId = typeof chain === 'string' ? parseInt(chain, 16) : Number(chain)
+    } catch (error) {
+      console.warn('Failed to get starcoin chain.id:', error)
+    }
+    if (currentChainId && currentChainId !== numericChainId) {
+      console.warn(`Starcoin network mismatch: expected ${numericChainId}, got ${currentChainId}. Please switch in StarMask.`)
+    }
 
-    console.log('Switched to Starcoin network:', parseInt(chainId, 16))
-    return { balance }
+    const targetTags = ca ? (ca.includes('::') ? [ca] : [`${ca}::USDT::USDT`]) : ['0x1::STC::STC']
+
+    let balanceFromList: { raw: bigint; decimals: number } | null = null
+    try {
+      const listResult = await provider.request({
+        method: 'state.list_resource',
+        params: [address, { decode: true }],
+      })
+      const resources =
+        (listResult as { resources?: Record<string, { json?: { token?: { value?: string | number | bigint } } }> } | undefined)
+          ?.resources ??
+        (listResult as Record<string, { json?: { token?: { value?: string | number | bigint } } }>) ??
+        null
+      if (resources) {
+        const balances = parseListResourceBalance(resources)
+        for (const tag of targetTags) {
+          const normalized = normalizeTokenCode(tag)
+          if (balances[normalized] !== undefined) {
+            const decimals = normalized.endsWith('::usdt::usdt') ? 6 : 9
+            balanceFromList = { raw: balances[normalized], decimals }
+            break
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('state.list_resource failed, fallback to get_resource:', error)
+    }
+
+    if (balanceFromList) {
+      return {
+        balance: formatWithDecimals(balanceFromList.raw, balanceFromList.decimals),
+        rawBalance: balanceFromList.raw,
+        decimals: balanceFromList.decimals,
+      }
+    }
+
+    const fallbackTag = targetTags[0]
+    const fallbackDecimals = normalizeTokenCode(fallbackTag).endsWith('::usdt::usdt') ? 6 : 9
+    return getStarcoinBalance(provider, address, fallbackTag, fallbackDecimals)
   }, [])
+
+  const getBalance = (chainId: string, ca?: string | null) => {
+    const key = `getStarcoinBalance:${chainId}:${ca || 'native'}`
+    return idmp(key, async () => {
+      const res = await _getBalance(chainId, ca)
+      if (res) return res
+      idmp.flush(key)
+    })
+  }
 
   type ScriptFunctionPayload = {
     type: 'script_function'
