@@ -24,6 +24,7 @@ export default function CoinSelectorCard() {
     const fetchBalance = async () => {
       setTotalBalance('')
       setIsPending(true)
+      console.info('[CoinSelectorCard] fetchBalance', { currentCoin })
       const result =
         currentCoin.walletType === 'STARCOIN'
           ? await getStarcoinBalance(currentCoin.network.chainId, currentCoin.ca)
@@ -41,6 +42,7 @@ export default function CoinSelectorCard() {
   }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getEvmBalance, getStarcoinBalance])
 
   const setMax = useCallback(async () => {
+    console.info('[CoinSelectorCard] setMax', { currentCoin })
     const result =
       currentCoin.walletType === 'STARCOIN'
         ? await getStarcoinBalance(currentCoin.network.chainId, currentCoin.ca)

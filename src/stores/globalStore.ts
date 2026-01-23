@@ -6,7 +6,7 @@ import type { WalletInfo, WalletType } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
 
-type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT' | 'StarUSDT' | 'AnvilUSDT' | 'AnvilETH'
+type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT' | 'StarUSDT' | 'AnvilUSDT' | 'AnvilETH' | 'STC'
 export type CoinItem = {
   icon: string
   name: CoinsName
@@ -68,11 +68,19 @@ const mappings: Record<CoinsName, CoinItem> = {
     ca: '0xdac17f958d2ee523a2206206994597c13d831ec7',
   },
 
+  STC: {
+    icon: usdtIcon,
+    name: 'STC',
+    walletType: 'STARCOIN',
+    network: { name: 'devnet', chainId: '0x1' },
+    gas: 'STC',
+  },
+
   StarUSDT: {
     icon: usdtIcon,
     name: 'StarUSDT',
     walletType: 'STARCOIN',
-    network: { name: 'devnet', chainId: '0xfe' },
+    network: { name: 'devnet', chainId: '0x1' },
     gas: 'STC',
     ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
     // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'

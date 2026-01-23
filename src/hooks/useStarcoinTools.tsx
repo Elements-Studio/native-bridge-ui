@@ -22,6 +22,16 @@ function normalizeTokenCode(code: string): string {
   return `0x${padded}::${rest.toLowerCase()}`
 }
 
+function normalizeTypeTagAddress(code: string): string {
+  const trimmed = code.trim()
+  const match = trimmed.match(/^(0x[0-9a-fA-F]+)::(.+)$/)
+  if (!match) return trimmed
+  const [, addr, rest] = match
+  const clean = addr.slice(2)
+  const padded = clean.padStart(32, '0')
+  return `0x${padded}::${rest}`
+}
+
 function parseStarcoinBalanceResource(resource: unknown): bigint | null {
   const data = resource as { value?: Array<{ name: string; value?: { Vector?: Array<{ U128?: string }> } }> } | undefined
   if (!data || !data.value) return null
@@ -36,24 +46,67 @@ function parseStarcoinBalanceResource(resource: unknown): bigint | null {
   }
 }
 
-function parseListResourceBalance(
-  resources: Record<string, { json?: { token?: { value?: string | number | bigint } } }>,
-): Record<string, bigint> {
-  const balances: Record<string, bigint> = {}
-  for (const key of Object.keys(resources)) {
-    const normalizedKey = key.toLowerCase()
-    if (!normalizedKey.startsWith('0x00000000000000000000000000000001::account::balance<')) continue
-    const tokenCode = key.slice(key.indexOf('<') + 1, key.lastIndexOf('>'))
-    const rawValue = resources[key]?.json?.token?.value
-    if (rawValue === undefined || rawValue === null) continue
+function parseStarcoinTokenValue(resource: unknown): bigint | null {
+  const rawHex = (resource as { raw?: string } | undefined)?.raw
+  if (typeof rawHex === 'string' && rawHex.startsWith('0x')) {
     try {
-      const value = typeof rawValue === 'bigint' ? rawValue : BigInt(rawValue)
-      balances[normalizeTokenCode(tokenCode)] = value
+      const hex = rawHex.slice(2)
+      if (hex.length % 2 === 0 && hex.length >= 2) {
+        const bytes = new Uint8Array(hex.length / 2)
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16)
+        }
+        let value = 0n
+        for (let i = bytes.length - 1; i >= 0; i -= 1) {
+          value = (value << 8n) + BigInt(bytes[i] ?? 0)
+        }
+        return value
+      }
     } catch {
-      continue
+      return null
     }
   }
-  return balances
+
+  const raw = resource as { value?: unknown[] } | undefined
+  const rawValue =
+    raw &&
+    Array.isArray(raw.value) &&
+    raw.value[0] &&
+    Array.isArray(raw.value[0]) &&
+    (raw.value[0] as unknown[])[1] &&
+    typeof (raw.value[0] as unknown[])[1] === 'object'
+      ? ((raw.value[0] as unknown[])[1] as { Struct?: { value?: unknown[] } })?.Struct?.value
+      : undefined
+  if (Array.isArray(rawValue) && rawValue[0] && Array.isArray(rawValue[0])) {
+    const possible = (rawValue[0] as unknown[])[1] as { U128?: string } | undefined
+    if (possible?.U128) {
+      try {
+        return BigInt(possible.U128)
+      } catch {
+        return null
+      }
+    }
+  }
+
+  const direct = resource as { token?: { value?: string | number | bigint } } | undefined
+  if (direct?.token?.value !== undefined && direct.token.value !== null) {
+    try {
+      return typeof direct.token.value === 'bigint' ? direct.token.value : BigInt(direct.token.value)
+    } catch {
+      return null
+    }
+  }
+
+  const jsonWrapped = resource as { json?: { token?: { value?: string | number | bigint } } } | undefined
+  if (jsonWrapped?.json?.token?.value !== undefined && jsonWrapped.json.token.value !== null) {
+    try {
+      return typeof jsonWrapped.json.token.value === 'bigint' ? jsonWrapped.json.token.value : BigInt(jsonWrapped.json.token.value)
+    } catch {
+      return null
+    }
+  }
+
+  return parseStarcoinBalanceResource(resource)
 }
 
 function formatWithDecimals(value: bigint, decimals: number): string {
@@ -72,12 +125,35 @@ async function getStarcoinBalance(
   decimals = 9,
 ): Promise<{ balance: string; rawBalance: bigint; decimals: number }> {
   try {
-    const tag = typeTag ?? '0x1::STC::STC'
-    const resource = await provider.request({
-      method: 'contract.get_resource',
-      params: [address, `0x1::Account::Balance<${tag}>`],
-    })
-    const raw = parseStarcoinBalanceResource(resource)
+    const tag = normalizeTypeTagAddress(typeTag ?? '0x1::STC::STC')
+    console.info('[StarcoinBalance] request', { address, tag })
+    let resource: unknown
+    try {
+      resource = await provider.request({
+        method: 'state.get_resource',
+        params: [address, `0x1::Account::Balance<${tag}>`],
+      })
+      console.info('[StarcoinBalance] state.get_resource ok', { tag, resource })
+      try {
+        console.info('[StarcoinBalance] state.get_resource json', JSON.stringify(resource))
+      } catch (err) {
+        console.warn('[StarcoinBalance] state.get_resource json failed', err)
+      }
+    } catch (error) {
+      console.warn('state.get_resource failed, fallback to contract.get_resource:', error)
+      resource = await provider.request({
+        method: 'contract.get_resource',
+        params: [address, `0x1::Account::Balance<${tag}>`],
+      })
+      console.info('[StarcoinBalance] contract.get_resource ok', { tag, resource })
+      try {
+        console.info('[StarcoinBalance] contract.get_resource json', JSON.stringify(resource))
+      } catch (err) {
+        console.warn('[StarcoinBalance] contract.get_resource json failed', err)
+      }
+    }
+    const raw = parseStarcoinTokenValue(resource)
+    console.info('[StarcoinBalance] parsed', { tag, raw })
     if (raw === null) return { balance: '0', rawBalance: 0n, decimals }
     return { balance: formatWithDecimals(raw, decimals), rawBalance: raw, decimals }
   } catch (error) {
@@ -165,7 +241,7 @@ export default function useStarcoinTools() {
     const provider = getStarMaskProvider()
     if (!provider) return { balance: '0', rawBalance: 0n, decimals: 0 }
 
-    console.log('Getting balance for chainId:', chainId)
+    console.info('[StarcoinBalance] getBalance', { chainId, ca })
 
     const accounts = (await provider.request({ method: 'stc_accounts' })) as string[]
     const address = accounts?.[0]
@@ -180,48 +256,13 @@ export default function useStarcoinTools() {
       console.warn('Failed to get starcoin chain.id:', error)
     }
     if (currentChainId && currentChainId !== numericChainId) {
-      console.warn(`Starcoin network mismatch: expected ${numericChainId}, got ${currentChainId}. Please switch in StarMask.`)
+      console.warn(`[StarcoinBalance] network mismatch: expected ${numericChainId}, got ${currentChainId}. Please switch in StarMask.`)
     }
 
-    const targetTags = ca ? (ca.includes('::') ? [ca] : [`${ca}::USDT::USDT`]) : ['0x1::STC::STC']
-
-    let balanceFromList: { raw: bigint; decimals: number } | null = null
-    try {
-      const listResult = await provider.request({
-        method: 'state.list_resource',
-        params: [address, { decode: true }],
-      })
-      const resources =
-        (listResult as { resources?: Record<string, { json?: { token?: { value?: string | number | bigint } } }> } | undefined)
-          ?.resources ??
-        (listResult as Record<string, { json?: { token?: { value?: string | number | bigint } } }>) ??
-        null
-      if (resources) {
-        const balances = parseListResourceBalance(resources)
-        for (const tag of targetTags) {
-          const normalized = normalizeTokenCode(tag)
-          if (balances[normalized] !== undefined) {
-            const decimals = normalized.endsWith('::usdt::usdt') ? 6 : 9
-            balanceFromList = { raw: balances[normalized], decimals }
-            break
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('state.list_resource failed, fallback to get_resource:', error)
-    }
-
-    if (balanceFromList) {
-      return {
-        balance: formatWithDecimals(balanceFromList.raw, balanceFromList.decimals),
-        rawBalance: balanceFromList.raw,
-        decimals: balanceFromList.decimals,
-      }
-    }
-
-    const fallbackTag = targetTags[0]
-    const fallbackDecimals = normalizeTokenCode(fallbackTag).endsWith('::usdt::usdt') ? 6 : 9
-    return getStarcoinBalance(provider, address, fallbackTag, fallbackDecimals)
+    const targetTag = ca ?? '0x1::STC::STC'
+    const targetDecimals = normalizeTokenCode(targetTag).endsWith('::usdt::usdt') ? 6 : 9
+    console.info('[StarcoinBalance] query', { address, targetTag, targetDecimals })
+    return getStarcoinBalance(provider, address, targetTag, targetDecimals)
   }, [])
 
   const getBalance = (chainId: string, ca?: string | null) => {
