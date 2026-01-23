@@ -164,7 +164,9 @@ export default function TransactionsDetailPage() {
             quorumStake: 3334,
           })
         }
+        
         if (transferStatus !== 'approved') {
+          console.info('[Bridge][Approve] start')
           setBridgeStatus('Submitting approve on Starcoin...')
 
           const uniqueSignatures = signatures.filter((sig, index, list) => {
@@ -214,9 +216,12 @@ export default function TransactionsDetailPage() {
             args: approveArgs,
           })
 
-          await sendTransaction({
+          debugger
+          console.log(33333, { approvePayload, hex: bytesToHex(approvePayload) })
+          const result = await sendTransaction({
             data: bytesToHex(approvePayload),
           })
+          console.info('[Bridge][Approve] done', result)
         }
 
         setBridgeStatus('Submitting claim on Starcoin...')
