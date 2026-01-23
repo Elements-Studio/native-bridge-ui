@@ -1,10 +1,10 @@
 export const BRIDGE_CONFIG = {
   evm: {
-    chainIdHex: '0xaa36a7',
-    chainId: 11,
+    chainIdHex: '0x7a69',
+    chainId: 12,
     // bridgeAddress: '0x14F62f5E2Bb563Ef995964dF2053373f559E3310', // 线上
     bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016', // 本地
-    destinationChainId: 1,
+    destinationChainId: 3,
   },
   starcoin: {
     // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
