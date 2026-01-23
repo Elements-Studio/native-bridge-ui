@@ -165,7 +165,6 @@ export default function useStarcoinTools() {
     console.info('[StarMask][sendTransaction] payload(json):', JSON.stringify(tx.payload))
     const result = await provider.request({ method: 'stc_sendTransaction', params: [tx] })
     console.log('[StarMask][sendTransaction] result:', result)
-    debugger
     return result
   }, [])
 

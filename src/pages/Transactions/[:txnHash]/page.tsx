@@ -216,7 +216,6 @@ export default function TransactionsDetailPage() {
             args: approveArgs,
           })
 
-          debugger
           console.log(33333, { approvePayload, hex: bytesToHex(approvePayload) })
           const result = await sendTransaction({
             data: bytesToHex(approvePayload),
