@@ -19,29 +19,33 @@ export default defineConfig(({ mode }) => ({
       },
 
       '/api0/sign': {
-        target: 'http://143.198.220.234:60002',
+        // target: 'http://143.198.220.234:60002', // 线上
+        target: 'http://143.198.220.234:50002', // 本地测试
         changeOrigin: true,
         rewrite: (path: string) => {
           return path.replace(/^\/api0/, '')
         },
       },
       '/api1/sign': {
-        target: 'http://143.198.220.234:60003',
+        // target: 'http://143.198.220.234:60003', // 线上
+        target: 'http://143.198.220.234:50003', // 本地测试
         changeOrigin: true,
         rewrite: (path: string) => {
           return path.replace(/^\/api1/, '')
         },
       },
       '/api2/sign': {
-        target: 'http://143.198.220.234:60004',
+        // target: 'http://143.198.220.234:60004', // 线上
+        target: 'http://143.198.220.234:50004', // 本地测试
         changeOrigin: true,
         rewrite: (path: string) => {
           return path.replace(/^\/api2/, '')
         },
       },
 
-      '/api': {
-        target: 'http://143.198.220.234:60002',
+      '/api/estimate_fees': {
+        // target: 'http://143.198.220.234:60002',
+        target: 'http://143.198.220.234:50004', // 本地测试
         changeOrigin: true,
         rewrite: (path: string) => {
           console.log(333333, path.replace(/^\/api/, ''))

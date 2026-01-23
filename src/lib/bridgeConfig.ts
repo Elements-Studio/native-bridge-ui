@@ -1,14 +1,19 @@
 export const BRIDGE_CONFIG = {
   evm: {
-    chainIdHex: '0xaa36a7',
-    chainId: 11,
-    bridgeAddress: '0x14F62f5E2Bb563Ef995964dF2053373f559E3310',
-    destinationChainId: 1,
+    chainIdHex: '0x7a69',
+    // chainIdHex: '0xc', // 本地测试
+    chainId: 12,
+    // bridgeAddress: '0x14F62f5E2Bb563Ef995964dF2053373f559E3310', // 线上
+    bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016', // 本地
+    // destinationChainId: 3, // 线上
+    destinationChainId: 2, // 本地测试
   },
   starcoin: {
-    packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645',
+    // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
+    packageAddress: '0x9601de11320713ac003a6e41ab8b7dae', // 本地
   },
   tokens: {
+    AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
     SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
   },
 }
