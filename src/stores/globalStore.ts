@@ -2,6 +2,7 @@ import ethIcon from '@/assets/img/eth.svg'
 import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
 import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
+import wbtcIcon from '@/assets/img/wbtc.svg'
 import type { WalletInfo, WalletType } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
@@ -19,14 +20,17 @@ export type CoinItem = {
   ca?: string | null
 }
 const mappings: Record<CoinsName, CoinItem | undefined> = {
-  // ETH: {
-  //   icon: ethIcon,
-  //   name: 'ETH',
-  //   walletType: 'EVM',
-  //   network: { name: 'mainnet', chainId: '0x1' },
-  //   gas: 'ETH',
-  //   ca: null,
-  // },
+  ETH:
+    process.env.NODE_ENV === 'development'
+      ? {
+          icon: ethIcon,
+          name: 'ETH',
+          walletType: 'EVM',
+          network: { name: 'mainnet', chainId: '0x1' },
+          gas: 'ETH',
+          ca: null,
+        }
+      : undefined,
   USDT: {
     icon: usdtIcon,
     name: 'USDT',
@@ -80,35 +84,38 @@ const mappings: Record<CoinsName, CoinItem | undefined> = {
         }
       : undefined,
 
-  // WBTC: {
-  //   icon: wbtcIcon,
-  //   name: 'WBTC',
-  //   walletType: 'EVM',
-  //   network: { name: 'mainnet', chainId: '0x1' },
-  //   gas: 'ETH',
-  //   ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
-  // },
+  WBTC:
+    process.env.NODE_ENV === 'development'
+      ? {
+          icon: wbtcIcon,
+          name: 'WBTC',
+          walletType: 'EVM',
+          network: { name: 'mainnet', chainId: '0x1' },
+          gas: 'ETH',
+          ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+        }
+      : undefined,
 
-  // STC: {
-  //   icon: usdtIcon,
-  //   name: 'STC',
-  //   walletType: 'STARCOIN',
-  //   network: { name: 'devnet', chainId: '0x1' },
-  //   gas: 'STC',
-  // },
-
-  StarUSDT:
+  STC:
     process.env.NODE_ENV === 'development'
       ? {
           icon: usdtIcon,
-          name: 'StarUSDT',
+          name: 'STC',
           walletType: 'STARCOIN',
           network: { name: 'devnet', chainId: '0x1' },
           gas: 'STC',
-          ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
-          // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
         }
       : undefined,
+
+  StarUSDT: {
+    icon: usdtIcon,
+    name: 'StarUSDT',
+    walletType: 'STARCOIN',
+    network: { name: 'devnet', chainId: '0x1' },
+    gas: 'STC',
+    ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
+    // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
+  },
 }
 
 interface GlobalState {

@@ -231,8 +231,9 @@ export default function TransactionsDetailPage() {
             }
             const action = first.EthToStarcoinBridgeAction
             const event = action.eth_bridge_event
-            const ethSenderAddress = getEthSenderAddress(event as Record<string, unknown>) ?? evmWalletInfo.address
-            const starcoinRecipientAddress = getStarcoinRecipientAddress(event as Record<string, unknown>) ?? starcoinWalletInfo.address
+            const ethSenderAddress = getEthSenderAddress(event as unknown as Record<string, unknown>) ?? evmWalletInfo.address
+            const starcoinRecipientAddress =
+              getStarcoinRecipientAddress(event as unknown as Record<string, unknown>) ?? starcoinWalletInfo.address
             if (!ethSenderAddress || !starcoinRecipientAddress) {
               throw new Error('Signature response missing sender or recipient address')
             }
@@ -362,12 +363,8 @@ export default function TransactionsDetailPage() {
 
         const action = first.StarcoinToEthBridgeAction
         const event = action.starcoin_bridge_event
-        const starcoinSenderAddress =
-          (event.starcoin_bridge_address as string | undefined) ??
-          (event.starcoinBridgeAddress as string | undefined) ??
-          starcoinWalletInfo.address
-        const ethRecipientAddress =
-          (event.eth_address as string | undefined) ?? (event.ethAddress as string | undefined) ?? evmWalletInfo.address
+        const starcoinSenderAddress = (event.starcoin_bridge_address as string | undefined) ?? starcoinWalletInfo.address
+        const ethRecipientAddress = (event.eth_address as string | undefined) ?? evmWalletInfo.address
         if (!starcoinSenderAddress || !ethRecipientAddress) {
           throw new Error('Signature response missing sender or recipient address')
         }

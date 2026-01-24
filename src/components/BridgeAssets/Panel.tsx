@@ -147,12 +147,12 @@ export default function BridgeAssetPanel() {
       }
 
       const tokenConfig = BRIDGE_CONFIG.tokens[currentCoin.name as keyof typeof BRIDGE_CONFIG.tokens]
-      if (!tokenConfig || tokenConfig.sendFunction !== 'send_bridge_usdt') {
+      if (!tokenConfig || !('sendFunction' in tokenConfig) || tokenConfig.sendFunction !== 'send_bridge_usdt') {
         setBridgeError('Selected token is not supported for Starcoin → Ethereum.')
         return
       }
 
-      const decimals = 'decimals' in tokenConfig && typeof tokenConfig.decimals === 'number' ? tokenConfig.decimals : 6
+      const decimals = tokenConfig.decimals || 6
       const amount = parseUnits(inputBalance, decimals)
 
       const recipientBytes = hexToBytes(normalizeHex(evmWalletInfo.address, 20))
