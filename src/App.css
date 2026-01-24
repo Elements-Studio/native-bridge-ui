@@ -160,4 +160,9 @@
     background-repeat: no-repeat;
     background-position: center top;
   }
+  #app {
+    min-height: 100dvh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
 }
