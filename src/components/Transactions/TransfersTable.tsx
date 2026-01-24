@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { BRIDGE_CONFIG } from '@/lib/bridgeConfig'
 import type { Pagination, TransferListItem } from '@/services/types'
 import { Link } from 'react-router-dom'
 
@@ -78,12 +77,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
                     </span>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
-                    <Link
-                      target="_blank"
-                      to={buildTxLink(item)}
-                      title={item.txn_hash}
-                      className="text-blue-600 hover:underline"
-                    >
+                    <Link target="_blank" to={buildTxLink(item)} title={item.txn_hash} className="text-blue-600 hover:underline">
                       {formatHash(item.txn_hash)}
                     </Link>
                   </TableCell>

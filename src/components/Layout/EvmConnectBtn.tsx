@@ -46,7 +46,7 @@ export default function ConnectBtn() {
       <>
         {contextHolder}
         <button
-          className="ring-offset-background focus-visible:ring-ring flex h-10 cursor-pointer items-center justify-center gap-1 rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+          className="ring-offset-background focus-visible:ring-ring border-border hover:text-accent-foreground flex h-10 cursor-pointer items-center justify-center gap-1 rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           onClick={openConnectDialog}
         >
           <div className="flex items-center gap-2">
@@ -61,7 +61,7 @@ export default function ConnectBtn() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={isPending}>
-        <button className="ring-offset-background focus-visible:ring-ring flex h-10 cursor-pointer items-center justify-center gap-1 rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
+        <button className="ring-offset-background focus-visible:ring-ring border-border hover:text-accent-foreground flex h-10 cursor-pointer items-center justify-center gap-1 rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
           <div className="flex items-center gap-2">
             {/* { walletType === 'EVM' ? JSON.stringify(evmWalletInfo) : JSON.stringify(starcoinWalletInfo) } */}
             {isPending ? <Spinner /> : Icon}
