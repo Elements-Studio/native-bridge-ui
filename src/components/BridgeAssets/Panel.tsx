@@ -188,7 +188,7 @@ export default function BridgeAssetPanel() {
   }, [direction, evmWalletInfo, starcoinWalletInfo, inputBalance, currentCoin, navigate, sendTransaction])
 
   return (
-    <div className="i-panel relative min-h-149 max-w-117.5 min-w-100 rounded-3xl bg-[rgba(44,41,88,0.8)]">
+    <div className="i-panel bg-accent/20 relative grid gap-4 rounded-3xl p-4 backdrop-blur-3xl">
       {/* card1 */}
       <CoinSelectorCard />
 
@@ -196,7 +196,7 @@ export default function BridgeAssetPanel() {
       <FromToCard />
 
       {/* Actions */}
-      <div className="m-4 flex flex-col gap-6 rounded-b-4xl">
+      <div className="flex flex-col gap-6 rounded-b-4xl">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between px-2 text-[#abbdcc]">
             <div className="text-sm font-normal">Estimated Gas</div>
@@ -208,7 +208,11 @@ export default function BridgeAssetPanel() {
           </div>
         </div>
 
-        <Button className="bg-[#346bba] text-gray-100" disabled={isBridging} onClick={handleBridge}>
+        <Button
+          className="bg-accent hover:bg-accent/80 cursor-pointer text-gray-100 transition-colors duration-300 disabled:cursor-not-allowed"
+          disabled={isBridging}
+          onClick={handleBridge}
+        >
           {isBridging ? <Spinner className="me-[0.2em]" /> : null}
           Bridge assets
         </Button>

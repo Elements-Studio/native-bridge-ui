@@ -54,14 +54,14 @@ export default function CoinSelectorCard() {
   }, [currentCoin, getEvmBalance, getStarcoinBalance, setInputBalance])
 
   return (
-    <div className="m-4 flex flex-col justify-between gap-4 rounded-2xl border border-gray-500 py-6">
+    <div className="flex flex-col justify-between gap-4 rounded-2xl border border-gray-500 p-6">
       <div className="flex justify-between">
         {/* Selector */}
         <CoinSelector />
 
         {/* max */}
         <button
-          className="ring-offset-background focus-visible:ring-ring me-6 inline-flex h-10 cursor-pointer items-center justify-center rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+          className="ring-offset-background focus-visible:ring-ring border-border hover:bg-secondary/10 hover:text-accent-foreground inline-flex h-10 cursor-pointer items-center justify-center rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           type="button"
           onClick={setMax}
         >
@@ -71,7 +71,7 @@ export default function CoinSelectorCard() {
       {/* input */}
       <input
         name="inputBalance"
-        className="mx-6 h-10 [appearance:textfield] bg-transparent font-mono text-4xl ring-0 outline-none focus-visible:ring-0 focus-visible:outline-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-10 w-full [appearance:textfield] bg-transparent font-mono text-4xl ring-0 outline-none focus-visible:ring-0 focus-visible:outline-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
         placeholder="0.00"
         value={inputBalance}
         onChange={e => setInputBalance(e.target.value)}
@@ -80,7 +80,7 @@ export default function CoinSelectorCard() {
 
       {/* balance */}
       {
-        <div className="ms-6 flex w-full items-center gap-2">
+        <div className="flex w-full items-center gap-2">
           <img src={walletIcon} width={12} height={12} />
 
           <div className="flex font-mono text-sm font-normal text-[#9f9aae] uppercase">

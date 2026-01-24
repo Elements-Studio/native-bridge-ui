@@ -3,7 +3,7 @@ import twitterIcon from '@/assets/img/twitter.svg'
 
 export default function Footer() {
   return (
-    <footer className="rounded-6xl border-gradient-ocean-dark flex flex-col items-center justify-between gap-6 p-10 md:px-[160px] md:py-[80px] lg:flex-row">
+    <footer className="rounded-6xl bg-primary/50 border-gradient-ocean-dark flex flex-col items-center justify-between gap-6 p-10 backdrop-blur-sm md:px-[160px] md:py-[80px] lg:flex-row">
       <div className="flex w-full flex-1 items-center justify-center self-start pt-6">
         <div className="flex max-w-[470px] items-center text-center lg:min-w-[470px] lg:text-left">
           {/* <img
