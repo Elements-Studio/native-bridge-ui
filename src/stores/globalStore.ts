@@ -18,47 +18,15 @@ export type CoinItem = {
   gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH'
   ca?: string | null
 }
-const mappings: Record<CoinsName, CoinItem> = {
-  ETH: {
-    icon: ethIcon,
-    name: 'ETH',
-    walletType: 'EVM',
-    network: { name: 'mainnet', chainId: '0x1' },
-    gas: 'ETH',
-    ca: null,
-  },
-  SepoliaETH: {
-    icon: sepoliaEthIcon,
-    name: 'SepoliaETH',
-    walletType: 'EVM',
-    network: { name: 'sepolia', chainId: '0xaa36a7' },
-    gas: 'SepoliaETH',
-    ca: null,
-  },
-  SepoliaUSDT: {
-    icon: sepoliaUsdtIcon,
-    name: 'SepoliaUSDT',
-    walletType: 'EVM',
-    network: { name: 'sepolia', chainId: '0xaa36a7' },
-    gas: 'SepoliaETH',
-    ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
-  },
-  AnvilETH: {
-    icon: ethIcon,
-    name: 'AnvilETH',
-    walletType: 'EVM',
-    network: { name: 'anvil', chainId: '0x7a69' },
-    gas: 'AnvilETH',
-    ca: null,
-  },
-  AnvilUSDT: {
-    icon: usdtIcon,
-    name: 'AnvilUSDT',
-    walletType: 'EVM',
-    network: { name: 'anvil', chainId: '0x7a69' },
-    gas: 'AnvilETH',
-    ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
-  },
+const mappings: Record<CoinsName, CoinItem | undefined> = {
+  // ETH: {
+  //   icon: ethIcon,
+  //   name: 'ETH',
+  //   walletType: 'EVM',
+  //   network: { name: 'mainnet', chainId: '0x1' },
+  //   gas: 'ETH',
+  //   ca: null,
+  // },
   USDT: {
     icon: usdtIcon,
     name: 'USDT',
@@ -67,24 +35,80 @@ const mappings: Record<CoinsName, CoinItem> = {
     gas: 'ETH',
     ca: '0xdac17f958d2ee523a2206206994597c13d831ec7',
   },
+  SepoliaETH:
+    process.env.NODE_ENV === 'development'
+      ? {
+          icon: sepoliaEthIcon,
+          name: 'SepoliaETH',
+          walletType: 'EVM',
+          network: { name: 'sepolia', chainId: '0xaa36a7' },
+          gas: 'SepoliaETH',
+          ca: null,
+        }
+      : undefined,
+  SepoliaUSDT:
+    process.env.NODE_ENV === 'development'
+      ? {
+          icon: sepoliaUsdtIcon,
+          name: 'SepoliaUSDT',
+          walletType: 'EVM',
+          network: { name: 'sepolia', chainId: '0xaa36a7' },
+          gas: 'SepoliaETH',
+          ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
+        }
+      : undefined,
+  AnvilETH:
+    process.env.NODE_ENV === 'development'
+      ? {
+          icon: ethIcon,
+          name: 'AnvilETH',
+          walletType: 'EVM',
+          network: { name: 'anvil', chainId: '0x7a69' },
+          gas: 'AnvilETH',
+          ca: null,
+        }
+      : undefined,
+  AnvilUSDT:
+    process.env.NODE_ENV === 'development'
+      ? {
+          icon: usdtIcon,
+          name: 'AnvilUSDT',
+          walletType: 'EVM',
+          network: { name: 'anvil', chainId: '0x7a69' },
+          gas: 'AnvilETH',
+          ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+        }
+      : undefined,
 
-  STC: {
-    icon: usdtIcon,
-    name: 'STC',
-    walletType: 'STARCOIN',
-    network: { name: 'devnet', chainId: '0x1' },
-    gas: 'STC',
-  },
+  // WBTC: {
+  //   icon: wbtcIcon,
+  //   name: 'WBTC',
+  //   walletType: 'EVM',
+  //   network: { name: 'mainnet', chainId: '0x1' },
+  //   gas: 'ETH',
+  //   ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+  // },
 
-  StarUSDT: {
-    icon: usdtIcon,
-    name: 'StarUSDT',
-    walletType: 'STARCOIN',
-    network: { name: 'devnet', chainId: '0x1' },
-    gas: 'STC',
-    ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
-    // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
-  },
+  // STC: {
+  //   icon: usdtIcon,
+  //   name: 'STC',
+  //   walletType: 'STARCOIN',
+  //   network: { name: 'devnet', chainId: '0x1' },
+  //   gas: 'STC',
+  // },
+
+  StarUSDT:
+    process.env.NODE_ENV === 'development'
+      ? {
+          icon: usdtIcon,
+          name: 'StarUSDT',
+          walletType: 'STARCOIN',
+          network: { name: 'devnet', chainId: '0x1' },
+          gas: 'STC',
+          ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
+          // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
+        }
+      : undefined,
 }
 
 interface GlobalState {
@@ -114,7 +138,7 @@ const defaults = freeze(
     mappings,
     fromWalletType: 'EVM' as WalletType,
     toWalletType: 'STARCOIN' as WalletType,
-    currentCoin: process.env.NODE_ENV === 'development' ? mappings.AnvilUSDT : mappings.ETH,
+    currentCoin: process.env.NODE_ENV === 'development' ? mappings.AnvilUSDT! : mappings.USDT!,
     evmWalletInfo: null,
     starcoinWalletInfo: null,
     inputBalance: '',

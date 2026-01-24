@@ -18,7 +18,7 @@ export default function FromToCard() {
     openConnectDialog: openStarcoinConnectDialog,
     disconnect: disconnectStarcoin,
   } = useStarcoinTools()
-  const { evmWalletInfo, starcoinWalletInfo, fromWalletType, toWalletType, setFromWalletType, setToWalletType } = useGlobalStore()
+  const { evmWalletInfo, starcoinWalletInfo, fromWalletType, setFromWalletType, setToWalletType } = useGlobalStore()
   const [from, setFrom] = useState<WalletType>(fromWalletType)
   const toggleCard = useCallback(() => {
     setFrom(prev => {
@@ -116,9 +116,6 @@ export default function FromToCard() {
 
   return (
     <>
-      fromWalletType: {fromWalletType}
-      <br />
-      toWalletType: {toWalletType}
       {evmContextHolder}
       {starcoinContextHolder}
       <div className="relative overflow-hidden rounded-4xl">

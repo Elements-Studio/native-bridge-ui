@@ -20,7 +20,9 @@ export default function CoinSelector() {
   const { contextHolder: starcoinContextHolder, getBalance: getStarcoinBalance } = useStarcoinTools()
 
   const items = useMemo(() => {
-    return Object.values(mappings).filter(item => item.walletType === fromWalletType && item.name !== currentCoin.name)
+    return Object.values(mappings)
+      .filter((item): item is CoinItem => !!item)
+      .filter(item => item.walletType === fromWalletType && item.name !== currentCoin.name)
   }, [mappings, fromWalletType, currentCoin.name])
 
   const switchCoin = useCallback(
