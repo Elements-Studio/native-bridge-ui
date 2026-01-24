@@ -56,18 +56,16 @@
 
 :root {
   /* 背景 */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F5F5F5;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
 
   /* 文字 */
   --text-primary: #000000;
-  --text-secondary: #4A4A4A;
+  --text-secondary: #4a4a4a;
 
   /* 强调色 */
-  --accent-cyan: #4ACFC5;
-  --accent-purple: #5A4FC0;
-
-  
+  --accent-cyan: #4acfc5;
+  --accent-purple: #5a4fc0;
 
   --radius: 0.625rem;
   /* --background: oklch(1 0 0);
@@ -76,10 +74,10 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  
+
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  
+
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -100,18 +98,17 @@
 }
 
 .dark {
-    /* 背景 */
-    --bg-primary: #000000;      /* 深空黑 */
-    --bg-secondary: #1A1A2E;    /* 星云暗 */
-    /* 文字 */
-    --text-primary: #FFFFFF;    /* 恒星白 */
-    --text-secondary: #A0A0A0;  /* 轨道灰 */
+  /* 背景 */
+  --bg-primary: #000000; /* 深空黑 */
+  --bg-secondary: #1a1a2e; /* 星云暗 */
+  /* 文字 */
+  --text-primary: #ffffff; /* 恒星白 */
+  --text-secondary: #a0a0a0; /* 轨道灰 */
 
-    /* 强调色 */
-    --accent-cyan: #4ACFC5;     /* 轨道青 */
-    --accent-purple: #5A4FC0;   /* 宇宙紫 */
+  /* 强调色 */
+  --accent-cyan: #4acfc5; /* 轨道青 */
+  --accent-purple: #5a4fc0; /* 宇宙紫 */
 
-  
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
