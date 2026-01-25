@@ -461,13 +461,165 @@ export default function TransactionsDetailPage() {
   const progressGridClass = direction === 'starcoin_to_eth' ? 'grid-cols-4' : 'grid-cols-5'
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center rounded-4xl bg-gray-700">
-      <div className="mx-[15%] my-20 flex w-[90%] flex-col items-center justify-center gap-6 md:w-177 xl:mx-[10%]">
-        <div className="flex w-full flex-col items-center justify-between gap-2 md:flex-row">
-          <div className="text-2xl font-semibold wrap-break-word">Transaction details</div>
-        </div>
-        {txnHash ? <div className="w-full text-xs wrap-break-word text-gray-200">Tx Hash: {txnHash}</div> : null}
+    <div className="bg-secondary grid w-full p-4">
+      <div className="mx-auto grid w-full max-w-300 content-start gap-4 py-6">
+        <h1 className="text-2xl font-bold">Transaction Details</h1>
 
+        <div className="bg-accent/20 border-accent-foreground/10 grid gap-y-5 rounded-3xl border p-7.5">
+          {txnHash ? <div className="text-secondary-foreground w-full text-xs wrap-break-word">Tx Hash: {txnHash}</div> : null}
+          {/* 这部分根据需要调整*/}
+          <div className="flex items-center justify-between">
+            <div className="grid gap-1.5">
+              <div className="text-secondary-foreground text-sm uppercase">SEP 30, 2024, 12:07 PM PDT</div>
+              <div className="text-primary-foreground text-3xl font-extrabold">0.01 ETH</div>
+              <div className="text-secondary-foreground text-lg font-bold">From Ethereum to Sui</div>
+            </div>
+            {/* 
+              * 按钮三个状态：Pending, Ready to claim, Completed
+              * Pending:bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-secondary-foreground/90
+              * Ready to claim: bg-accent/20 text-accent hover:bg-accent/10 hover:text-accent/90
+              * Completed: bg-accent-foreground/20 text-accent-foreground hover:bg-accent-foreground/10 hover:text-accent-foreground/90
+              *
+              这部分根据需要调整
+            
+            */}
+            <button className="bg-accent-foreground/20 text-accent-foreground hover:bg-accent-foreground/10 hover:text-accent-foreground/90 inline-flex cursor-pointer rounded-xl px-6 py-2.5 text-xl font-extrabold transition-colors duration-200">
+              Completed
+            </button>
+          </div>
+
+          {/* Progress Steps Section */}
+          <div className="mt-7.5 grid">
+            <Progress value={progressValue} className={`z-0 col-start-1 row-start-1 mx-[10%] mt-4.5 ${bridgeError ? 'bg-gray-600' : ''}`} />
+            <div className={`z-2 col-start-1 row-start-1 grid ${progressGridClass} gap-2`}>
+              {progressSteps.map((step, index) => (
+                <div key={index} className="grid content-start justify-center gap-y-4">
+                  <div
+                    className={`grid aspect-square w-10 place-content-center justify-self-center rounded-full p-2 transition-colors ${
+                      progressValue >= step.value
+                        ? bridgeError && progressValue === 100
+                          ? 'bg-accent-foreground text-primary-foreground'
+                          : 'bg-accent text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground'
+                    }`}
+                  >
+                    <svg viewBox="0 0 1024 1024" className="aspect-square w-6">
+                      <path
+                        fill="currentColor"
+                        d="M384 768c-12.8 0-21.333333-4.266667-29.866667-12.8l-213.333333-213.333333c-17.066667-17.066667-17.066667-42.666667 0-59.733334s42.666667-17.066667 59.733333 0L384 665.6 823.466667 226.133333c17.066667-17.066667 42.666667-17.066667 59.733333 0s17.066667 42.666667 0 59.733334l-469.333333 469.333333c-8.533333 8.533333-17.066667 12.8-29.866667 12.8z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <span className="text-primary-foreground text-center text-sm font-semibold uppercase md:text-lg">{step.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* 提示信息 */}
+          <div className="bg-secondary border-secondary-foreground/30 mt-4 flex items-center gap-x-3 rounded-xl border p-5">
+            <svg viewBox="0 0 1024 1024" className="text-secondary-foreground/80 aspect-square w-6 shrink-0">
+              <path
+                d="M560 800l-10.464-416h-75.072L464 800h96z m-14.144-493.984c9.44-9.312 14.144-20.672 14.144-34.016 0-13.6-4.704-24.992-14.144-34.208A46.784 46.784 0 0 0 512 224c-13.12 0-24.448 4.608-33.856 13.792A45.856 45.856 0 0 0 464 272c0 13.344 4.704 24.704 14.144 34.016 9.408 9.312 20.704 13.984 33.856 13.984 13.12 0 24.448-4.672 33.856-13.984zM512 32C246.912 32 32 246.912 32 512c0 265.088 214.912 480 480 480 265.088 0 480-214.912 480-480 0-265.088-214.912-480-480-480z m0 64c229.76 0 416 186.24 416 416s-186.24 416-416 416S96 741.76 96 512 282.24 96 512 96z"
+                fill="currentColor"
+              ></path>
+            </svg>
+            <div className="grid min-w-0 flex-1 gap-1">
+              <div className="text-primary-foreground text-lg font-bold">Ethereum may take 13 minutes or more</div>
+              {bridgeStatus ? <div className="text-accent-foreground w-full text-sm">{bridgeStatus}</div> : null}
+              {bridgeError ? <div className="text-secondary-foreground w-full text-sm">{bridgeError}</div> : null}
+            </div>
+          </div>
+          {/*卡片*/}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* 左侧卡片 */}
+            <div className="bg-secondary/50 grid content-start overflow-hidden rounded-xl">
+              <div className="bg-accent-foreground/10 flex items-center justify-between gap-x-3 p-5">
+                <div className="text-primary-foreground text-lg font-bold wrap-break-word">Ethereum</div>
+                <img width={32} height={32} src={ethIcon} />
+              </div>
+              <div className="grid gap-3 p-5">
+                <div className="flex items-center justify-between gap-x-3">
+                  <div className="text-md text-secondary-foreground font-medium wrap-break-word">Originating wallet</div>
+                  <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">0x1689xxxB660</div>
+                </div>
+                <div className="flex items-center justify-between gap-x-3">
+                  <div className="text-md text-secondary-foreground font-medium wrap-break-word">Gas Fee</div>
+                  <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">0.00000389 ETH</div>
+                </div>
+                <div className="mt-4 flex flex-row items-center justify-around">
+                  <a
+                    className="font-inter text-accent-foreground hover:text-accent-foreground/80 flex items-center text-lg font-semibold uppercase transition-colors duration-200"
+                    href="https://suivision.xyz/txblock/0xd3d404a473e024b8a37ec1df93ea5a57f3d36ed96117bdeb625cdae0ff51f562"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View on Explorer
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      className="h-3 w-3"
+                    >
+                      <path d="M5 12h14"></path>
+                      <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+            {/* 右侧卡片 */}
+            <div className="bg-secondary/50 grid content-start overflow-hidden rounded-xl">
+              <div className="bg-accent-foreground/10 flex items-center justify-between gap-x-3 p-5">
+                <div className="text-primary-foreground text-lg font-bold wrap-break-word">Sui</div>
+                <img width={32} height={32} src={sepoliaEthIcon} />
+              </div>
+              <div className="grid gap-3 p-5">
+                <div className="flex items-center justify-between gap-x-3">
+                  <div className="text-md text-secondary-foreground font-medium wrap-break-word">Destination wallet</div>
+                  <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">0x1689xxxB660</div>
+                </div>
+                <div className="flex items-center justify-between gap-x-3">
+                  <div className="text-md text-secondary-foreground font-medium wrap-break-word">Gas Fee</div>
+                  <div className="flex items-center gap-1">
+                    <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">pending</div>
+                    <Spinner className="h-3 w-3" />
+                  </div>
+                </div>
+                <div className="mt-4 hidden flex-row items-center justify-around">
+                  <a
+                    className="font-inter text-accent-foreground hover:text-accent-foreground/80 flex items-center text-lg font-semibold uppercase transition-colors duration-200"
+                    href="https://suivision.xyz/txblock/0xd3d404a473e024b8a37ec1df93ea5a57f3d36ed96117bdeb625cdae0ff51f562"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View on Explorer
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      className="h-3 w-3"
+                    >
+                      <path d="M5 12h14"></path>
+                      <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 以下是之前的代码，看看是否可以直接删除 */}
         {/* Progress Bar Section */}
         <div className="w-full space-y-4 rounded-2xl bg-gray-600 p-6">
           <div className="flex items-center justify-between">
@@ -477,7 +629,6 @@ export default function TransactionsDetailPage() {
 
           <Progress value={progressValue} className={bridgeError ? 'bg-gray-600' : ''} />
 
-          {/* Progress Steps */}
           <div className={`grid ${progressGridClass} gap-2 pt-2`}>
             {progressSteps.map((step, index) => (
               <div key={index} className="flex flex-col items-center">
