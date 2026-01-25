@@ -7,7 +7,7 @@ export default function Layout(props: { children: React.ReactNode }) {
     <>
       <GlobalInitial />
       <Header />
-      <main> {props.children} </main>
+      <main className="grid"> {props.children} </main>
       <Footer />
     </>
   )

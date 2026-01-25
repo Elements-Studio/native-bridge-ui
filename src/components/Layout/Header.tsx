@@ -20,13 +20,13 @@ export default function Header() {
 
   return (
     <header className="bg-primary/70 border-border sticky top-0 z-50 border-b backdrop-blur-md">
-      <nav className="flex items-center justify-between px-6 py-4">
+      <nav className="flex flex-col items-center justify-between px-6 py-4 md:flex-row">
         <h1>
           <Link to="/">
             <img src={logoIcon} alt="Logo" width={140} />
           </Link>
         </h1>
-        <div className="hidden gap-2 md:gap-8 lg:flex">
+        <div className="flex gap-2 md:gap-8">
           {menuItems.map(item => {
             const isActive =
               item.path === '/'
@@ -46,7 +46,7 @@ export default function Header() {
             )
           })}
         </div>
-        <div className="hidden gap-4 lg:flex">
+        <div className="flex gap-4">
           <EvmConnectBtn />
           <StartconConnectBtn />
         </div>

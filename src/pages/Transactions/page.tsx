@@ -49,41 +49,47 @@ export default function TransactionsPage() {
   )
 
   return (
-    <div className="w-full">
-      <h1 className="mb-6 text-2xl font-bold">Transactions</h1>
+    <div className="bg-secondary grid w-full p-4">
+      <div className="mx-auto grid w-full max-w-300 content-start gap-4 py-6 md:content-stretch">
+        <h1 className="text-2xl font-bold md:col-start-1 md:row-start-1 md:mt-2">Transactions</h1>
 
-      <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="evm">EVM Wallet</TabsTrigger>
-          <TabsTrigger value="starcoin">Starcoin Wallet</TabsTrigger>
-        </TabsList>
+        <Tabs
+          value={currentTab}
+          onValueChange={handleTabChange}
+          className="grid w-full grid-rows-[auto_1fr] gap-4 md:col-start-1 md:row-start-1"
+        >
+          <TabsList className="justify-self-center md:justify-self-end">
+            <TabsTrigger value="evm">EVM Wallet</TabsTrigger>
+            <TabsTrigger value="starcoin">Starcoin Wallet</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="evm" className="space-y-4">
-          {!evmWalletInfo?.address ? (
-            <div className="py-8 text-center text-gray-500">Please connect your EVM wallet</div>
-          ) : (
-            <TransfersTable
-              data={evmData?.transfers || []}
-              pagination={evmData?.pagination || { page: 1, page_size: 20, total_count: 0, total_pages: 0 }}
-              isLoading={evmLoading}
-              onPageChange={setEvmPage}
-            />
-          )}
-        </TabsContent>
+          <TabsContent value="evm" className="space-y-4">
+            {!evmWalletInfo?.address ? (
+              <div className="py-8 text-center text-gray-500">Please connect your EVM wallet</div>
+            ) : (
+              <TransfersTable
+                data={evmData?.transfers || []}
+                pagination={evmData?.pagination || { page: 1, page_size: 20, total_count: 0, total_pages: 0 }}
+                isLoading={evmLoading}
+                onPageChange={setEvmPage}
+              />
+            )}
+          </TabsContent>
 
-        <TabsContent value="starcoin" className="space-y-4">
-          {!starcoinWalletInfo?.address ? (
-            <div className="py-8 text-center text-gray-500">Please connect your Starcoin wallet</div>
-          ) : (
-            <TransfersTable
-              data={starcoinData?.transfers || []}
-              pagination={starcoinData?.pagination || { page: 1, page_size: 20, total_count: 0, total_pages: 0 }}
-              isLoading={starcoinLoading}
-              onPageChange={setStarcoinPage}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="starcoin" className="space-y-4">
+            {!starcoinWalletInfo?.address ? (
+              <div className="py-8 text-center text-gray-500">Please connect your Starcoin wallet</div>
+            ) : (
+              <TransfersTable
+                data={starcoinData?.transfers || []}
+                pagination={starcoinData?.pagination || { page: 1, page_size: 20, total_count: 0, total_pages: 0 }}
+                isLoading={starcoinLoading}
+                onPageChange={setStarcoinPage}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }
