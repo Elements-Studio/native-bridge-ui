@@ -490,7 +490,7 @@ export default function TransactionsDetailPage() {
 
           {/* Progress Steps Section */}
           <div className="mt-7.5 grid">
-            <Progress value={progressValue} className={`z-0 col-start-1 row-start-1 mx-[10%] mt-4.5 ${bridgeError ? 'bg-gray-600' : ''}`} />
+            <Progress value={progressValue} className={`z-0 col-start-1 row-start-1 mx-[12%] mt-4.5 ${bridgeError ? 'bg-gray-600' : ''}`} />
             <div className={`z-2 col-start-1 row-start-1 grid ${progressGridClass} gap-2`}>
               {progressSteps.map((step, index) => (
                 <div key={index} className="grid content-start justify-center gap-y-4">
