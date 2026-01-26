@@ -18,7 +18,7 @@ export default function FromToCard() {
     openConnectDialog: openStarcoinConnectDialog,
     disconnect: disconnectStarcoin,
   } = useStarcoinTools()
-  const { evmWalletInfo, starcoinWalletInfo, fromWalletType, toWalletType, setFromWalletType, setToWalletType } = useGlobalStore()
+  const { evmWalletInfo, starcoinWalletInfo, fromWalletType, setFromWalletType, setToWalletType } = useGlobalStore()
   const [from, setFrom] = useState<WalletType>(fromWalletType)
   const toggleCard = useCallback(() => {
     setFrom(prev => {
@@ -30,7 +30,7 @@ export default function FromToCard() {
   }, [setFromWalletType, setToWalletType])
   const EvmCard = useMemo(() => {
     return (
-      <div key="EvmCard" className="flex h-32.5 flex-col gap-4 space-y-4 bg-[#c0e6ff] px-6 py-6 text-black/90">
+      <div key="EvmCard" className="bg-accent/80 flex flex-col gap-4 space-y-4 p-6 text-black/90 backdrop-blur-xs">
         <div className="relative flex w-full flex-1 items-center justify-between">
           <div className="text-sm leading-4 font-medium tracking-[0.6px]">{from === 'EVM' ? 'FROM' : 'TO'} ETHEREUM</div>
         </div>
@@ -57,7 +57,7 @@ export default function FromToCard() {
         ) : (
           <button
             onClick={openEvmConnectDialog}
-            className="ring-offset-background focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors hover:text-blue-400 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+            className="ring-offset-background focus-visible:ring-ring hover:text-accent-foreground flex w-full cursor-pointer items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           >
             <span className="text-2xl font-medium">Connect wallet</span>
             <ArrowRight />
@@ -69,7 +69,7 @@ export default function FromToCard() {
 
   const StarcoinCard = useMemo(() => {
     return (
-      <div key="StarcoinCard" className="flex h-32.5 flex-col space-y-4 bg-black/60 px-6 py-6">
+      <div key="StarcoinCard" className="bg-secondary/80 flex flex-col gap-4 space-y-4 p-6 backdrop-blur-xs">
         <div className="relative flex w-full flex-1 items-center justify-between">
           <div className="text-sm leading-4 font-medium tracking-[0.6px] text-zinc-200">{from === 'EVM' ? 'TO' : 'FROM'} STARCOIN</div>
           {/* <button
@@ -104,7 +104,7 @@ export default function FromToCard() {
         ) : (
           <button
             onClick={openStarcoinConnectDialog}
-            className="ring-offset-background focus-visible:ring-ring flex w-full cursor-pointer items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors hover:text-blue-400 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+            className="ring-offset-background focus-visible:ring-ring hover:text-accent-foreground flex w-full cursor-pointer items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           >
             <span className="text-2xl font-medium">Connect wallet</span>
             <ArrowRight />
@@ -116,17 +116,14 @@ export default function FromToCard() {
 
   return (
     <>
-      fromWalletType: {fromWalletType}
-      <br />
-      toWalletType: {toWalletType}
       {evmContextHolder}
       {starcoinContextHolder}
-      <div className="relative m-4 overflow-hidden rounded-4xl">
+      <div className="relative overflow-hidden rounded-4xl">
         {from === 'EVM' ? [EvmCard, StarcoinCard] : [StarcoinCard, EvmCard]}
 
         <button
           onClick={toggleCard}
-          className="ring-offset-background focus-visible:ring-ring text-primary-foreground absolute bottom-1/2 left-1/2 inline-flex h-10 -translate-x-1/2 translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+          className="ring-offset-background focus-visible:ring-ring text-accent-foreground absolute bottom-1/2 left-1/2 inline-flex h-10 -translate-x-1/2 translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
         >
           <ArrowRightLeft />
         </button>

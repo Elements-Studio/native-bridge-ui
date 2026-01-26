@@ -129,7 +129,7 @@ export async function getEstimateFees(direction: EstimateDirection): Promise<Est
 async function _getStarcoinToEthSignature(
   txHash: string,
   eventIndex: number,
-  validatorIndex: number,
+  _validatorIndex: number,
   signBaseUrl?: string,
 ): Promise<SignatureResponse> {
   try {
@@ -157,7 +157,7 @@ export async function getStarcoinToEthSignature(
 async function _getEthToStarcoinSignature(
   txHash: string,
   eventIndex: number,
-  validatorIndex: number,
+  _validatorIndex: number,
   signBaseUrl?: string,
 ): Promise<SignatureResponse> {
   try {

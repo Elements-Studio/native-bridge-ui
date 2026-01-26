@@ -19,29 +19,36 @@ export default function Header() {
   const location = useLocation()
 
   return (
-    <header className="relative z-50">
-      <nav>
-        <div className="flex items-center justify-between border-b px-6 py-4 backdrop-blur-md">
-          <h1 className="background-image:">
-            <Link to="/">
-              <img src={logoIcon} alt="Logo" width={140} />
-            </Link>
-          </h1>
-          <div className="hidden gap-2 md:gap-8 lg:flex">
-            {menuItems.map(item => (
+    <header className="bg-primary/70 border-border sticky top-0 z-50 border-b backdrop-blur-md">
+      <nav className="flex flex-col items-center justify-between px-6 py-4 md:flex-row">
+        <h1>
+          <Link to="/">
+            <img src={logoIcon} alt="Logo" width={140} />
+          </Link>
+        </h1>
+        <div className="flex gap-2 md:gap-8">
+          {menuItems.map(item => {
+            const isActive =
+              item.path === '/'
+                ? location.pathname === '/'
+                : location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+            return (
               <Link
                 to={item.path}
                 key={item.path}
-                className={cn('wrap-break-words text-sm leading-4', item.path === location.pathname ? 'font-bold' : 'font-normal')}
+                className={cn(
+                  'wrap-break-words hover:text-accent-foreground block cursor-pointer px-1.5 py-2.5 text-sm transition-colors duration-200',
+                  isActive ? 'text-accent-foreground font-bold' : 'text-primary-foreground font-normal',
+                )}
               >
                 {item.title}
               </Link>
-            ))}
-          </div>
-          <div className="hidden gap-4 lg:flex">
-            <EvmConnectBtn />
-            <StartconConnectBtn />
-          </div>
+            )
+          })}
+        </div>
+        <div className="flex gap-4">
+          <EvmConnectBtn />
+          <StartconConnectBtn />
         </div>
       </nav>
     </header>

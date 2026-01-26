@@ -1,42 +1,69 @@
-import discordIcon from '@/assets/img/discord.svg'
-import twitterIcon from '@/assets/img/twitter.svg'
+// import discordIcon from '@/assets/img/discord.svg'
+// import twitterIcon from '@/assets/img/twitter.svg'
 
 export default function Footer() {
   return (
-    <footer className="rounded-6xl border-gradient-ocean-dark flex flex-col items-center justify-between gap-6 p-10 md:px-[160px] md:py-[80px] lg:flex-row">
-      <div className="flex w-full flex-1 items-center justify-center self-start pt-6">
-        <div className="flex max-w-[470px] items-center text-center lg:min-w-[470px] lg:text-left">
-          {/* <img
-            width="284"
-            height="64"
-            decoding="async"
-            data-nimg="1"
-            className="text-content-primary"
-          /> */}
-        </div>
-      </div>
-      <div className="flex w-full flex-1 flex-col items-center justify-center gap-4">
-        <div className="flex max-w-[470px] flex-col gap-4">
-          <div className="flex w-full justify-center gap-3 lg:justify-end">
-            <a href="https://discord.com/invite/XJYmhRMQya" target="_blank" rel="noreferrer noopener nofollow">
-              <img alt="discord" width="40" height="40" decoding="async" data-nimg="1" className="text-content-primary" src={discordIcon} />
-            </a>
-
-            <a href="https://x.com/starcoinstc" target="_blank" rel="noreferrer noopener nofollow">
-              <img alt="twitter" width="40" height="40" decoding="async" data-nimg="1" className="text-content-primary" src={twitterIcon} />
-            </a>
-          </div>
-          {/* <div className="flex w-full flex-col gap-1">
-            <div className="text-2xs text-content-primary font-mono font-normal break-words uppercase">
-
-            </div>
-            <div className="flex flex-row-reverse gap-1">
-              <button type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="radix-:r1n:" data-state="closed">
-                <div className="text-2xs text-content-primary font-mono font-normal break-words uppercase underline">Terms of Use</div>
-              </button>
-            </div>
-          </div> */}
-        </div>
+    <footer className="bg-secondary border-secondary-foreground/40 grid border-t p-2">
+      <div className="mx-auto grid w-full max-w-300 grid-cols-2 justify-between px-2 py-6">
+        <p>© 2026 Starswap</p>
+        <nav className="flex items-center justify-end gap-x-6">
+          <a
+            href="http://t.me/StarswapEN"
+            rel="noopener noreferrer"
+            target="_blank"
+            className="hover:text-accent-foreground grid place-content-center transition-colors duration-200"
+          >
+            <svg viewBox="0 0 1024 1024" className="aspect-square w-6">
+              <title>Telegram</title>
+              <path
+                fill="currentColor"
+                d="M883.626667 155.946667s82.858667-32.341333 75.946666 46.165333c-2.261333 32.298667-22.997333 145.408-39.125333 267.776l-55.253333 362.453333s-4.608 53.077333-46.08 62.293334c-41.386667 9.258667-103.552-32.298667-115.072-41.514667-9.216-6.912-172.672-110.805333-230.272-161.621333-16.085333-13.824-34.517333-41.557333 2.346666-73.856l241.749334-230.826667c27.605333-27.733333 55.253333-92.373333-59.861334-13.866667l-322.346666 219.306667s-36.864 23.04-105.898667 2.304l-149.674667-46.165333s-55.253333-34.645333 39.125334-69.248C349.482667 370.56 632.661333 259.84 883.626667 155.904z"
+              ></path>
+            </svg>
+          </a>
+          <a
+            href="https://twitter.com/StarswapEN"
+            rel="noopener noreferrer"
+            target="_blank"
+            className="hover:text-accent-foreground grid place-content-center transition-colors duration-200"
+          >
+            <svg viewBox="0 0 1024 1024" className="aspect-square w-6">
+              <title>Twitter</title>
+              <path
+                fill="currentColor"
+                d="M390.097455 157.370182l170.181818 228.119273 195.525818-228.119273h110.824727L611.851636 454.609455l299.112728 400.942545h-232.727273l-190.836364-255.767273-219.205818 255.767273h-110.824727l278.481454-324.898909-278.481454-373.294546h232.727273z m177.396363 348.974545l-35.723636 41.693091L711.586909 789.061818h66.804364L567.505455 506.356364zM356.736 223.872h-66.816l190.277818 255.045818 35.723637-41.669818-159.185455-213.376z"
+              ></path>
+            </svg>
+          </a>
+          <a
+            href="https://github.com/Elements-Studio"
+            rel="noopener noreferrer"
+            target="_blank"
+            className="hover:text-accent-foreground grid place-content-center transition-colors duration-200"
+          >
+            <svg viewBox="0 0 1024 1024" className="aspect-square w-6">
+              <title>GitHub</title>
+              <path
+                fill="currentColor"
+                d="M511.6 76.3C264.3 76.2 64 276.4 64 523.5 64 718.9 189.3 885 363.8 946c23.5 5.9 19.9-10.8 19.9-22.2v-77.5c-135.7 15.9-141.2-73.9-150.3-88.9C215 726 171.5 718 184.5 703c30.9-15.9 62.4 4 98.9 57.9 26.4 39.1 77.9 32.5 104 26 5.7-23.5 17.9-44.5 34.7-60.8-140.6-25.2-199.2-111-199.2-213 0-49.5 16.3-95 48.3-131.7-20.4-60.5 1.9-112.3 4.9-120 58.1-5.2 118.5 41.6 123.2 45.3 33-8.9 70.7-13.6 112.9-13.6 42.4 0 80.2 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.3-43.9 2.9 7.7 24.7 58.3 5.5 118 32.4 36.8 48.9 82.7 48.9 132.3 0 102.2-59 188.1-200 212.9 23.5 23.2 38.1 55.4 38.1 91v112.5c0.8 9 0 17.9 15 17.9 177.1-59.7 304.6-227 304.6-424.1 0-247.2-200.4-447.3-447.5-447.3z"
+              ></path>
+            </svg>
+          </a>
+          <a
+            href="https://discord.com/invite/96tKt5exaE"
+            rel="noopener noreferrer"
+            target="_blank"
+            className="hover:text-accent-foreground grid place-content-center transition-colors duration-200"
+          >
+            <svg viewBox="0 0 1280 1024" className="aspect-square w-6">
+              <title>Discord</title>
+              <path
+                fill="currentColor"
+                d="M1049.062 139.672a3 3 0 0 0-1.528-1.4A970.13 970.13 0 0 0 808.162 64.06a3.632 3.632 0 0 0-3.846 1.82 674.922 674.922 0 0 0-29.8 61.2 895.696 895.696 0 0 0-268.852 0 619.082 619.082 0 0 0-30.27-61.2 3.78 3.78 0 0 0-3.848-1.82 967.378 967.378 0 0 0-239.376 74.214 3.424 3.424 0 0 0-1.576 1.352C78.136 367.302 36.372 589.38 56.86 808.708a4.032 4.032 0 0 0 1.53 2.75 975.332 975.332 0 0 0 293.65 148.378 3.8 3.8 0 0 0 4.126-1.352A696.4 696.4 0 0 0 416.24 860.8a3.72 3.72 0 0 0-2.038-5.176 642.346 642.346 0 0 1-91.736-43.706 3.77 3.77 0 0 1-0.37-6.252 502.094 502.094 0 0 0 18.218-14.274 3.638 3.638 0 0 1 3.8-0.512c192.458 87.834 400.82 87.834 591 0a3.624 3.624 0 0 1 3.848 0.466 469.066 469.066 0 0 0 18.264 14.32 3.768 3.768 0 0 1-0.324 6.252 602.814 602.814 0 0 1-91.78 43.66 3.75 3.75 0 0 0-2 5.222 782.11 782.11 0 0 0 60.028 97.63 3.728 3.728 0 0 0 4.126 1.4A972.096 972.096 0 0 0 1221.4 811.458a3.764 3.764 0 0 0 1.53-2.704c24.528-253.566-41.064-473.824-173.868-669.082zM444.982 675.16c-57.944 0-105.688-53.174-105.688-118.478s46.818-118.482 105.688-118.482c59.33 0 106.612 53.64 105.686 118.478 0 65.308-46.82 118.482-105.686 118.482z m390.76 0c-57.942 0-105.686-53.174-105.686-118.478s46.818-118.482 105.686-118.482c59.334 0 106.614 53.64 105.688 118.478 0 65.308-46.354 118.482-105.688 118.482z"
+              ></path>
+            </svg>
+          </a>
+        </nav>
       </div>
     </footer>
   )

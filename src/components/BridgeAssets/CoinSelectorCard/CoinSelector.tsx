@@ -20,7 +20,9 @@ export default function CoinSelector() {
   const { contextHolder: starcoinContextHolder, getBalance: getStarcoinBalance } = useStarcoinTools()
 
   const items = useMemo(() => {
-    return Object.values(mappings).filter(item => item.walletType === fromWalletType && item.name !== currentCoin.name)
+    return Object.values(mappings)
+      .filter((item): item is CoinItem => !!item)
+      .filter(item => item.walletType === fromWalletType && item.name !== currentCoin.name)
   }, [mappings, fromWalletType, currentCoin.name])
 
   const switchCoin = useCallback(
@@ -45,7 +47,7 @@ export default function CoinSelector() {
 
   if (!items.length) {
     return (
-      <div className="ms-3 flex items-center gap-2 rounded-full px-3 py-2">
+      <div className="flex items-center gap-2 rounded-full px-3 py-2">
         {isPending ? <Spinner /> : <img src={currentCoin.icon} alt={currentCoin.name} width={24} height={24} />}
 
         {currentCoin.name}
@@ -56,7 +58,7 @@ export default function CoinSelector() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={isPending}>
-          <button className="ms-3 flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 hover:bg-white/10">
+          <button className="flex cursor-pointer items-center gap-2 py-2 pr-3">
             {isPending ? <Spinner /> : <img src={currentCoin.icon} alt={currentCoin.name} width={24} height={24} />}
             {currentCoin.name}
             <ChevronDown size={20} color="#ccc" />

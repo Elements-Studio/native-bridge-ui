@@ -48,7 +48,10 @@ export default function StarMask({ className, onError, onDialogOk, onChange }: S
         href="https://chromewebstore.google.com/detail/starmask/kmheclfnfmpacglnpegeohempmedhiaf"
         target="_blank"
         rel="noreferrer noopener"
-        className={cn('flex items-center space-x-4 rounded-md border p-2 disabled:cursor-not-allowed disabled:opacity-60', className)}
+        className={cn(
+          'bg-accent/40 hover:bg-accent/30 hover:text-primary-foreground flex items-center space-x-4 rounded-md p-2 backdrop-blur-md transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
+          className,
+        )}
       >
         <img width={34} height={34} src={starmaskLogo} alt="StarMask Logo" className="grayscale" />
         <span>StarMask</span>
@@ -62,7 +65,7 @@ export default function StarMask({ className, onError, onDialogOk, onChange }: S
       onClick={handleClick}
       disabled={connecting}
       className={cn(
-        'flex items-center space-x-4 rounded-md border p-2 hover:border-gray-300 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60',
+        'bg-accent/40 hover:bg-accent/30 hover:text-primary-foreground flex items-center space-x-4 rounded-md p-2 backdrop-blur-md transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
         className,
       )}
     >
