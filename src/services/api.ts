@@ -2,7 +2,7 @@ import axios, { AxiosError, type AxiosInstance } from 'axios'
 import idmp from 'idmp'
 import { parse, stringify } from 'json-web3'
 import { sampleSize } from 'lodash-es'
-import env from '../../env.production'
+import env from '../../env'
 import type {
   EstimateDirection,
   EstimateFeesResponse,
@@ -14,10 +14,7 @@ import type {
   TransferListResponse,
 } from './types'
 
-const BASE_URL = '/api'
-
 const client: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
