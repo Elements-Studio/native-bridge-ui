@@ -2,6 +2,7 @@ import axios, { AxiosError, type AxiosInstance } from 'axios'
 import idmp from 'idmp'
 import { parse, stringify } from 'json-web3'
 import { sampleSize } from 'lodash-es'
+import env from '../../env.production'
 import type {
   EstimateDirection,
   EstimateFeesResponse,
@@ -50,7 +51,7 @@ type CommitteesResponse = {
 
 async function getCommittees(): Promise<CommitteesResponse> {
   return {
-    signs: ['https://localhost:5173/api0/sign', 'https://localhost:5173/api1/sign', 'https://localhost:5173/api2/sign'],
+    signs: env.apis.committees.signs,
   }
 }
 
@@ -74,7 +75,7 @@ export async function getHealth(): Promise<HealthResponse> {
 
 export async function getTransferDetail(chainId: number, nonce: number): Promise<TransferDetailResponse> {
   try {
-    const response = await client.get<TransferDetailResponse>(`/transfers/${chainId}/${nonce}`)
+    const response = await client.get<TransferDetailResponse>(`${env.apis['/transfers']}/${chainId}/${nonce}`)
     return response.data
   } catch (error) {
     return handleError(error as AxiosError)
@@ -85,7 +86,7 @@ export async function getTransferDetail(chainId: number, nonce: number): Promise
 
 export async function getTransferList(params: TransferListParams): Promise<TransferListResponse> {
   try {
-    const response = await client.get<TransferListResponse>('/transfers', { params })
+    const response = await client.get<TransferListResponse>(env.apis['/transfers'], { params })
     return response.data
   } catch (error) {
     return handleError(error as AxiosError)
@@ -112,7 +113,7 @@ export async function getQuota(): Promise<QuotaResponse> {
 
 async function _getEstimateFees(direction: EstimateDirection): Promise<EstimateFeesResponse> {
   try {
-    const response = await client.get<EstimateFeesResponse>('/estimate_fees', { params: { direction } })
+    const response = await client.get<EstimateFeesResponse>(env.apis['/estimate_fees'], { params: { direction } })
     return response.data
   } catch (error) {
     return handleError(error as AxiosError)
