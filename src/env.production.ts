@@ -33,6 +33,15 @@ export default {
       ca: '0xcb5801ab1287f73364b2889a58360e00::USDT::USDT',
     },
 
+    anvilUSDT: {
+      icon: usdtIcon,
+      name: 'anvilUSDT',
+      walletType: 'EVM',
+      network: { name: 'anvil', chainId: '0x7a69' },
+      gas: 'ETH',
+      ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+    },
+
     SepoliaETH: {
       icon: sepoliaEthIcon,
       name: 'SepoliaETH',
@@ -41,6 +50,7 @@ export default {
       gas: 'SepoliaETH',
       ca: null,
     },
+
     SepoliaUSDT: {
       icon: sepoliaUsdtIcon,
       name: 'SepoliaUSDT',
