@@ -1,5 +1,3 @@
-import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
-import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 
 export default {
@@ -33,51 +31,33 @@ export default {
       ca: '0xcb5801ab1287f73364b2889a58360e00::USDT::USDT',
     },
 
-    anvilUSDT: {
+    AnvilUSDT: {
       icon: usdtIcon,
-      name: 'anvilUSDT',
+      name: 'AnvilUSDT',
       walletType: 'EVM',
       network: { name: 'anvil', chainId: '0x7a69' },
-      gas: 'ETH',
+      gas: 'AnvilETH',
       ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
     },
 
-    SepoliaETH: {
-      icon: sepoliaEthIcon,
-      name: 'SepoliaETH',
-      walletType: 'EVM',
-      network: { name: 'sepolia', chainId: '0xaa36a7' },
-      gas: 'SepoliaETH',
-      ca: null,
-    },
-
-    SepoliaUSDT: {
-      icon: sepoliaUsdtIcon,
-      name: 'SepoliaUSDT',
-      walletType: 'EVM',
-      network: { name: 'sepolia', chainId: '0xaa36a7' },
-      gas: 'SepoliaETH',
-      ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
-    },
-  },
-
-  bridge: {
-    evm: {
-      chainIdHex: '0x7a69',
-      // chainIdHex: '0xc', // 本地测试
-      chainId: 12,
-      bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
-      destinationChainId: 2, // 本地测试
-    },
-    starcoin: {
-      // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
-      packageAddress: '0xcb5801ab1287f73364b2889a58360e00', // 本地
-      chainId: 2,
-    },
-    tokens: {
-      AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
-      SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
-      StarUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt', sendFunction: 'send_bridge_usdt', decimals: 6 },
+    bridge: {
+      evm: {
+        chainIdHex: '0x7a69',
+        // chainIdHex: '0xc', // 本地测试
+        chainId: 12,
+        bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
+        destinationChainId: 2, // 本地测试
+      },
+      starcoin: {
+        // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
+        packageAddress: '0xcb5801ab1287f73364b2889a58360e00', // 本地
+        chainId: 2,
+      },
+      tokens: {
+        AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
+        SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
+        StarUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt', sendFunction: 'send_bridge_usdt', decimals: 6 },
+      },
     },
   },
 }
