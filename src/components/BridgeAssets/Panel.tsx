@@ -101,7 +101,7 @@ export default function BridgeAssetPanel() {
 
         await mm.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: BRIDGE_CONFIG.evm.chainIdHex }],
+          params: [{ chainId: currentCoin.network.chainId }],
         })
 
         const provider = new BrowserProvider(mm)

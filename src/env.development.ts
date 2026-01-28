@@ -59,6 +59,7 @@ export default {
       ca: null,
     },
     AnvilUSDT: {
+      isDefault: true,
       icon: usdtIcon,
       name: 'AnvilUSDT',
       walletType: 'EVM',
@@ -74,14 +75,15 @@ export default {
       gas: 'ETH',
       ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
     },
-    STC: {
-      icon: usdtIcon,
-      name: 'STC',
-      walletType: 'STARCOIN',
-      network: { name: 'devnet', chainId: '0x1' },
-      gas: 'STC',
-    },
+    // STC: {
+    //   icon: usdtIcon,
+    //   name: 'STC',
+    //   walletType: 'STARCOIN',
+    //   network: { name: 'devnet', chainId: '0x1' },
+    //   gas: 'STC',
+    // },
     StarUSDT: {
+      isDefault: true,
       icon: usdtIcon,
       name: 'StarUSDT',
       walletType: 'STARCOIN',

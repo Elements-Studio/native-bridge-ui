@@ -9,7 +9,8 @@ import { Spinner } from '@/components/ui/spinner'
 import useEvmTools from '@/hooks/useEvmTools'
 import useStarcoinTools from '@/hooks/useStarcoinTools'
 import { connectMetaMask } from '@/lib/evmProvider'
-import { useGlobalStore, type CoinItem } from '@/stores/globalStore'
+import { useGlobalStore } from '@/stores/globalStore'
+import type { CoinItem } from '@/types/domain'
 import { ChevronDown } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -47,7 +48,7 @@ export default function CoinSelector() {
 
   if (!items.length) {
     return (
-      <div className="flex items-center gap-2 rounded-full px-3 py-2">
+      <div className="flex items-center gap-2 rounded-full py-2">
         {isPending ? <Spinner /> : <img src={currentCoin.icon} alt={currentCoin.name} width={24} height={24} />}
 
         {currentCoin.name}
