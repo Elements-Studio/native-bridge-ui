@@ -217,7 +217,7 @@ export default function BridgeAssetPanel() {
           Bridge assets
         </Button>
         {bridgeStatus ? <div className="text-xs text-[#abbdcc]">{bridgeStatus}</div> : null}
-        {bridgeError ? <div className="text-xs text-red-300">{bridgeError}</div> : null}
+        {bridgeError ? <div className="text-xs wrap-break-word break-all text-red-300">{bridgeError}</div> : null}
       </div>
     </div>
   )
