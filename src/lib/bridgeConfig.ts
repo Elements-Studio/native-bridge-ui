@@ -10,7 +10,7 @@ export const BRIDGE_CONFIG = {
   },
   starcoin: {
     // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
-    packageAddress: '0x9601de11320713ac003a6e41ab8b7dae', // 本地
+    packageAddress: '0xcb5801ab1287f73364b2889a58360e00', // 本地
     chainId: 2,
   },
   tokens: {
