@@ -32,7 +32,7 @@ const defaults = freeze(
     mappings,
     fromWalletType: 'EVM' as WalletType,
     toWalletType: 'STARCOIN' as WalletType,
-    currentCoin: process.env.NODE_ENV === 'development' ? mappings.AnvilUSDT! : mappings.USDT!,
+    currentCoin: Object.values(mappings).find(coin => coin?.isDefault)!,
     evmWalletInfo: null,
     starcoinWalletInfo: null,
     inputBalance: '',
