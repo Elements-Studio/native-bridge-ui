@@ -41,7 +41,7 @@ export default {
       chainIdHex: '0x7a69',
       // chainIdHex: '0xc', // 本地测试
       chainId: 12,
-      bridgeAddress: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+      bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
       destinationChainId: 2, // 本地测试
     },
     starcoin: {
