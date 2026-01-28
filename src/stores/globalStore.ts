@@ -113,8 +113,7 @@ const mappings: Record<CoinsName, CoinItem | undefined> = {
     walletType: 'STARCOIN',
     network: { name: 'devnet', chainId: '0x1' },
     gas: 'STC',
-    ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
-    // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
+    ca: '0xcb5801ab1287f73364b2889a58360e00::USDT::USDT',
   },
 }
 
