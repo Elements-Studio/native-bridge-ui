@@ -35,4 +35,24 @@ export default {
       // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
     },
   },
+
+  bridge: {
+    evm: {
+      chainIdHex: '0x7a69',
+      // chainIdHex: '0xc', // 本地测试
+      chainId: 12,
+      bridgeAddress: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+      destinationChainId: 2, // 本地测试
+    },
+    starcoin: {
+      // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
+      packageAddress: '0x9601de11320713ac003a6e41ab8b7dae', // 本地
+      chainId: 2,
+    },
+    tokens: {
+      AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
+      SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
+      StarUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt', sendFunction: 'send_bridge_usdt', decimals: 6 },
+    },
+  },
 }
