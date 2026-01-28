@@ -4,11 +4,9 @@ import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 import wbtcIcon from '@/assets/img/wbtc.svg'
 
-const indexerHost = 'https://bridge-indexer-monitor-dev2anvil.starswap.xyz'
-
 export default {
   apis: {
-    '/transfers': `${indexerHost}/transfers`,
+    '/transfers': `https://bridge-indexer-monitor-dev2anvil.starswap.xyz/transfers`,
     '/estimate_fees': `https://bridge-node1-dev2anvil.starswap.xyz/estimate_fees`,
     committees: {
       signs: [
@@ -37,7 +35,7 @@ export default {
       walletType: 'EVM',
       network: { name: 'mainnet', chainId: '0x1' },
       gas: 'ETH',
-      ca: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
     },
     SepoliaETH:
       process.env.NODE_ENV === 'development'
