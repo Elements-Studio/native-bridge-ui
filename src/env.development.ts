@@ -4,18 +4,17 @@ import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 import wbtcIcon from '@/assets/img/wbtc.svg'
 
-const indexerHost = '/api'
-const signHost = 'https://bridge-sign-monitor-dev2anvil.starswap.xyz'
+const indexerHost = 'https://bridge-indexer-monitor-dev2anvil.starswap.xyz'
 
 export default {
   apis: {
     '/transfers': `${indexerHost}/transfers`,
-    '/estimate_fees': `${indexerHost}/estimate_fees`,
+    '/estimate_fees': `https://bridge-node1-dev2anvil.starswap.xyz/estimate_fees`,
     committees: {
       signs: [
-        `${signHost}/bridge-node1-dev2anvil/sign`,
-        `${signHost}/bridge-node2-dev2anvil/sign`,
-        `${signHost}/bridge-node3-dev2anvil/sign`,
+        `https://bridge-node1-dev2anvil.starswap.xyz/sign`,
+        `https://bridge-node2-dev2anvil.starswap.xyz/sign`,
+        `https://bridge-node3-dev2anvil.starswap.xyz/sign`,
       ],
     },
   },
@@ -114,8 +113,7 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'devnet', chainId: '0x1' },
       gas: 'STC',
-      ca: '0x9601de11320713ac003a6e41ab8b7dae::USDT::USDT',
-      // ca: '0x9601de11320713ac003a6e41ab8b7dae:Bridge::USDT::USDT'
+      ca: '0xcb5801ab1287f73364b2889a58360e00::USDT::USDT',
     },
   },
 
@@ -124,14 +122,11 @@ export default {
       chainIdHex: '0x7a69',
       // chainIdHex: '0xc', // 本地测试
       chainId: 12,
-      // bridgeAddress: '0x14F62f5E2Bb563Ef995964dF2053373f559E3310', // 线上
-      bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016', // 本地
-      // destinationChainId: 3, // 线上
-      destinationChainId: 2, // 本地测试
+      bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
+      destinationChainId: 2,
     },
     starcoin: {
-      // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
-      packageAddress: '0x9601de11320713ac003a6e41ab8b7dae', // 本地
+      packageAddress: '0xcb5801ab1287f73364b2889a58360e00',
       chainId: 2,
     },
     tokens: {
