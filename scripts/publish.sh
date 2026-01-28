@@ -2,16 +2,25 @@
 
 root=`pwd`
 
+/bin/rm -rf dist dist-remote
 pnpm run build
 
-cd $root/dist
-cp index.html 404.html
-git init -b gh-pages
-git remote add origin git@github.com:Elements-Studio/native-bridge-ui.git
+
+git clone --depth 1 --branch gh-pages git@github.com:Elements-Studio/native-bridge-ui.git $root/dist-remote
+cd $root/dist-remote
+/bin/rm -rf * 
+
+cd $root
+cp -r dist/* dist-remote/
+
+
+cd $root/dist-remote
+
 git config commit.gpgsign false
+cp index.html 404.html
 git add .
-git stash
-git pull origin gh-pages || true
-git stash pop || true
-git commit -m "Deploy to GitHub Pages"
-git push  --force --set-upstream origin gh-pages
+git commit -m "Deploy to GitHub Pages - $(date +"%Y-%m-%d %H:%M:%S")"
+git push --set-upstream origin gh-pages
+
+cd $root
+/bin/rm -rf dist dist-remote
