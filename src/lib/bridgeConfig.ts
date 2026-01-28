@@ -1,24 +1,5 @@
-export const BRIDGE_CONFIG = {
-  evm: {
-    chainIdHex: '0x7a69',
-    // chainIdHex: '0xc', // 本地测试
-    chainId: 12,
-    // bridgeAddress: '0x14F62f5E2Bb563Ef995964dF2053373f559E3310', // 线上
-    bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016', // 本地
-    // destinationChainId: 3, // 线上
-    destinationChainId: 2, // 本地测试
-  },
-  starcoin: {
-    // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
-    packageAddress: '0xcb5801ab1287f73364b2889a58360e00', // 本地
-    chainId: 2,
-  },
-  tokens: {
-    AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
-    SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
-    StarUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt', sendFunction: 'send_bridge_usdt', decimals: 6 },
-  },
-}
+import env from '@/env'
+export const BRIDGE_CONFIG = env.bridge
 
 export const BRIDGE_ABI = [
   'function bridgeERC20(uint8 tokenID, uint256 amount, bytes recipientAddress, uint8 destinationChainID)',
