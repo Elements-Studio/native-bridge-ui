@@ -41,6 +41,26 @@ export default function CoinSelectorCard() {
     fetchBalance()
   }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getEvmBalance, getStarcoinBalance])
 
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value
+      if (value === '') {
+        setInputBalance('')
+        return
+      }
+      const numValue = Number(value)
+      const maxBalance = Number(totalBalance) || 0
+      if (numValue < 0) {
+        return
+      }
+      if (numValue > maxBalance - 5) {
+        return
+      }
+      setInputBalance(value)
+    },
+    [totalBalance, setInputBalance],
+  )
+
   const setMax = useCallback(async () => {
     console.info('[CoinSelectorCard] setMax', { currentCoin })
     const result =
@@ -74,7 +94,7 @@ export default function CoinSelectorCard() {
         className="h-10 w-full [appearance:textfield] bg-transparent font-mono text-4xl ring-0 outline-none focus-visible:ring-0 focus-visible:outline-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
         placeholder="0.00"
         value={inputBalance}
-        onChange={e => setInputBalance(e.target.value)}
+        onChange={handleInputChange}
         type="number"
       />
 

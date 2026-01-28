@@ -1,8 +1,8 @@
+import env from '@/env'
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 import idmp from 'idmp'
 import { parse, stringify } from 'json-web3'
 import { sampleSize } from 'lodash-es'
-import env from '../../env'
 import type {
   EstimateDirection,
   EstimateFeesResponse,
@@ -128,14 +128,13 @@ async function _getStarcoinToEthSignature(
   txHash: string,
   eventIndex: number,
   _validatorIndex: number,
-  signBaseUrl?: string,
+  signBaseUrl: string,
 ): Promise<SignatureResponse> {
   try {
     const cleanHash = txHash.replace(/^0x/, '')
-    const url = signBaseUrl
-      ? `${signBaseUrl}/bridge_tx/starcoin/eth/${cleanHash}/${eventIndex}`
-      : `/sign/bridge_tx/starcoin/eth/${cleanHash}/${eventIndex}`
-    const response = await (signBaseUrl ? axios.get<SignatureResponse>(url) : client.get<SignatureResponse>(url))
+    const url = `${signBaseUrl}/bridge_tx/starcoin/eth/${cleanHash}/${eventIndex}`
+
+    const response = await axios.get<SignatureResponse>(url)
     return response.data
   } catch (error) {
     return handleError(error as AxiosError)
@@ -146,7 +145,7 @@ export async function getStarcoinToEthSignature(
   txHash: string,
   eventIndex = 0,
   validatorIndex = 0,
-  signBaseUrl?: string,
+  signBaseUrl: string,
 ): Promise<SignatureResponse> {
   const key = `starcoin_to_eth_signature: ${stringify({ txHash, eventIndex, validatorIndex, signBaseUrl })}`
   return idmp(key, () => _getStarcoinToEthSignature(txHash, eventIndex, validatorIndex, signBaseUrl), { maxRetry: 2 })
@@ -156,13 +155,11 @@ async function _getEthToStarcoinSignature(
   txHash: string,
   eventIndex: number,
   _validatorIndex: number,
-  signBaseUrl?: string,
+  signBaseUrl: string,
 ): Promise<SignatureResponse> {
   try {
     const cleanHash = txHash.replace(/^0x/, '')
-    const url = signBaseUrl
-      ? `${signBaseUrl}/bridge_tx/eth/starcoin/${cleanHash}/${eventIndex}`
-      : `/sign/bridge_tx/eth/starcoin/${cleanHash}/${eventIndex}`
+    const url = `${signBaseUrl}/bridge_tx/eth/starcoin/${cleanHash}/${eventIndex}`
     const response = await (signBaseUrl ? axios.get<SignatureResponse>(url) : client.get<SignatureResponse>(url))
     return response.data
   } catch (error) {
@@ -174,7 +171,7 @@ export async function getEthToStarcoinSignature(
   txHash: string,
   eventIndex = 0,
   validatorIndex = 0,
-  signBaseUrl?: string,
+  signBaseUrl: string,
 ): Promise<SignatureResponse> {
   const key = `eth_to_starcoin_signature: ${stringify({ txHash, eventIndex, validatorIndex, signBaseUrl })}`
   return idmp(key, () => _getEthToStarcoinSignature(txHash, eventIndex, validatorIndex, signBaseUrl), { maxRetry: 2 })
