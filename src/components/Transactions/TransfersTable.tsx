@@ -68,7 +68,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
               </TableRow>
             ) : (
               data.map(item => (
-                <TableRow key={`${item.chain_id}-${item.nonce}`}>
+                <TableRow key={`${item.chain_id}-${item.nonce}-${item.sender_address}`}>
                   <TableCell>{item.nonce}</TableCell>
                   <TableCell>{item.chain_id}</TableCell>
                   <TableCell>
