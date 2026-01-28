@@ -1,3 +1,5 @@
+import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
+import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 
 export default {
@@ -29,6 +31,23 @@ export default {
       network: { name: 'devnet', chainId: '0x1' },
       gas: 'STC',
       ca: '0xcb5801ab1287f73364b2889a58360e00::USDT::USDT',
+    },
+
+    SepoliaETH: {
+      icon: sepoliaEthIcon,
+      name: 'SepoliaETH',
+      walletType: 'EVM',
+      network: { name: 'sepolia', chainId: '0xaa36a7' },
+      gas: 'SepoliaETH',
+      ca: null,
+    },
+    SepoliaUSDT: {
+      icon: sepoliaUsdtIcon,
+      name: 'SepoliaUSDT',
+      walletType: 'EVM',
+      network: { name: 'sepolia', chainId: '0xaa36a7' },
+      gas: 'SepoliaETH',
+      ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
     },
   },
 
