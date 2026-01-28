@@ -2,6 +2,7 @@ import walletIcon from '@/assets/img/wallet.svg'
 import { Spinner } from '@/components/ui/spinner'
 import useEvmTools from '@/hooks/useEvmTools'
 import useStarcoinTools from '@/hooks/useStarcoinTools'
+import { getMetaMask } from '@/lib/evmProvider'
 import { toFixedWithoutRounding } from '@/lib/format'
 import { useGlobalStore } from '@/stores/globalStore'
 import { useCallback, useEffect, useState } from 'react'
@@ -15,6 +16,26 @@ export default function CoinSelectorCard() {
   const [totalBalance, setTotalBalance] = useState<string>('')
 
   useEffect(() => {
+    if (currentCoin?.walletType !== 'EVM') return
+    if (!evmWalletInfo?.address) return
+    if (evmWalletInfo.network.chainId === currentCoin.network.chainId) return
+
+    const switchNetwork = async () => {
+      try {
+        const mm = await getMetaMask()
+        if (!mm) return
+        await mm.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: currentCoin.network.chainId }],
+        })
+      } catch (err) {
+        console.error('Failed to switch EVM network', err)
+      }
+    }
+    switchNetwork()
+  }, [currentCoin, evmWalletInfo])
+
+  useEffect(() => {
     if (!currentCoin) return
 
     if (currentCoin.walletType === 'EVM' && !evmWalletInfo) return
@@ -22,21 +43,26 @@ export default function CoinSelectorCard() {
     if (currentCoin.walletType === 'STARCOIN' && !starcoinWalletInfo) return
 
     const fetchBalance = async () => {
-      setTotalBalance('')
-      setIsPending(true)
-      console.info('[CoinSelectorCard] fetchBalance', { currentCoin })
-      const result =
-        currentCoin.walletType === 'STARCOIN'
-          ? await getStarcoinBalance(currentCoin.network.chainId, currentCoin.ca)
-          : await getEvmBalance(currentCoin.network.chainId, currentCoin.ca)
-      const balance = result?.balance
-      if (balance) {
-        console.log(11111, balance)
-        setTotalBalance(balance)
-      } else {
+      try {
         setTotalBalance('')
+        setIsPending(true)
+        console.info('[CoinSelectorCard] fetchBalance', { currentCoin })
+        const result =
+          currentCoin.walletType === 'STARCOIN'
+            ? await getStarcoinBalance(currentCoin.network.chainId, currentCoin.ca)
+            : await getEvmBalance(currentCoin.network.chainId, currentCoin.ca)
+        const balance = result?.balance
+        if (balance) {
+          setTotalBalance(balance)
+        } else {
+          setTotalBalance('')
+        }
+      } catch (err) {
+        console.error('Failed to fetch balance', err)
+        setTotalBalance('')
+      } finally {
+        setIsPending(false)
       }
-      setIsPending(false)
     }
     fetchBalance()
   }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getEvmBalance, getStarcoinBalance])

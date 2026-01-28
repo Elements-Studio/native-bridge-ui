@@ -21,7 +21,7 @@ export default {
       walletType: 'EVM',
       network: { name: 'mainnet', chainId: '0x1' },
       gas: 'ETH',
-      ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+      ca: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
     },
 
     StarUSDT: {
