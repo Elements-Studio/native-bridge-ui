@@ -1,4 +1,5 @@
 import usdtIcon from '@/assets/img/usdt.svg'
+import type { Coins } from './types/domain'
 
 export default {
   apis: {
@@ -14,6 +15,7 @@ export default {
   },
   coins: {
     USDT: {
+      isDefault: true,
       icon: usdtIcon,
       name: 'USDT',
       walletType: 'EVM',
@@ -23,6 +25,7 @@ export default {
     },
 
     StarUSDT: {
+      isDefault: true,
       icon: usdtIcon,
       name: 'StarUSDT',
       walletType: 'STARCOIN',
@@ -39,7 +42,7 @@ export default {
       gas: 'AnvilETH',
       ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
     },
-  },
+  } as Coins,
 
   bridge: {
     evm: {

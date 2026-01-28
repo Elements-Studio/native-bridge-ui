@@ -1,24 +1,12 @@
 import env from '@/env'
-import type { WalletInfo, WalletType } from '@/types/domain'
+import type { CoinItem, Coins, WalletInfo, WalletType } from '@/types/domain'
 import { freeze } from 'immer'
 import { create } from 'zustand'
 
-type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT' | 'StarUSDT' | 'AnvilUSDT' | 'AnvilETH' | 'STC'
-export type CoinItem = {
-  icon: string
-  name: CoinsName
-  walletType: WalletType
-  network: {
-    name: 'mainnet' | 'sepolia' | 'anvil' | 'devnet'
-    chainId: string // '0x1' | '0xfb' | '0x6a'
-  }
-  gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH'
-  ca?: string | null
-}
-const mappings: Record<CoinsName, CoinItem | undefined> = env.coins as any
+const mappings = env.coins
 
 interface GlobalState {
-  mappings: typeof mappings
+  mappings: Coins
 
   fromWalletType: WalletType
   setFromWalletType: (walletType: WalletType) => void
