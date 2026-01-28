@@ -18,17 +18,14 @@ export default {
   },
 
   coins: {
-    ETH:
-      process.env.NODE_ENV === 'development'
-        ? {
-            icon: ethIcon,
-            name: 'ETH',
-            walletType: 'EVM',
-            network: { name: 'mainnet', chainId: '0x1' },
-            gas: 'ETH',
-            ca: null,
-          }
-        : undefined,
+    ETH: {
+      icon: ethIcon,
+      name: 'ETH',
+      walletType: 'EVM',
+      network: { name: 'mainnet', chainId: '0x1' },
+      gas: 'ETH',
+      ca: null,
+    },
     USDT: {
       icon: usdtIcon,
       name: 'USDT',
@@ -37,74 +34,53 @@ export default {
       gas: 'ETH',
       ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
     },
-    SepoliaETH:
-      process.env.NODE_ENV === 'development'
-        ? {
-            icon: sepoliaEthIcon,
-            name: 'SepoliaETH',
-            walletType: 'EVM',
-            network: { name: 'sepolia', chainId: '0xaa36a7' },
-            gas: 'SepoliaETH',
-            ca: null,
-          }
-        : undefined,
-    SepoliaUSDT:
-      process.env.NODE_ENV === 'development'
-        ? {
-            icon: sepoliaUsdtIcon,
-            name: 'SepoliaUSDT',
-            walletType: 'EVM',
-            network: { name: 'sepolia', chainId: '0xaa36a7' },
-            gas: 'SepoliaETH',
-            ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
-          }
-        : undefined,
-    AnvilETH:
-      process.env.NODE_ENV === 'development'
-        ? {
-            icon: ethIcon,
-            name: 'AnvilETH',
-            walletType: 'EVM',
-            network: { name: 'anvil', chainId: '0x7a69' },
-            gas: 'AnvilETH',
-            ca: null,
-          }
-        : undefined,
-    AnvilUSDT:
-      process.env.NODE_ENV === 'development'
-        ? {
-            icon: usdtIcon,
-            name: 'AnvilUSDT',
-            walletType: 'EVM',
-            network: { name: 'anvil', chainId: '0x7a69' },
-            gas: 'AnvilETH',
-            ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
-          }
-        : undefined,
-
-    WBTC:
-      process.env.NODE_ENV === 'development'
-        ? {
-            icon: wbtcIcon,
-            name: 'WBTC',
-            walletType: 'EVM',
-            network: { name: 'mainnet', chainId: '0x1' },
-            gas: 'ETH',
-            ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
-          }
-        : undefined,
-
-    STC:
-      process.env.NODE_ENV === 'development'
-        ? {
-            icon: usdtIcon,
-            name: 'STC',
-            walletType: 'STARCOIN',
-            network: { name: 'devnet', chainId: '0x1' },
-            gas: 'STC',
-          }
-        : undefined,
-
+    SepoliaETH: {
+      icon: sepoliaEthIcon,
+      name: 'SepoliaETH',
+      walletType: 'EVM',
+      network: { name: 'sepolia', chainId: '0xaa36a7' },
+      gas: 'SepoliaETH',
+      ca: null,
+    },
+    SepoliaUSDT: {
+      icon: sepoliaUsdtIcon,
+      name: 'SepoliaUSDT',
+      walletType: 'EVM',
+      network: { name: 'sepolia', chainId: '0xaa36a7' },
+      gas: 'SepoliaETH',
+      ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
+    },
+    AnvilETH: {
+      icon: ethIcon,
+      name: 'AnvilETH',
+      walletType: 'EVM',
+      network: { name: 'anvil', chainId: '0x7a69' },
+      gas: 'AnvilETH',
+      ca: null,
+    },
+    AnvilUSDT: {
+      icon: usdtIcon,
+      name: 'AnvilUSDT',
+      walletType: 'EVM',
+      network: { name: 'anvil', chainId: '0x7a69' },
+      gas: 'AnvilETH',
+      ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+    },
+    WBTC: {
+      icon: wbtcIcon,
+      name: 'WBTC',
+      walletType: 'EVM',
+      network: { name: 'mainnet', chainId: '0x1' },
+      gas: 'ETH',
+      ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+    },
+    STC: {
+      icon: usdtIcon,
+      name: 'STC',
+      walletType: 'STARCOIN',
+      network: { name: 'devnet', chainId: '0x1' },
+      gas: 'STC',
+    },
     StarUSDT: {
       icon: usdtIcon,
       name: 'StarUSDT',
