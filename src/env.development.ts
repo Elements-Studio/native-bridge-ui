@@ -3,6 +3,7 @@ import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
 import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 import wbtcIcon from '@/assets/img/wbtc.svg'
+
 const indexerHost = '/api'
 
 export default {

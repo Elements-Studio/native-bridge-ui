@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { Pagination, TransferListItem } from '@/services/types'
+import clsx from 'clsx'
 import { Link } from 'react-router-dom'
 
 interface TransfersTableProps {
@@ -72,7 +73,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
                   <TableCell>{item.nonce}</TableCell>
                   <TableCell>{item.chain_id}</TableCell>
                   <TableCell>
-                    <span className={`inline-block rounded px-2 py-1 text-xs font-medium ${getStatusColor(item.status)}`}>
+                    <span className={clsx(`inline-block rounded px-2 py-1 text-xs font-medium`, getStatusColor(item.status))}>
                       {item.status}
                     </span>
                   </TableCell>
