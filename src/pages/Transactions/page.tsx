@@ -24,7 +24,13 @@ export default function TransactionsPage() {
     evmWalletInfo?.address ? ['getTransferList-evm', evmWalletInfo.address, evmPage] : null,
     () => {
       const address = evmWalletInfo?.address
-      if (!address) return Promise.resolve({ transfers: [], pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 0 } })
+      if (!address) {
+        return Promise.resolve({
+          transfers: [],
+          pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 0 },
+          claim_delay_seconds: 0,
+        })
+      }
       return getTransferList({
         address,
         page: evmPage,
@@ -38,7 +44,13 @@ export default function TransactionsPage() {
     starcoinWalletInfo?.address ? ['getTransferList-starcoin', starcoinWalletInfo.address, starcoinPage] : null,
     () => {
       const address = starcoinWalletInfo?.address
-      if (!address) return Promise.resolve({ transfers: [], pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 0 } })
+      if (!address) {
+        return Promise.resolve({
+          transfers: [],
+          pagination: { page: 1, page_size: 20, total_count: 0, total_pages: 0 },
+          claim_delay_seconds: 0,
+        })
+      }
       return getTransferList({
         address,
         page: starcoinPage,

@@ -17,6 +17,35 @@ export interface StatusHistoryItem {
   data_source: DataSource
 }
 
+export interface DepositInfo {
+  txn_hash: string
+  block_height: number
+  timestamp_ms: number
+  sender_address: string
+  recipient_address: string
+  token_id: number
+  amount: number
+  is_finalized: boolean
+}
+
+export interface ApprovalInfo {
+  txn_hash: string
+  block_height: number
+  timestamp_ms: number
+  data_source: DataSource
+  is_finalized: boolean
+}
+
+export interface ClaimInfo {
+  txn_hash: string
+  block_height: number
+  timestamp_ms: number
+  claimer_address: string
+  gas_usage: number
+  data_source: DataSource
+  is_finalized: boolean
+}
+
 export interface Transfer {
   chain_id: ChainId
   nonce: number
@@ -32,7 +61,16 @@ export interface Transfer {
   status_history?: StatusHistoryItem[]
 }
 
-export type TransferListItem = Omit<Transfer, 'transfer_data' | 'status_history' | 'gas_usage'>
+export interface TransferListItem {
+  source_chain_id: ChainId
+  destination_chain_id: ChainId
+  nonce: number
+  current_status: TransferStatus
+  is_complete: boolean
+  deposit: DepositInfo | null
+  approval: ApprovalInfo | null
+  claim: ClaimInfo | null
+}
 
 export interface Pagination {
   page: number

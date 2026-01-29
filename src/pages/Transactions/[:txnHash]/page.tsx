@@ -178,11 +178,24 @@ export default function TransactionsDetailPage() {
                 claimDelay = list.claim_delay_seconds
                 setClaimDelaySeconds(list.claim_delay_seconds)
               }
-              const matched = list.transfers.find(t => normalizeHash(t.txn_hash ?? '') === normalizedTxHash)
+              console.log('[Bridge] Looking for txHash:', normalizedTxHash)
+              console.log(
+                '[Bridge] Available transfers:',
+                list.transfers.map(t => ({
+                  txn_hash: t.deposit?.txn_hash,
+                  normalized: normalizeHash(t.deposit?.txn_hash ?? ''),
+                  is_finalized: t.deposit?.is_finalized,
+                  deposit: t.deposit,
+                })),
+              )
+              const matched = list.transfers.find(t => normalizeHash(t.deposit?.txn_hash ?? '') === normalizedTxHash)
+              console.log('[Bridge] Matched:', matched)
+              console.log('[Bridge] Matched deposit:', matched?.deposit)
+              console.log('[Bridge] is_finalized:', matched?.deposit?.is_finalized)
               if (matched) {
                 nonce = Number(matched.nonce)
-                transferStatus = matched.status
-                if (matched.is_finalized) {
+                transferStatus = matched.current_status
+                if (matched.deposit?.is_finalized) {
                   isFinalized = true
                   break
                 }
@@ -199,13 +212,14 @@ export default function TransactionsDetailPage() {
 
           // 等待倒计时结束
           if (claimDelay > 0) {
-            setBridgeStatus(`Waiting for claim delay...`)
             while (claimDelay > 0) {
               if (cancelled) return
+              setClaimDelaySeconds(claimDelay)
+              setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
               await sleep(1000)
               claimDelay -= 1
-              setClaimDelaySeconds(claimDelay)
             }
+            setClaimDelaySeconds(0)
           }
 
           if (nonce === null || !Number.isFinite(nonce)) {
@@ -335,11 +349,11 @@ export default function TransactionsDetailPage() {
               claimDelay = list.claim_delay_seconds
               setClaimDelaySeconds(list.claim_delay_seconds)
             }
-            const matched = list.transfers.find(t => normalizeHash(t.txn_hash ?? '') === normalizedTxHash)
+            const matched = list.transfers.find(t => normalizeHash(t.deposit?.txn_hash ?? '') === normalizedTxHash)
             if (matched) {
               nonce = Number(matched.nonce)
-              transferStatus = matched.status
-              if (matched.is_finalized) {
+              transferStatus = matched.current_status
+              if (matched.deposit?.is_finalized) {
                 isFinalized = true
                 break
               }
@@ -356,13 +370,14 @@ export default function TransactionsDetailPage() {
 
         // 等待倒计时结束
         if (claimDelay > 0) {
-          setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
           while (claimDelay > 0) {
             if (cancelled) return
+            setClaimDelaySeconds(claimDelay)
+            setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
             await sleep(1000)
             claimDelay -= 1
-            setClaimDelaySeconds(claimDelay)
           }
+          setClaimDelaySeconds(0)
         }
 
         if (nonce === null || !Number.isFinite(nonce)) {
@@ -464,7 +479,7 @@ export default function TransactionsDetailPage() {
   }, [bridgeError, bridgeStatus])
 
   const progressValue = useMemo(() => {
-    if (bridgeError) return 100
+    if (bridgeError) return 0
     if (!bridgeStatus) return 0
     if (bridgeStatus.includes('Waiting for indexer')) return 20
     if (bridgeStatus.includes('Collecting validator signatures')) return direction === 'starcoin_to_eth' ? 50 : 40

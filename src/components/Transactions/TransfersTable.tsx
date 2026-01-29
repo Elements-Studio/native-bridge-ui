@@ -25,9 +25,12 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
   }
 
   const buildTxLink = (item: TransferListItem) => {
-    const direction = item.data_source === 'STARCOIN' ? 'starcoin_to_eth' : 'eth_to_starcoin'
+    // 根据 source_chain_id 判断方向
+    const isFromStarcoin = item.source_chain_id < 10 // Starcoin chain IDs are 0, 1, 2
+    const direction = isFromStarcoin ? 'starcoin_to_eth' : 'eth_to_starcoin'
     const suffix = direction === 'starcoin_to_eth' ? '?direction=starcoin_to_eth' : ''
-    return `/transactions/${item.txn_hash}${suffix}`
+    const txnHash = item.deposit?.txn_hash ?? ''
+    return `/transactions/${txnHash}${suffix}`
   }
 
   const getStatusColor = (status: string) => {
@@ -50,44 +53,44 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
           <TableHeader>
             <TableRow>
               <TableHead>Nonce</TableHead>
-              <TableHead>Chain ID</TableHead>
+              <TableHead>From → To</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Transaction Hash</TableHead>
               <TableHead>Sender Address</TableHead>
               <TableHead>Block Height</TableHead>
               <TableHead>Time</TableHead>
-              <TableHead>Data Source</TableHead>
               <TableHead>Finalized</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-gray-500">
+                <TableCell colSpan={8} className="py-8 text-center text-gray-500">
                   {isLoading ? 'Loading...' : 'No transactions found'}
                 </TableCell>
               </TableRow>
             ) : (
               data.map(item => (
-                <TableRow key={`${item.chain_id}-${item.nonce}-${item.sender_address}`}>
+                <TableRow key={`${item.source_chain_id}-${item.nonce}-${item.deposit?.sender_address}`}>
                   <TableCell>{item.nonce}</TableCell>
-                  <TableCell>{item.chain_id}</TableCell>
                   <TableCell>
-                    <span className={clsx(`inline-block rounded px-2 py-1 text-xs font-medium`, getStatusColor(item.status))}>
-                      {item.status}
+                    {item.source_chain_id} → {item.destination_chain_id}
+                  </TableCell>
+                  <TableCell>
+                    <span className={clsx(`inline-block rounded px-2 py-1 text-xs font-medium`, getStatusColor(item.current_status))}>
+                      {item.current_status}
                     </span>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
-                    <Link target="_blank" to={buildTxLink(item)} title={item.txn_hash} className="text-blue-600 hover:underline">
-                      {formatHash(item.txn_hash)}
+                    <Link target="_blank" to={buildTxLink(item)} title={item.deposit?.txn_hash} className="text-blue-600 hover:underline">
+                      {formatHash(item.deposit?.txn_hash ?? '')}
                     </Link>
                   </TableCell>
-                  <TableCell className="font-mono text-sm">{formatAddress(item.sender_address)}</TableCell>
-                  <TableCell>{item.block_height}</TableCell>
-                  <TableCell className="text-sm">{formatTimestamp(item.timestamp_ms)}</TableCell>
-                  <TableCell>{item.data_source}</TableCell>
+                  <TableCell className="font-mono text-sm">{formatAddress(item.deposit?.sender_address ?? '')}</TableCell>
+                  <TableCell>{item.deposit?.block_height}</TableCell>
+                  <TableCell className="text-sm">{item.deposit ? formatTimestamp(item.deposit.timestamp_ms) : '-'}</TableCell>
                   <TableCell>
-                    {item.is_finalized ? <span className="text-green-600">✓</span> : <span className="text-gray-400">-</span>}
+                    {item.deposit?.is_finalized ? <span className="text-green-600">✓</span> : <span className="text-gray-400">-</span>}
                   </TableCell>
                 </TableRow>
               ))
