@@ -128,6 +128,7 @@ export default function TransactionsDetailPage() {
   const [bridgeStatus, setBridgeStatus] = useState<string | null>(null)
   const [bridgeError, setBridgeError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [claimDelaySeconds, setClaimDelaySeconds] = useState<number | null>(null)
   const startedRef = useRef<string | null>(null)
   useEffect(() => {
     if (!txnHash) return
@@ -163,6 +164,7 @@ export default function TransactionsDetailPage() {
           let transferStatus: string | null = null
           let isFinalized = false
           const normalizedTxHash = normalizeHash(txnHash)
+          let claimDelay = 0
 
           while (Date.now() - pollStart < pollTimeoutMs) {
             if (cancelled) return
@@ -172,6 +174,10 @@ export default function TransactionsDetailPage() {
                 chain_id: BRIDGE_CONFIG.evm.chainId,
                 page_size: 20,
               })
+              if (list.claim_delay_seconds != null) {
+                claimDelay = list.claim_delay_seconds
+                setClaimDelaySeconds(list.claim_delay_seconds)
+              }
               const matched = list.transfers.find(t => normalizeHash(t.txn_hash ?? '') === normalizedTxHash)
               if (matched) {
                 nonce = Number(matched.nonce)
@@ -191,12 +197,24 @@ export default function TransactionsDetailPage() {
             throw new Error('Transfer not finalized yet')
           }
 
+          // 等待倒计时结束
+          if (claimDelay > 0) {
+            setBridgeStatus(`Waiting for claim delay...`)
+            while (claimDelay > 0) {
+              if (cancelled) return
+              await sleep(1000)
+              claimDelay -= 1
+              setClaimDelaySeconds(claimDelay)
+            }
+          }
+
           if (nonce === null || !Number.isFinite(nonce)) {
             throw new Error('Indexer did not return transfer nonce')
           }
 
           if (transferStatus === null) {
             const detail = await getTransferDetail(BRIDGE_CONFIG.evm.chainId, nonce)
+
             transferStatus = detail.transfer.status
           }
 
@@ -303,6 +321,7 @@ export default function TransactionsDetailPage() {
         let transferStatus: string | null = null
         let isFinalized = false
         const normalizedTxHash = normalizeHash(txnHash)
+        let claimDelay = 0
 
         while (Date.now() - pollStart < pollTimeoutMs) {
           if (cancelled) return
@@ -312,6 +331,10 @@ export default function TransactionsDetailPage() {
               chain_id: BRIDGE_CONFIG.starcoin.chainId,
               page_size: 20,
             })
+            if (list.claim_delay_seconds != null) {
+              claimDelay = list.claim_delay_seconds
+              setClaimDelaySeconds(list.claim_delay_seconds)
+            }
             const matched = list.transfers.find(t => normalizeHash(t.txn_hash ?? '') === normalizedTxHash)
             if (matched) {
               nonce = Number(matched.nonce)
@@ -329,6 +352,17 @@ export default function TransactionsDetailPage() {
 
         if (!isFinalized) {
           throw new Error('Transfer not finalized yet')
+        }
+
+        // 等待倒计时结束
+        if (claimDelay > 0) {
+          setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
+          while (claimDelay > 0) {
+            if (cancelled) return
+            await sleep(1000)
+            claimDelay -= 1
+            setClaimDelaySeconds(claimDelay)
+          }
         }
 
         if (nonce === null || !Number.isFinite(nonce)) {
@@ -460,19 +494,27 @@ export default function TransactionsDetailPage() {
 
   const progressGridClass = direction === 'starcoin_to_eth' ? 'grid-cols-4' : 'grid-cols-5'
 
+  const formatDelayTime = (seconds: number | null): string => {
+    if (seconds === null) return 'calculating...'
+    if (seconds <= 0) return 'Ready'
+    return `${seconds} seconds`
+  }
+
   return (
     <div className="bg-secondary grid w-full p-4">
       <div className="mx-auto grid w-full max-w-300 content-start gap-4 py-6">
         <h1 className="text-2xl font-bold">Transaction Details</h1>
 
         <div className="bg-accent/20 border-accent-foreground/10 grid gap-y-5 rounded-3xl border p-7.5">
-          {txnHash ? <div className="text-secondary-foreground w-full text-xs wrap-break-word">Tx Hash: {txnHash}</div> : null}
+          {/* {txnHash ? <div className="text-secondary-foreground w-full text-xs wrap-break-word">Tx Hash: {txnHash}</div> : null} */}
           {/* 这部分根据需要调整*/}
           <div className="flex items-center justify-between">
             <div className="grid gap-1.5">
-              <div className="text-secondary-foreground text-sm uppercase">SEP 30, 2024, 12:07 PM PDT</div>
-              <div className="text-primary-foreground text-3xl font-extrabold">0.01 ETH</div>
-              <div className="text-secondary-foreground text-lg font-bold">From Ethereum to Sui</div>
+              {/* <div className="text-secondary-foreground text-sm uppercase">SEP 30, 2024, 12:07 PM PDT</div> */}
+              {/* <div className="text-primary-foreground text-3xl font-extrabold">0.01 ETH</div> */}
+              <div className="text-secondary-foreground text-lg font-bold">
+                {direction === 'eth_to_starcoin' ? 'From Ethereum to Starcoin' : 'From Starcoin to Ethereum'}
+              </div>
             </div>
             {/* 
               * 按钮三个状态：Pending, Ready to claim, Completed
@@ -525,7 +567,9 @@ export default function TransactionsDetailPage() {
               ></path>
             </svg>
             <div className="grid min-w-0 flex-1 gap-1">
-              <div className="text-primary-foreground text-lg font-bold">Ethereum may take 13 minutes or more</div>
+              <div className="text-primary-foreground text-lg font-bold">
+                {direction === 'eth_to_starcoin' ? 'Ethereum' : 'Starcoin'} may take {formatDelayTime(claimDelaySeconds)} or more
+              </div>
               {bridgeStatus ? <div className="text-accent-foreground w-full text-sm">{bridgeStatus}</div> : null}
               {bridgeError ? <div className="text-secondary-foreground w-full text-sm">{bridgeError}</div> : null}
             </div>
@@ -535,13 +579,17 @@ export default function TransactionsDetailPage() {
             {/* 左侧卡片 */}
             <div className="bg-secondary/50 grid content-start overflow-hidden rounded-xl">
               <div className="bg-accent-foreground/10 flex items-center justify-between gap-x-3 p-5">
-                <div className="text-primary-foreground text-lg font-bold wrap-break-word">Ethereum</div>
-                <img width={32} height={32} src={ethIcon} />
+                <div className="text-primary-foreground text-lg font-bold wrap-break-word">
+                  {direction === 'eth_to_starcoin' ? 'Ethereum' : 'Starcoin'}
+                </div>
+                <img width={32} height={32} src={direction === 'eth_to_starcoin' ? ethIcon : sepoliaEthIcon} />
               </div>
               <div className="grid gap-3 p-5">
                 <div className="flex items-center justify-between gap-x-3">
                   <div className="text-md text-secondary-foreground font-medium wrap-break-word">Originating wallet</div>
-                  <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">0x1689xxxB660</div>
+                  <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
+                    {direction === 'eth_to_starcoin' ? evmWalletInfo?.address : starcoinWalletInfo?.address}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between gap-x-3">
                   <div className="text-md text-secondary-foreground font-medium wrap-break-word">Gas Fee</div>
@@ -550,7 +598,7 @@ export default function TransactionsDetailPage() {
                 <div className="mt-4 flex flex-row items-center justify-around">
                   <a
                     className="font-inter text-accent-foreground hover:text-accent-foreground/80 flex items-center text-lg font-semibold uppercase transition-colors duration-200"
-                    href="https://suivision.xyz/txblock/0xd3d404a473e024b8a37ec1df93ea5a57f3d36ed96117bdeb625cdae0ff51f562"
+                    href={`https://suivision.xyz/txblock/${txnHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -576,13 +624,17 @@ export default function TransactionsDetailPage() {
             {/* 右侧卡片 */}
             <div className="bg-secondary/50 grid content-start overflow-hidden rounded-xl">
               <div className="bg-accent-foreground/10 flex items-center justify-between gap-x-3 p-5">
-                <div className="text-primary-foreground text-lg font-bold wrap-break-word">Sui</div>
-                <img width={32} height={32} src={sepoliaEthIcon} />
+                <div className="text-primary-foreground text-lg font-bold wrap-break-word">
+                  {direction === 'eth_to_starcoin' ? 'Starcoin' : 'Ethereum'}
+                </div>
+                <img width={32} height={32} src={direction === 'eth_to_starcoin' ? sepoliaEthIcon : ethIcon} />
               </div>
               <div className="grid gap-3 p-5">
                 <div className="flex items-center justify-between gap-x-3">
                   <div className="text-md text-secondary-foreground font-medium wrap-break-word">Destination wallet</div>
-                  <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">0x1689xxxB660</div>
+                  <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
+                    {direction === 'eth_to_starcoin' ? starcoinWalletInfo?.address : evmWalletInfo?.address}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between gap-x-3">
                   <div className="text-md text-secondary-foreground font-medium wrap-break-word">Gas Fee</div>
@@ -594,7 +646,7 @@ export default function TransactionsDetailPage() {
                 <div className="mt-4 hidden flex-row items-center justify-around">
                   <a
                     className="font-inter text-accent-foreground hover:text-accent-foreground/80 flex items-center text-lg font-semibold uppercase transition-colors duration-200"
-                    href="https://suivision.xyz/txblock/0xd3d404a473e024b8a37ec1df93ea5a57f3d36ed96117bdeb625cdae0ff51f562"
+                    href={`https://suivision.xyz/txblock/${txnHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -619,123 +671,6 @@ export default function TransactionsDetailPage() {
             </div>
           </div>
         </div>
-
-        {/* 以下是之前的代码，看看是否可以直接删除 */}
-        {/* Progress Bar Section */}
-        {/* <div className="w-full space-y-4 rounded-2xl bg-gray-600 p-6">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-100">{bridgeError ? 'Transaction Failed' : statusLabel}</span>
-            <span className="text-sm font-semibold text-gray-100">{progressValue}%</span>
-          </div>
-
-          <Progress value={progressValue} className={bridgeError ? 'bg-gray-600' : ''} />
-
-          <div className={`grid ${progressGridClass} gap-2 pt-2`}>
-            {progressSteps.map((step, index) => (
-              <div key={index} className="flex flex-col items-center">
-                <div
-                  className={`mb-1 h-2 w-2 rounded-full transition-colors ${
-                    progressValue >= step.value ? (bridgeError && progressValue === 100 ? 'bg-red-500' : 'bg-purple-500') : 'bg-gray-500'
-                  }`}
-                />
-                <span className="text-2xs text-center text-gray-300">{step.label}</span>
-              </div>
-            ))}
-          </div>
-        </div> */}
-
-        {/* {bridgeStatus ? <div className="w-full text-xs text-gray-200">{bridgeStatus}</div> : null}
-        {bridgeError ? <div className="w-full text-xs text-red-300">{bridgeError}</div> : null} */}
-        {/* <div className="w-full rounded-3xl bg-gray-500 backdrop-blur-xl">
-          <div className="flex flex-row items-center justify-between space-y-1.5 p-6">
-            <div className="flex flex-col gap-2">
-              <div className="flex md:hidden">
-                <div className="focus:ring-ring inline-flex items-center rounded-lg px-3 py-2 text-xs font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none">
-                  {statusLabel}
-                  {isProcessing ? <Spinner className="ms-2 h-3 w-3" /> : null}
-                </div>
-              </div>
-            </div>
-            <div className="items-center justify-center gap-4">
-              <div className="hidden items-center justify-center gap-4 md:flex">
-                <div className="focus:ring-ring inline-flex items-center rounded-lg px-3 py-2 text-xs font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none">
-                  {statusLabel}
-                  {isProcessing ? <Spinner className="ms-2 h-3 w-3" /> : null}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div data-state="open" id="radix-:r1i:">
-            <div className="">
-              <div className="flex items-center justify-center px-6 pb-6">
-                <div className="flex w-full flex-col gap-6">
-                  <div className="flex w-full flex-col justify-between gap-4 md:flex-row">
-                    <div className="flex flex-1 flex-col rounded-3xl bg-gray-400 pb-4">
-                      <div className="flex items-center justify-between gap-2 rounded-t-3xl p-4">
-                        <div className="text-sm font-medium wrap-break-word"></div>
-                        <img width={24} height={24} src={ethIcon} />
-                      </div>
-                      <div className="flex flex-col gap-2 p-4">
-                        <div className="flex flex-row items-center justify-between">
-                          <div className="text-sm font-normal wrap-break-word">Originating wallet</div>
-                          <div className="font-inter text-sm leading-4 font-normal wrap-break-word"></div>
-                        </div>
-                        <div className="flex flex-row items-center justify-between">
-                          <div className="font-inter text-sm leading-4 font-normal wrap-break-word">Gas Fee</div>
-                          <div className="font-inter text-sm leading-4 font-normal wrap-break-word">-</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-row items-center justify-around">
-                        <a
-                          className="font-inter text-2xs text-accent-content flex items-center leading-4 font-semibold uppercase"
-                          href="https://suivision.xyz/txblock/0xd3d404a473e024b8a37ec1df93ea5a57f3d36ed96117bdeb625cdae0ff51f562"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View on Explorer
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-3 w-3"
-                          >
-                            <path d="M5 12h14"></path>
-                            <path d="m12 5 7 7-7 7"></path>
-                          </svg>
-                        </a>
-                      </div>
-                    </div>
-                    <div className="flex flex-1 flex-col rounded-3xl bg-gray-400 pb-3">
-                      <div className="flex items-center justify-between gap-2 rounded-t-3xl p-4">
-                        <div className="text-sm font-medium wrap-break-word"></div>
-                        <img width={24} height={24} src={sepoliaEthIcon} />
-                      </div>
-                      <div className="flex flex-col gap-2 p-4">
-                        <div className="flex flex-row items-center justify-between">
-                          <div className="text-sm font-normal wrap-break-word">Destination wallet</div>
-                          <div className="font-inter text-sm leading-4 font-normal wrap-break-word"></div>
-                        </div>
-                        <div className="flex flex-row items-center justify-between">
-                          <div className="font-inter text-sm leading-4 font-normal wrap-break-word">Gas Fee</div>
-                          <div className="flex items-center gap-1">
-                            <div className="font-inter text-sm leading-4 font-normal wrap-break-word">pending</div>
-                            <Spinner className="h-3 w-3" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   )

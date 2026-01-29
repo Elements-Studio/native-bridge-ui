@@ -53,6 +53,7 @@ export interface TransferDetailResponse {
 export interface TransferListResponse {
   transfers: TransferListItem[]
   pagination: Pagination
+  claim_delay_seconds: number
 }
 
 export interface QuotaResponse {
