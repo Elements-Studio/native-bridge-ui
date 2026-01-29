@@ -484,7 +484,8 @@ export default function TransactionsDetailPage() {
             
             */}
             <button className="bg-accent-foreground/20 text-accent-foreground hover:bg-accent-foreground/10 hover:text-accent-foreground/90 inline-flex cursor-pointer rounded-xl px-6 py-2.5 text-xl font-extrabold transition-colors duration-200">
-              Completed
+              {statusLabel}
+              {isProcessing ? <Spinner className="ms-2 h-3 w-3" /> : null}
             </button>
           </div>
 
@@ -621,7 +622,7 @@ export default function TransactionsDetailPage() {
 
         {/* 以下是之前的代码，看看是否可以直接删除 */}
         {/* Progress Bar Section */}
-        <div className="w-full space-y-4 rounded-2xl bg-gray-600 p-6">
+        {/* <div className="w-full space-y-4 rounded-2xl bg-gray-600 p-6">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-100">{bridgeError ? 'Transaction Failed' : statusLabel}</span>
             <span className="text-sm font-semibold text-gray-100">{progressValue}%</span>
@@ -641,11 +642,11 @@ export default function TransactionsDetailPage() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
-        {bridgeStatus ? <div className="w-full text-xs text-gray-200">{bridgeStatus}</div> : null}
-        {bridgeError ? <div className="w-full text-xs text-red-300">{bridgeError}</div> : null}
-        <div className="w-full rounded-3xl bg-gray-500 backdrop-blur-xl">
+        {/* {bridgeStatus ? <div className="w-full text-xs text-gray-200">{bridgeStatus}</div> : null}
+        {bridgeError ? <div className="w-full text-xs text-red-300">{bridgeError}</div> : null} */}
+        {/* <div className="w-full rounded-3xl bg-gray-500 backdrop-blur-xl">
           <div className="flex flex-row items-center justify-between space-y-1.5 p-6">
             <div className="flex flex-col gap-2">
               <div className="flex md:hidden">
@@ -734,7 +735,7 @@ export default function TransactionsDetailPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   )
