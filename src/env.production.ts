@@ -31,7 +31,7 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'devnet', chainId: '0x1' },
       gas: 'STC',
-      ca: '0xcb5801ab1287f73364b2889a58360e00::USDT::USDT',
+      ca: '0xded6d62bf4db25d5fd69a714a8896424::USDT::USDT',
     },
 
     AnvilUSDT: {
@@ -54,7 +54,7 @@ export default {
     },
     starcoin: {
       // packageAddress: '0x4c57cfe0f117d62db8dfd72f7444b645', // 线上
-      packageAddress: '0xcb5801ab1287f73364b2889a58360e00', // 本地
+      packageAddress: '0xded6d62bf4db25d5fd69a714a8896424', // 本地
       chainId: 2,
     },
     tokens: {

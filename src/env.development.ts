@@ -89,7 +89,7 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'devnet', chainId: '0x1' },
       gas: 'STC',
-      ca: '0xcb5801ab1287f73364b2889a58360e00::USDT::USDT',
+      ca: '0xded6d62bf4db25d5fd69a714a8896424::USDT::USDT',
     },
   },
 
@@ -102,7 +102,7 @@ export default {
       destinationChainId: 2,
     },
     starcoin: {
-      packageAddress: '0xcb5801ab1287f73364b2889a58360e00',
+      packageAddress: '0xded6d62bf4db25d5fd69a714a8896424',
       chainId: 2,
     },
     tokens: {
