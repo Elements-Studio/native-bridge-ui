@@ -26,5 +26,5 @@ export function normalizeHex(input: string, expectedBytes?: number): string {
 }
 
 export function normalizeHash(input: string): string {
-  return input.replace(/^0x/, '').toLowerCase()
+  return input.startsWith('0x') ? input.toLowerCase() : `0x${input.toLowerCase()}`
 }
