@@ -16,7 +16,7 @@ type StarMaskProps = {
 export default function StarMask({ className, onError, onDialogOk, onChange }: StarMaskProps) {
   console.log('StarMask component rendered')
   const [connecting, setConnecting] = useState(false)
-  const { currentCoin } = useGlobalStore()
+  const currentCoin = useGlobalStore(state => state.currentCoin)
 
   const handleClick = useCallback(async () => {
     if (connecting) return
@@ -43,19 +43,33 @@ export default function StarMask({ className, onError, onDialogOk, onChange }: S
   }, [])
 
   if (!hasInstalled) {
+    const downloadUrl = 'https://chromewebstore.google.com/detail/starmask/kmheclfnfmpacglnpegeohempmedhiaf'
     return (
-      <a
-        href="https://chromewebstore.google.com/detail/starmask/kmheclfnfmpacglnpegeohempmedhiaf"
-        target="_blank"
-        rel="noreferrer noopener"
-        className={cn(
-          'bg-accent/40 hover:bg-accent/30 hover:text-primary-foreground flex items-center space-x-4 rounded-md p-2 backdrop-blur-md transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
-          className,
-        )}
-      >
-        <img width={34} height={34} src={starmaskLogo} alt="StarMask Logo" className="grayscale" />
-        <span>StarMask</span>
-      </a>
+      <>
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={cn(
+            'bg-accent/40 hover:bg-accent/30 hover:text-primary-foreground flex items-center space-x-4 rounded-md p-2 backdrop-blur-md transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
+            className,
+          )}
+        >
+          <img width={34} height={34} src={starmaskLogo} alt="StarMask Logo" className="grayscale" />
+          <span>StarMask</span>
+        </a>
+        <div className="text-sm text-gray-400">
+          If you’ve already installed{' '}
+          <a href={downloadUrl} target="_blank" rel="noreferrer noopener" className="hover:text-accent-foreground inline underline">
+            StarMask
+          </a>{' '}
+          but it still shows as not installed, please try opening the wallet manually, unlocking it, and then{' '}
+          <button className="hover:text-accent-foreground inline cursor-pointer underline" onClick={() => window.location.reload()}>
+            refreshing
+          </button>{' '}
+          the page.
+        </div>
+      </>
     )
   }
 

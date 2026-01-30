@@ -3,6 +3,7 @@ import { Spinner } from '@/components/ui/spinner'
 import useStarcoinTools from '@/hooks/useStarcoinTools'
 import { BRIDGE_ABI, BRIDGE_CONFIG, ERC20_ABI, normalizeHex } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
+import { formatDecimal } from '@/lib/format'
 import { bytesToHex, hexToBytes, serializeBytes, serializeScriptFunctionPayload, serializeU128, serializeU8 } from '@/lib/starcoinBcs'
 import { getEstimateFees, type EstimateFeesResponse } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
@@ -14,7 +15,13 @@ import FromToCard from './FromToCard'
 import './panel.styl'
 
 export default function BridgeAssetPanel() {
-  const { fromWalletType, toWalletType, currentCoin, evmWalletInfo, starcoinWalletInfo, inputBalance } = useGlobalStore()
+  const fromWalletType = useGlobalStore(state => state.fromWalletType)
+  const toWalletType = useGlobalStore(state => state.toWalletType)
+  const currentCoin = useGlobalStore(state => state.currentCoin)
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
+  const inputBalance = useGlobalStore(state => state.inputBalance)
+
   const { sendTransaction } = useStarcoinTools()
   const [fees, setFees] = useState<EstimateFeesResponse | null>(null)
   const [loading, setLoading] = useState(false)
@@ -200,11 +207,15 @@ export default function BridgeAssetPanel() {
         <div className="flex flex-col gap-2">
           <div className="flex justify-between px-2 text-[#abbdcc]">
             <div className="text-sm font-normal">Estimated Gas</div>
-            <div className="flex items-center text-sm font-normal">{estimatedGas} ETH</div>
+            <div className="flex items-center text-sm font-normal">
+              {estimatedGas} {currentCoin.gas}
+            </div>
           </div>
           <div className="flex justify-between px-2 text-[#abbdcc]">
             <div className="text-sm font-normal">You receive</div>
-            <div className="text-sm font-normal">{fees?.claim_estimate} USDT</div>
+            <div className="text-sm font-normal">
+              {formatDecimal(inputBalance) || '0.00'} {currentCoin.name}
+            </div>
           </div>
         </div>
 

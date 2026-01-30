@@ -16,7 +16,13 @@ import { useCallback, useMemo, useState } from 'react'
 
 export default function CoinSelector() {
   const [isPending, setIsPending] = useState(false)
-  const { currentCoin, setCurrentCoin, mappings, fromWalletType, setEvmWalletInfo, setInputBalance } = useGlobalStore()
+  const currentCoin = useGlobalStore(state => state.currentCoin)
+  const setCurrentCoin = useGlobalStore(state => state.setCurrentCoin)
+  const mappings = useGlobalStore(state => state.mappings)
+  const fromWalletType = useGlobalStore(state => state.fromWalletType)
+  const setEvmWalletInfo = useGlobalStore(state => state.setEvmWalletInfo)
+  const setInputBalance = useGlobalStore(state => state.setInputBalance)
+
   const { contextHolder: evmContextHolder, getBalance: getEvmBalance } = useEvmTools()
   const { contextHolder: starcoinContextHolder, getBalance: getStarcoinBalance } = useStarcoinTools()
 

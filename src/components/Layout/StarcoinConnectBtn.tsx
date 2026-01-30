@@ -18,7 +18,7 @@ export default function ConnectBtn() {
   const [isPending, setIsPending] = useState(false)
   const { contextHolder, openConnectDialog, disconnect } = useStarcoinTools()
 
-  const { starcoinWalletInfo } = useGlobalStore()
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
 
   const Icon = useMemo(() => {
     return <img alt="Connect" loading="lazy" width="24" height="24" className="h-6 w-6 rounded-full object-cover" src={starcoinIcon} />

@@ -19,7 +19,7 @@ export default function ConnectBtn() {
   const [isPending, setIsPending] = useState(false)
   const { contextHolder, openConnectDialog, disconnect } = useEvmTools()
 
-  const { evmWalletInfo } = useGlobalStore()
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
 
   const Icon = useMemo(() => {
     return <img alt="Connect" loading="lazy" width="24" height="24" className="h-6 w-6 rounded-full object-cover" src={evmIcon} />

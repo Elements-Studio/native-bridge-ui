@@ -9,6 +9,7 @@ import type {
   HealthResponse,
   QuotaResponse,
   SignatureResponse,
+  TransferByDepositTxnResponse,
   TransferDetailResponse,
   TransferListParams,
   TransferListResponse,
@@ -73,6 +74,18 @@ export async function getHealth(): Promise<HealthResponse> {
 export async function getTransferDetail(chainId: number, nonce: number): Promise<TransferDetailResponse> {
   try {
     const response = await client.get<TransferDetailResponse>(`${env.apis['/transfers']}/${chainId}/${nonce}`)
+    return response.data
+  } catch (error) {
+    return handleError(error as AxiosError)
+  }
+}
+
+// ========== Transfer Detail by Deposit Txn Hash ==========
+
+export async function getTransferByDepositTxn(txnHash: string): Promise<TransferByDepositTxnResponse> {
+  try {
+    const cleanHash = txnHash.replace(/^0x/, '')
+    const response = await client.get<TransferByDepositTxnResponse>(`${env.apis['/transfers']}/by-deposit-txn/${cleanHash}`)
     return response.data
   } catch (error) {
     return handleError(error as AxiosError)
@@ -182,7 +195,7 @@ export async function getEthToStarcoinSignature(
 const DEFAULT_VALIDATOR_COUNT = 3
 
 export async function collectSignatures(
-  direction: 'starcoin_to_eth' | 'eth_to_starcoin',
+  direction: EstimateDirection,
   txHash: string,
   eventIndex = 0,
   opts?: { validatorCount?: number; quorumStake?: number; validatorStakes?: Record<string, number> },

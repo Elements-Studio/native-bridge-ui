@@ -3,16 +3,25 @@ import { Spinner } from '@/components/ui/spinner'
 import useEvmTools from '@/hooks/useEvmTools'
 import useStarcoinTools from '@/hooks/useStarcoinTools'
 import { getMetaMask } from '@/lib/evmProvider'
-import { toFixedWithoutRounding } from '@/lib/format'
+import { formatDecimal, toFixedWithoutRounding } from '@/lib/format'
 import { useGlobalStore } from '@/stores/globalStore'
 import { useCallback, useEffect, useState } from 'react'
 import CoinSelector from './CoinSelector'
 
 export default function CoinSelectorCard() {
   const [isPending, setIsPending] = useState(false)
-  const { currentCoin, evmWalletInfo, starcoinWalletInfo, inputBalance, setInputBalance } = useGlobalStore()
-  const { getBalance: getEvmBalance, contextHolder: evmContextHolder } = useEvmTools()
-  const { getBalance: getStarcoinBalance, contextHolder: starcoinContextHolder } = useStarcoinTools()
+  const currentCoin = useGlobalStore(state => state.currentCoin)
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
+  const inputBalance = useGlobalStore(state => state.inputBalance)
+  const setInputBalance = useGlobalStore(state => state.setInputBalance)
+
+  const { getBalance: getEvmBalance, contextHolder: evmContextHolder, openConnectDialog: openEvmConnectDialog } = useEvmTools()
+  const {
+    getBalance: getStarcoinBalance,
+    contextHolder: starcoinContextHolder,
+    openConnectDialog: openStarcoinConnectDialog,
+  } = useStarcoinTools()
   const [totalBalance, setTotalBalance] = useState<string>('')
 
   useEffect(() => {
@@ -74,17 +83,52 @@ export default function CoinSelectorCard() {
         setInputBalance('')
         return
       }
+
+      if (value.includes('e') || value.includes('E')) {
+        return
+      }
+
+      const [intPart, decPart] = value.split('.')
+      if (intPart && intPart.replace('-', '').length > 18) {
+        return
+      }
+
       const numValue = Number(value)
-      const maxBalance = Number(totalBalance) || 0
       if (numValue < 0) {
         return
       }
-      if (numValue > maxBalance - 5) {
+
+      if (decPart && decPart.length > 3) {
         return
       }
       setInputBalance(value)
     },
-    [totalBalance, setInputBalance],
+    [setInputBalance],
+  )
+
+  const handleInputBlur = useCallback(() => {
+    if (!inputBalance) return
+    const numValue = Number(inputBalance)
+    const maxBalance = Number(totalBalance) || 0
+    if (numValue > maxBalance) {
+      setInputBalance(maxBalance.toFixed(3).toString())
+    }
+  }, [inputBalance, totalBalance, setInputBalance])
+
+  const connectWallet = useCallback(
+    async (e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      if (currentCoin.walletType === 'EVM') {
+        if (!evmWalletInfo) {
+          openEvmConnectDialog()
+        }
+      } else if (currentCoin.walletType === 'STARCOIN') {
+        if (!starcoinWalletInfo) {
+          openStarcoinConnectDialog()
+        }
+      }
+    },
+    [currentCoin, evmWalletInfo, starcoinWalletInfo, openEvmConnectDialog, openStarcoinConnectDialog],
   )
 
   const setMax = useCallback(async () => {
@@ -95,7 +139,7 @@ export default function CoinSelectorCard() {
         : await getEvmBalance(currentCoin.network.chainId, currentCoin.ca)
     const balance = result?.balance
     if (balance) {
-      setInputBalance(Number(balance).toFixed(6).toString())
+      setInputBalance((+balance).toFixed(3).toString())
     }
   }, [currentCoin, getEvmBalance, getStarcoinBalance, setInputBalance])
 
@@ -117,10 +161,12 @@ export default function CoinSelectorCard() {
       {/* input */}
       <input
         name="inputBalance"
-        className="h-10 w-full [appearance:textfield] bg-transparent font-mono text-4xl ring-0 outline-none focus-visible:ring-0 focus-visible:outline-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
-        placeholder="0.00"
-        value={inputBalance}
+        className="h-10 w-full cursor-text [appearance:textfield] bg-transparent font-mono text-4xl ring-0 outline-none focus-visible:ring-0 focus-visible:outline-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+        placeholder="0.0"
+        value={formatDecimal(inputBalance)}
         onChange={handleInputChange}
+        onBlur={handleInputBlur}
+        onClick={connectWallet}
         type="number"
       />
 
@@ -131,7 +177,7 @@ export default function CoinSelectorCard() {
 
           <div className="flex font-mono text-sm font-normal text-[#9f9aae] uppercase">
             <span className="wrap-break-words me-[0.5em] max-w-70 truncate">
-              {isPending ? <Spinner /> : toFixedWithoutRounding(totalBalance, 3)}
+              {isPending ? <Spinner /> : toFixedWithoutRounding(totalBalance, 6)}
             </span>
             {currentCoin.name}
           </div>

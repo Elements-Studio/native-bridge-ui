@@ -3,10 +3,12 @@ import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
 import { Progress } from '@/components/ui/progress'
 import { Spinner } from '@/components/ui/spinner'
 import useStarcoinTools from '@/hooks/useStarcoinTools'
-import { BRIDGE_ABI, BRIDGE_CONFIG, normalizeHash, normalizeHex } from '@/lib/bridgeConfig'
+import { BRIDGE_ABI, BRIDGE_CONFIG, normalizeHex } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
+import { normalizeHash } from '@/lib/format'
 import { bytesToHex, hexToBytes, serializeBytes, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { collectSignatures, getTransferDetail, getTransferList, type SignatureResponse } from '@/services'
+import type { EstimateDirection, TransferListItem } from '@/services/types'
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Contract, Interface, getAddress } from 'ethers'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -22,6 +24,13 @@ const CHAIN_ID_MAP: Record<string, number> = {
   EthSepolia: 11,
   EthCustom: 12,
 }
+
+const EVM_BRIDGE_ABI = [
+  ...BRIDGE_ABI,
+  'function approveTransferWithSignatures(bytes[] signatures, tuple(uint8 messageType, uint8 version, uint64 nonce, uint8 chainID, bytes payload) message)',
+  'function claimApprovedTransfer(uint8 sourceChainID, uint64 nonce)',
+  'function transferApprovals(uint8 sourceChainID, uint64 nonce) view returns (uint256)',
+]
 
 function concatBytes(chunks: Uint8Array[]): Uint8Array {
   const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
@@ -121,14 +130,19 @@ async function getEthEventIndex(txHash: string): Promise<number> {
 export default function TransactionsDetailPage() {
   const { txnHash } = useParams()
   const [searchParams] = useSearchParams()
-  const { currentCoin, evmWalletInfo, starcoinWalletInfo } = useGlobalStore()
-  const directionParam = searchParams.get('direction')
-  const direction = directionParam === 'starcoin_to_eth' || directionParam === 'eth_to_starcoin' ? directionParam : 'eth_to_starcoin'
+
+  const currentCoin = useGlobalStore(state => state.currentCoin)
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
+
+  const direction: EstimateDirection = searchParams.get('direction') === 'starcoin_to_eth' ? 'starcoin_to_eth' : 'eth_to_starcoin'
   const { sendTransaction } = useStarcoinTools()
   const [bridgeStatus, setBridgeStatus] = useState<string | null>(null)
   const [bridgeError, setBridgeError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [claimDelaySeconds, setClaimDelaySeconds] = useState<number | null>(null)
+  const isDev = import.meta.env.DEV
+  const claimDelayCapSeconds = 0
   const startedRef = useRef<string | null>(null)
   useEffect(() => {
     if (!txnHash) return
@@ -151,6 +165,15 @@ export default function TransactionsDetailPage() {
     if (startedRef.current === runKey) return
     startedRef.current = runKey
     let cancelled = false
+    const findMatchingTransfer = (transfers: TransferListItem[] | undefined, targetHash: string) => {
+      if (!transfers) return null
+      return (
+        transfers.find(t => {
+          const candidates = [t.deposit?.txn_hash, t.approval?.txn_hash, t.claim?.txn_hash, (t as { txn_hash?: string }).txn_hash]
+          return candidates.some(hash => (hash ? normalizeHash(hash) === targetHash : false))
+        }) ?? null
+      )
+    }
 
     const run = async () => {
       setBridgeError(null)
@@ -171,12 +194,19 @@ export default function TransactionsDetailPage() {
             try {
               const list = await getTransferList({
                 address: evmWalletInfo.address,
-                chain_id: BRIDGE_CONFIG.evm.chainId,
                 page_size: 20,
+                page: 1,
+              })
+              console.log('[Bridge] Poll page 1/?:', {
+                direction,
+                address: evmWalletInfo.address,
+                total: list.pagination?.total_count,
+                pages: list.pagination?.total_pages,
               })
               if (list.claim_delay_seconds != null) {
-                claimDelay = list.claim_delay_seconds
-                setClaimDelaySeconds(list.claim_delay_seconds)
+                const adjustedDelay = isDev ? Math.min(list.claim_delay_seconds, claimDelayCapSeconds) : list.claim_delay_seconds
+                claimDelay = adjustedDelay
+                setClaimDelaySeconds(adjustedDelay)
               }
               console.log('[Bridge] Looking for txHash:', normalizedTxHash)
               console.log(
@@ -188,7 +218,22 @@ export default function TransactionsDetailPage() {
                   deposit: t.deposit,
                 })),
               )
-              const matched = list.transfers.find(t => normalizeHash(t.deposit?.txn_hash ?? '') === normalizedTxHash)
+              let matched = findMatchingTransfer(list.transfers, normalizedTxHash)
+              const totalPages = list.pagination?.total_pages ?? 1
+              if (!matched && totalPages > 1) {
+                for (let page = 2; page <= totalPages; page += 1) {
+                  if (cancelled) return
+                  const pageList = await getTransferList({
+                    address: evmWalletInfo.address,
+                    page_size: 20,
+                    page,
+                  })
+                  console.log('[Bridge] Poll page', page, '/', totalPages, 'transfers:', pageList.transfers.length)
+                  matched = findMatchingTransfer(pageList.transfers, normalizedTxHash)
+                  if (matched) break
+                }
+              }
+              console.log('[Bridge] Match result:', matched ? { nonce: matched.nonce, status: matched.current_status } : 'NOT_FOUND')
               console.log('[Bridge] Matched:', matched)
               console.log('[Bridge] Matched deposit:', matched?.deposit)
               console.log('[Bridge] is_finalized:', matched?.deposit?.is_finalized)
@@ -196,6 +241,8 @@ export default function TransactionsDetailPage() {
                 nonce = Number(matched.nonce)
                 transferStatus = matched.current_status
                 if (matched.deposit?.is_finalized) {
+                  console.log('[Bridge] Finalized transfer found, preparing next step')
+                  setBridgeStatus('Indexer finalized, preparing...')
                   isFinalized = true
                   break
                 }
@@ -206,20 +253,30 @@ export default function TransactionsDetailPage() {
             await sleep(6000)
           }
 
+          console.log('[Bridge] Poll finished:', {
+            isFinalized,
+            nonce,
+            transferStatus,
+            claimDelay,
+          })
           if (!isFinalized) {
             throw new Error('Transfer not finalized yet')
           }
 
           // 等待倒计时结束
           if (claimDelay > 0) {
+            console.log('[Bridge] Starting claim delay countdown:', claimDelay)
+            setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
             while (claimDelay > 0) {
               if (cancelled) return
               setClaimDelaySeconds(claimDelay)
               setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
+              console.log('[Bridge] Countdown tick:', claimDelay)
               await sleep(1000)
               claimDelay -= 1
             }
             setClaimDelaySeconds(0)
+            console.log('[Bridge] Claim delay finished')
           }
 
           if (nonce === null || !Number.isFinite(nonce)) {
@@ -239,9 +296,12 @@ export default function TransactionsDetailPage() {
 
           let signatures: SignatureResponse[] = []
           if (transferStatus !== 'approved') {
+            console.log('[Bridge] Next step: collect signatures')
             setBridgeStatus('Collecting validator signatures...')
             const eventIndex = await getEthEventIndex(txnHash)
+            console.log('[Bridge] Event index:', eventIndex)
             signatures = await collectSignatures('eth_to_starcoin', txnHash, eventIndex, { validatorCount: 3 })
+            console.log('[Bridge] Signatures collected:', signatures.length)
           }
 
           if (transferStatus !== 'approved') {
@@ -296,7 +356,6 @@ export default function TransactionsDetailPage() {
               args: approveArgs,
             })
 
-            console.log(33333, { approvePayload, hex: bytesToHex(approvePayload) })
             const result = await sendTransaction({
               data: bytesToHex(approvePayload),
             })
@@ -342,18 +401,42 @@ export default function TransactionsDetailPage() {
           try {
             const list = await getTransferList({
               address: starcoinWalletInfo.address,
-              chain_id: BRIDGE_CONFIG.starcoin.chainId,
               page_size: 20,
+              page: 1,
+            })
+            console.log('[Bridge] Poll page 1/?:', {
+              direction,
+              address: starcoinWalletInfo.address,
+              total: list.pagination?.total_count,
+              pages: list.pagination?.total_pages,
             })
             if (list.claim_delay_seconds != null) {
-              claimDelay = list.claim_delay_seconds
-              setClaimDelaySeconds(list.claim_delay_seconds)
+              const adjustedDelay = isDev ? Math.min(list.claim_delay_seconds, claimDelayCapSeconds) : list.claim_delay_seconds
+              claimDelay = adjustedDelay
+              setClaimDelaySeconds(adjustedDelay)
             }
-            const matched = list.transfers.find(t => normalizeHash(t.deposit?.txn_hash ?? '') === normalizedTxHash)
+            let matched = findMatchingTransfer(list.transfers, normalizedTxHash)
+            const totalPages = list.pagination?.total_pages ?? 1
+            if (!matched && totalPages > 1) {
+              for (let page = 2; page <= totalPages; page += 1) {
+                if (cancelled) return
+                const pageList = await getTransferList({
+                  address: starcoinWalletInfo.address,
+                  page_size: 20,
+                  page,
+                })
+                console.log('[Bridge] Poll page', page, '/', totalPages, 'transfers:', pageList.transfers.length)
+                matched = findMatchingTransfer(pageList.transfers, normalizedTxHash)
+                if (matched) break
+              }
+            }
+            console.log('[Bridge] Match result:', matched ? { nonce: matched.nonce, status: matched.current_status } : 'NOT_FOUND')
             if (matched) {
               nonce = Number(matched.nonce)
               transferStatus = matched.current_status
               if (matched.deposit?.is_finalized) {
+                console.log('[Bridge] Finalized transfer found, preparing next step')
+                setBridgeStatus('Indexer finalized, preparing...')
                 isFinalized = true
                 break
               }
@@ -364,20 +447,14 @@ export default function TransactionsDetailPage() {
           await sleep(6000)
         }
 
+        console.log('[Bridge] Poll finished:', {
+          isFinalized,
+          nonce,
+          transferStatus,
+          claimDelay,
+        })
         if (!isFinalized) {
           throw new Error('Transfer not finalized yet')
-        }
-
-        // 等待倒计时结束
-        if (claimDelay > 0) {
-          while (claimDelay > 0) {
-            if (cancelled) return
-            setClaimDelaySeconds(claimDelay)
-            setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
-            await sleep(1000)
-            claimDelay -= 1
-          }
-          setClaimDelaySeconds(0)
         }
 
         if (nonce === null || !Number.isFinite(nonce)) {
@@ -440,7 +517,6 @@ export default function TransactionsDetailPage() {
 
         const signatureHexes = uniqueSignatures.map(sig => bytesToHex(base64ToBytes(sig.auth_signature.signature)))
 
-        setBridgeStatus('Submitting claim on Ethereum...')
         const mm = await getMetaMask()
         if (!mm) throw new Error('MetaMask not detected')
 
@@ -452,11 +528,71 @@ export default function TransactionsDetailPage() {
         const provider = new BrowserProvider(mm)
         const signer = await provider.getSigner()
         const bridgeAddress = getAddress(BRIDGE_CONFIG.evm.bridgeAddress)
-        const bridge = new Contract(bridgeAddress, BRIDGE_ABI, signer)
+        const bridgeIface = new Interface(EVM_BRIDGE_ABI)
+        const bridgeRead = new Contract(bridgeAddress, EVM_BRIDGE_ABI, provider)
 
         const message = [0, 1, bridgeNonce, sourceChainId, bytesToHex(payload)]
-        const tx = await bridge.transferBridgedTokensWithSignatures(signatureHexes, message)
-        await tx.wait()
+
+        if (transferStatus === 'claimed') {
+          setBridgeStatus('Already claimed on Ethereum.')
+          return
+        }
+
+        let isApprovedOnChain = false
+        try {
+          const approvalTs = await bridgeRead.transferApprovals(sourceChainId, bridgeNonce)
+          isApprovedOnChain = BigInt(approvalTs) > 0n
+        } catch (err) {
+          console.warn('[Bridge] Failed to read transferApprovals:', err)
+        }
+
+        if (transferStatus !== 'approved' && !isApprovedOnChain) {
+          setBridgeStatus('Submitting approve on Ethereum...')
+
+          const approveData = bridgeIface.encodeFunctionData('approveTransferWithSignatures', [signatureHexes, message])
+          console.log('[Bridge] Approve calldata selector:', approveData.slice(0, 10))
+          try {
+            const approveTx = await signer.sendTransaction({ to: bridgeAddress, data: approveData })
+            await approveTx.wait()
+          } catch (err) {
+            const messageText = err instanceof Error ? err.message : String(err)
+            if (!messageText.includes('Transfer already approved')) {
+              throw err
+            }
+            console.warn('[Bridge] Approve already done on chain, continuing to claim.')
+            isApprovedOnChain = true
+          }
+        } else {
+          setBridgeStatus('Transfer already approved, preparing claim...')
+        }
+
+        if (claimDelay > 0) {
+          console.log('[Bridge] Starting claim delay countdown:', claimDelay)
+          setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
+          while (claimDelay > 0) {
+            if (cancelled) return
+            setClaimDelaySeconds(claimDelay)
+            setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
+            console.log('[Bridge] Countdown tick:', claimDelay)
+            await sleep(1000)
+            claimDelay -= 1
+          }
+          setClaimDelaySeconds(0)
+          console.log('[Bridge] Claim delay finished')
+        }
+        const claimData = bridgeIface.encodeFunctionData('claimApprovedTransfer', [sourceChainId, bridgeNonce])
+
+        const claimTx = await signer.sendTransaction({ to: bridgeAddress, data: claimData })
+        console.log('[Bridge] Claim calldata selector:', claimTx)
+        if (claimDelay > 0) {
+          setBridgeStatus('Submitting claim on Ethereum...')
+
+          const claimData = bridgeIface.encodeFunctionData('claimApprovedTransfer', [sourceChainId, bridgeNonce])
+
+          console.log('[Bridge] Claim calldata selector:', claimData.slice(0, 10))
+          const claimTx = await signer.sendTransaction({ to: bridgeAddress, data: claimData })
+          await claimTx.wait()
+        }
         setBridgeStatus('Bridge completed.')
       } catch (err) {
         console.error('Bridge error:', err)
@@ -470,7 +606,7 @@ export default function TransactionsDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [currentCoin.name, direction, evmWalletInfo, sendTransaction, starcoinWalletInfo, txnHash])
+  }, [currentCoin.name, direction, isDev, evmWalletInfo, sendTransaction, starcoinWalletInfo, txnHash])
 
   const statusLabel = useMemo(() => {
     if (bridgeError) return 'Failed'
@@ -531,15 +667,16 @@ export default function TransactionsDetailPage() {
                 {direction === 'eth_to_starcoin' ? 'From Ethereum to Starcoin' : 'From Starcoin to Ethereum'}
               </div>
             </div>
-            {/* 
+            {/*
               * 按钮三个状态：Pending, Ready to claim, Completed
               * Pending:bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-secondary-foreground/90
               * Ready to claim: bg-accent/20 text-accent hover:bg-accent/10 hover:text-accent/90
               * Completed: bg-accent-foreground/20 text-accent-foreground hover:bg-accent-foreground/10 hover:text-accent-foreground/90
               *
               这部分根据需要调整
-            
+
             */}
+
             <button className="bg-accent-foreground/20 text-accent-foreground hover:bg-accent-foreground/10 hover:text-accent-foreground/90 inline-flex cursor-pointer rounded-xl px-6 py-2.5 text-xl font-extrabold transition-colors duration-200">
               {statusLabel}
               {isProcessing ? <Spinner className="ms-2 h-3 w-3" /> : null}

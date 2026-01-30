@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { formatAddress } from '@/lib/format'
 import type { Pagination, TransferListItem } from '@/services/types'
 import clsx from 'clsx'
 import { Link } from 'react-router-dom'
@@ -9,28 +11,17 @@ interface TransfersTableProps {
   pagination: Pagination
   isLoading: boolean
   onPageChange: (page: number) => void
+  direction: 'eth_to_starcoin' | 'starcoin_to_eth'
 }
 
-export function TransfersTable({ data, pagination, isLoading, onPageChange }: TransfersTableProps) {
+export function TransfersTable({ data, pagination, isLoading, onPageChange, direction }: TransfersTableProps) {
   const formatTimestamp = (ms: number) => {
     return new Date(ms).toLocaleString()
   }
 
-  const formatHash = (hash: string) => {
-    return `${hash.substring(0, 8)}...${hash.substring(hash.length - 8)}`
-  }
-
-  const formatAddress = (address: string) => {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`
-  }
-
   const buildTxLink = (item: TransferListItem) => {
-    // 根据 source_chain_id 判断方向
-    const isFromStarcoin = item.source_chain_id < 10 // Starcoin chain IDs are 0, 1, 2
-    const direction = isFromStarcoin ? 'starcoin_to_eth' : 'eth_to_starcoin'
-    const suffix = direction === 'starcoin_to_eth' ? '?direction=starcoin_to_eth' : ''
     const txnHash = item.deposit?.txn_hash ?? ''
-    return `/transactions/${txnHash}${suffix}`
+    return `/transactions/${txnHash}?direction=${direction}`
   }
 
   const getStatusColor = (status: string) => {
@@ -49,13 +40,13 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
   return (
     <div className="w-full space-y-4">
       <div className="overflow-hidden rounded-lg border">
-        <Table>
+        <Table className="w-full">
           <TableHeader>
             <TableRow>
+              <TableHead>Transaction Hash</TableHead>
               <TableHead>Nonce</TableHead>
               <TableHead>From → To</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Transaction Hash</TableHead>
               <TableHead>Sender Address</TableHead>
               <TableHead>Block Height</TableHead>
               <TableHead>Time</TableHead>
@@ -72,6 +63,11 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
             ) : (
               data.map(item => (
                 <TableRow key={`${item.source_chain_id}-${item.nonce}-${item.deposit?.sender_address}`}>
+                  <TableCell className="font-mono text-sm">
+                    <Link target="_blank" to={buildTxLink(item)} title={item.deposit?.txn_hash} className="text-blue-600 hover:underline">
+                      {formatAddress(item.deposit?.txn_hash ?? '')}
+                    </Link>
+                  </TableCell>
                   <TableCell>{item.nonce}</TableCell>
                   <TableCell>
                     {item.source_chain_id} → {item.destination_chain_id}
@@ -82,11 +78,11 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange }: Tr
                     </span>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
-                    <Link target="_blank" to={buildTxLink(item)} title={item.deposit?.txn_hash} className="text-blue-600 hover:underline">
-                      {formatHash(item.deposit?.txn_hash ?? '')}
-                    </Link>
+                    <Tooltip>
+                      <TooltipContent>{item.deposit?.sender_address}</TooltipContent>
+                      <TooltipTrigger>{formatAddress(item.deposit?.sender_address ?? '')}</TooltipTrigger>
+                    </Tooltip>
                   </TableCell>
-                  <TableCell className="font-mono text-sm">{formatAddress(item.deposit?.sender_address ?? '')}</TableCell>
                   <TableCell>{item.deposit?.block_height}</TableCell>
                   <TableCell className="text-sm">{item.deposit ? formatTimestamp(item.deposit.timestamp_ms) : '-'}</TableCell>
                   <TableCell>
