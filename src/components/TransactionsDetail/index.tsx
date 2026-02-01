@@ -1,8 +1,9 @@
 import { Progress } from '@/components/ui/progress'
+import useEvmTools from '@/hooks/useEvmTools'
 import { normalizeHash } from '@/lib/format'
-import { getTransferByDepositTxn } from '@/services'
+import { collectSignatures, getTransferByDepositTxn } from '@/services'
 import { ArrowBigRight, CheckIcon, InfoIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 import { Spinner } from '../ui/spinner'
@@ -11,23 +12,22 @@ import ClaimCard from './ClaimCard'
 import DepositCard from './DepositCard'
 import { BridgeStatus, BridgeStatusLabelMap, useTransactionsDetailStore } from './store'
 
-const formatDelayTime = (seconds: number | null): string => {
-  if (seconds === null) return 'calculating...'
-  if (seconds <= 0) return 'Ready'
-  return `${seconds} seconds`
-}
-
 export default function TransactionsDetail() {
-  const [isPending, setIsPending] = useState(true)
   const [searchParams] = useSearchParams()
   const direction = useTransactionsDetailStore(state => state.direction)
   const setDirection = useTransactionsDetailStore(state => state.setDirection)
   const setTxnHash = useTransactionsDetailStore(state => state.setTxnHash)
   const bridgeError = useTransactionsDetailStore(state => state.bridgeError)
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
-  const claimDelaySeconds = useTransactionsDetailStore(state => state.claimDelaySeconds)
   const setTransferData = useTransactionsDetailStore(state => state.setTransferData)
   const setBridgeStatus = useTransactionsDetailStore(state => state.setBridgeStatus)
+  const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
+  const setSignatures = useTransactionsDetailStore(state => state.setSignatures)
+  const setIsCollectingSignatures = useTransactionsDetailStore(state => state.setIsCollectingSignatures)
+  const signatures = useTransactionsDetailStore(state => state.signatures)
+  const collectingSignaturesRef = useRef(false)
+
+  const { getEventIndex: getEvmEventIndex } = useEvmTools()
 
   useEffect(() => {
     const directionParam = searchParams.get('direction')
@@ -85,6 +85,35 @@ export default function TransactionsDetail() {
     }
   }, [transferData, setBridgeStatus])
 
+  // 当状态为 CollectingValidatorSignatures 时，开始收集签名
+  useEffect(() => {
+    if (bridgeStatus !== BridgeStatus.CollectingValidatorSignatures) return
+    if (signatures.length > 0) return
+    if (collectingSignaturesRef.current) return
+    if (!txnHash) return
+
+    const collect = async () => {
+      collectingSignaturesRef.current = true
+      setIsCollectingSignatures(true)
+      try {
+        console.log('[Bridge] Collecting validator signatures...')
+        const eventIndex = direction === 'eth_to_starcoin' ? await getEvmEventIndex(txnHash) : 0
+        console.log('[Bridge] Event index:', eventIndex)
+        const sigs = await collectSignatures(direction, txnHash, eventIndex, { validatorCount: 3 })
+        console.log('[Bridge] Signatures collected:', sigs.length)
+        setSignatures(sigs)
+      } catch (err) {
+        console.error('[Bridge] Failed to collect signatures:', err)
+        setBridgeError(err instanceof Error ? err.message : 'Failed to collect signatures')
+      } finally {
+        setIsCollectingSignatures(false)
+        collectingSignaturesRef.current = false
+      }
+    }
+
+    collect()
+  }, [bridgeStatus, direction, txnHash, signatures.length, getEvmEventIndex, setSignatures, setIsCollectingSignatures, setBridgeError])
+
   const statusLabel = useMemo(() => {
     const pendingCls = 'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-secondary-foreground/90'
     const readyToClaimCls = 'bg-accent/20 text-accent hover:bg-accent/10 hover:text-accent/90'
@@ -134,10 +163,11 @@ export default function TransactionsDetail() {
   const progressValue = useMemo(() => {
     if (bridgeError) return 0
     if (!bridgeStatus) return 0
-    if (bridgeStatus === BridgeStatus.WaitingForIndexer) return 20
-    if (bridgeStatus === BridgeStatus.CollectingValidatorSignatures) return direction === 'starcoin_to_eth' ? 50 : 40
-    if (bridgeStatus === BridgeStatus.SubmittingApprove) return 60
-    if (bridgeStatus === BridgeStatus.SubmittingClaim) return 80
+    // progressValue 设为前一个已完成步骤的值，当前步骤显示 spinner
+    if (bridgeStatus === BridgeStatus.WaitingForIndexer) return 0
+    if (bridgeStatus === BridgeStatus.CollectingValidatorSignatures) return 20
+    if (bridgeStatus === BridgeStatus.SubmittingApprove) return 40
+    if (bridgeStatus === BridgeStatus.SubmittingClaim) return direction === 'starcoin_to_eth' ? 50 : 60
     if (bridgeStatus === BridgeStatus.Completed || bridgeStatus === BridgeStatus.AlreadyClaimed) return 100
     return 0
   }, [bridgeError, bridgeStatus, direction])
@@ -163,6 +193,7 @@ export default function TransactionsDetail() {
 
   return (
     <div className="bg-secondary grid w-full p-4">
+      {bridgeStatus}
       <div className="mx-auto grid w-full max-w-300 content-start gap-4 py-6">
         <h1 className="text-2xl font-bold">Transaction Details</h1>
 
@@ -178,7 +209,6 @@ export default function TransactionsDetail() {
               className={`${statusLabel.cls} flex cursor-pointer items-center rounded-xl px-6 py-2.5 text-xl transition-colors duration-200`}
             >
               {statusLabel.label}
-              <Spinner className="ms-5" />
             </button>
           </div>
 
@@ -186,33 +216,38 @@ export default function TransactionsDetail() {
           <div className="mt-7.5 grid">
             <Progress value={progressValue} className={`z-0 col-start-1 row-start-1 mx-[12%] mt-4.5 ${bridgeError ? 'bg-gray-600' : ''}`} />
             <div className={`z-2 col-start-1 row-start-1 grid ${progressGridClass} gap-2`}>
-              {progressSteps.map((step, index) => (
-                <div key={index} className="grid content-start justify-center gap-y-4">
-                  <div
-                    className={`grid aspect-square w-10 place-content-center justify-self-center rounded-full p-2 transition-colors ${
-                      progressValue >= step.value
-                        ? bridgeError && progressValue === 100
-                          ? 'bg-accent-foreground text-primary-foreground'
-                          : 'bg-accent text-primary-foreground'
-                        : 'bg-secondary text-secondary-foreground'
-                    }`}
-                  >
-                    {isPending ? <Spinner /> : <CheckIcon />}
+              {progressSteps.map((step, index) => {
+                const isCompleted = progressValue >= step.value
+                const isCurrentStep =
+                  !isCompleted && index === progressSteps.findIndex(s => progressValue < s.value) && bridgeStatus !== BridgeStatus.Completed
+                return (
+                  <div key={index} className="grid content-start justify-center gap-y-4">
+                    <div
+                      className={`grid aspect-square w-10 place-content-center justify-self-center rounded-full p-2 transition-colors ${
+                        isCompleted
+                          ? bridgeError && progressValue === 100
+                            ? 'bg-accent-foreground text-primary-foreground'
+                            : 'bg-accent text-primary-foreground'
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}
+                    >
+                      {isCompleted ? <CheckIcon /> : isCurrentStep ? <Spinner /> : null}
+                    </div>
+                    <span className="text-primary-foreground text-center text-sm font-semibold uppercase md:text-lg">{step.label}</span>
                   </div>
-                  <span className="text-primary-foreground text-center text-sm font-semibold uppercase md:text-lg">{step.label}</span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
           {/* 提示信息 */}
-          {bridgeStatus !== 'Completed' && bridgeStatus !== 'WaitingForIndexer' && (
+          {bridgeStatus !== 'Completed' && (
             <div className="bg-secondary border-secondary-foreground/30 mt-4 flex items-center gap-x-3 rounded-xl border p-5">
               <InfoIcon />
               <div className="grid min-w-0 flex-1 gap-1">
-                <div className="text-primary-foreground text-lg font-bold">
+                {/* <div className="text-primary-foreground text-lg font-bold">
                   {direction === 'eth_to_starcoin' ? 'Ethereum' : 'Starcoin'} may take {formatDelayTime(claimDelaySeconds)} or more
-                </div>
+                </div> */}
                 {bridgeStatus ? <div className="text-accent-foreground w-full text-sm">{BridgeStatusLabelMap[bridgeStatus]}</div> : null}
                 {bridgeError ? <div className="text-secondary-foreground w-full text-sm">{bridgeError}</div> : null}
               </div>

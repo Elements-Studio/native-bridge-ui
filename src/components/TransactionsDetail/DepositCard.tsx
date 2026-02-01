@@ -4,6 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { formatAddress, normalizeHash } from '@/lib/format'
 import { ChevronRight } from 'lucide-react'
 import { useMemo } from 'react'
+import { Spinner } from '../ui/spinner'
 import { useTransactionsDetailStore } from './store'
 
 export default function DepositCard() {
@@ -12,14 +13,14 @@ export default function DepositCard() {
   const depositData = useMemo(() => transferData?.procedure?.deposit, [transferData?.procedure?.deposit])
 
   return (
-    <div className="bg-secondary/50 grid h-full content-start overflow-hidden rounded-xl">
+    <div className="bg-secondary/50 grid h-full min-h-75 content-start overflow-hidden rounded-xl">
       <div className="bg-accent-foreground/10 flex items-center justify-between gap-x-3 p-5">
         <h3 className="text-primary-foreground text-lg font-bold wrap-break-word">
           {direction === 'eth_to_starcoin' ? 'Ethereum' : 'Starcoin'}
         </h3>
         <img width={32} height={32} src={direction === 'eth_to_starcoin' ? ethIcon : starcoinIcon} />
       </div>
-      {depositData && (
+      {depositData ? (
         <div className="grid gap-3 p-5">
           {depositData.txn_hash ? (
             <div className="flex items-center justify-between gap-x-3">
@@ -112,6 +113,10 @@ export default function DepositCard() {
               </a>
             </div>
           )}
+        </div>
+      ) : (
+        <div className="flex min-h-50 items-center justify-center p-5">
+          <Spinner />
         </div>
       )}
     </div>

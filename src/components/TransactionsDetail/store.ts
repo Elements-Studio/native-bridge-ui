@@ -1,4 +1,4 @@
-import type { EstimateDirection, TransferByDepositTxnResponse } from '@/services/types'
+import type { EstimateDirection, SignatureResponse, TransferByDepositTxnResponse } from '@/services/types'
 import { create } from 'zustand'
 
 export const BridgeStatus = {
@@ -28,12 +28,16 @@ type TransactionsDetailState = {
   bridgeError: string | null
   claimDelaySeconds: number | null
   transferData: TransferByDepositTxnResponse | null
+  signatures: SignatureResponse[]
+  isCollectingSignatures: boolean
   setDirection: (direction: EstimateDirection) => void
   setTxnHash: (hash: string | null) => void
   setBridgeStatus: (status: BridgeStatus) => void
   setBridgeError: (error: string | null) => void
   setClaimDelaySeconds: (seconds: number | null) => void
   setTransferData: (data: TransferByDepositTxnResponse | null) => void
+  setSignatures: (signatures: SignatureResponse[]) => void
+  setIsCollectingSignatures: (isCollecting: boolean) => void
   reset: () => void
 }
 
@@ -44,6 +48,8 @@ const initialState = {
   bridgeError: null as string | null,
   claimDelaySeconds: null as number | null,
   transferData: null as TransferByDepositTxnResponse | null,
+  signatures: [] as SignatureResponse[],
+  isCollectingSignatures: false,
 }
 
 export const useTransactionsDetailStore = create<TransactionsDetailState>(set => ({
@@ -58,5 +64,7 @@ export const useTransactionsDetailStore = create<TransactionsDetailState>(set =>
       transferData: data,
       claimDelaySeconds: data?.claim_delay_seconds ?? null,
     }),
+  setSignatures: signatures => set({ signatures }),
+  setIsCollectingSignatures: isCollectingSignatures => set({ isCollectingSignatures }),
   reset: () => set({ ...initialState }),
 }))

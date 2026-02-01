@@ -1,10 +1,11 @@
 import WalletDialog from '@/components/WalletDialog'
+import { BRIDGE_ABI, BRIDGE_CONFIG } from '@/lib/bridgeConfig'
 import { getAllProviders, getMetaMask, tryReconnectMetaMask } from '@/lib/evmProvider'
 import storage from '@/lib/storage'
 import { asyncMap } from '@/lib/utils'
 import { useGlobalStore } from '@/stores/globalStore'
 import type { Callbacks, EIP1193Provider, WalletInfo } from '@/types/domain'
-import { BrowserProvider, Contract, formatEther, formatUnits } from 'ethers'
+import { BrowserProvider, Contract, formatEther, formatUnits, Interface } from 'ethers'
 import idmp from 'idmp'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -160,6 +161,30 @@ export default function useEvmTools() {
     })
   }
 
+  async function getEventIndex(txHash: string): Promise<number> {
+    const normalizedTxHash = txHash.startsWith('0x') ? txHash : `0x${txHash}`
+    const mm = await getMetaMask()
+    if (!mm) throw new Error('MetaMask not detected')
+
+    const provider = new BrowserProvider(mm)
+    const receipt = await provider.getTransactionReceipt(normalizedTxHash)
+    if (!receipt) throw new Error('Transaction receipt not found')
+
+    const iface = new Interface(BRIDGE_ABI)
+    const event = iface.getEvent('TokensDeposited')
+    const eventTopic = event?.topicHash
+    if (!eventTopic) throw new Error('TokensDeposited topic not found')
+
+    const bridgeAddress = BRIDGE_CONFIG.evm.bridgeAddress.toLowerCase()
+    const logs = receipt.logs || []
+    for (let i = 0; i < logs.length; i += 1) {
+      const log = logs[i]
+      if (!log?.address || log.address.toLowerCase() !== bridgeAddress) continue
+      if (log.topics?.[0] === eventTopic) return i
+    }
+    throw new Error('TokensDeposited event not found in receipt logs')
+  }
+
   const handleCancel = useCallback(() => {
     console.log('canceled')
     setIsOpen(false)
@@ -180,5 +205,5 @@ export default function useEvmTools() {
     return <WalletDialog open={isOpen} onCancel={handleCancel} onOk={handleOk} walletType="EVM" />
   }, [isOpen, handleCancel, handleOk])
 
-  return { contextHolder, initListener, getBalance, openConnectDialog, disconnect, tryReconnect }
+  return { contextHolder, initListener, getBalance, openConnectDialog, disconnect, tryReconnect, getEventIndex }
 }
