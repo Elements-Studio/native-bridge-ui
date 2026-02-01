@@ -64,7 +64,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
               data.map(item => (
                 <TableRow key={`${item.source_chain_id}-${item.nonce}-${item.deposit?.sender_address}`}>
                   <TableCell className="font-mono text-sm">
-                    <Link target="_blank" to={buildTxLink(item)} title={item.deposit?.txn_hash} className="text-blue-600 hover:underline">
+                    <Link to={buildTxLink(item)} title={item.deposit?.txn_hash} className="text-blue-600 hover:underline">
                       {formatAddress(item.deposit?.txn_hash ?? '')}
                     </Link>
                   </TableCell>

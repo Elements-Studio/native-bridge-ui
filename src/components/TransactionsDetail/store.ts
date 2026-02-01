@@ -13,7 +13,7 @@ export const BridgeStatus = {
 export type BridgeStatus = (typeof BridgeStatus)[keyof typeof BridgeStatus]
 
 export const BridgeStatusLabelMap: Record<BridgeStatus, string> = {
-  [BridgeStatus.WaitingForIndexer]: 'Waiting for indexer',
+  [BridgeStatus.WaitingForIndexer]: 'Waiting for indexer, it may take a few minutes',
   [BridgeStatus.CollectingValidatorSignatures]: 'Collecting validator signatures',
   [BridgeStatus.SubmittingApprove]: 'Submitting approve',
   [BridgeStatus.SubmittingClaim]: 'Submitting claim',

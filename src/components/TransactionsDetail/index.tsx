@@ -10,7 +10,10 @@ import { Spinner } from '../ui/spinner'
 import ApprovalCard from './ApprovalCard'
 import ClaimCard from './ClaimCard'
 import DepositCard from './DepositCard'
+import StatusButton from './StatusButton'
 import { BridgeStatus, BridgeStatusLabelMap, useTransactionsDetailStore } from './store'
+import { useApprove } from './useApprove'
+import { useClaim } from './useClaim'
 
 export default function TransactionsDetail() {
   const [searchParams] = useSearchParams()
@@ -25,9 +28,12 @@ export default function TransactionsDetail() {
   const setSignatures = useTransactionsDetailStore(state => state.setSignatures)
   const setIsCollectingSignatures = useTransactionsDetailStore(state => state.setIsCollectingSignatures)
   const signatures = useTransactionsDetailStore(state => state.signatures)
+  const claimDelaySeconds = useTransactionsDetailStore(state => state.claimDelaySeconds)
   const collectingSignaturesRef = useRef(false)
 
   const { getEventIndex: getEvmEventIndex } = useEvmTools()
+  const { submitApprove } = useApprove()
+  useClaim() // 自动处理 claim 逻辑和倒计时
 
   useEffect(() => {
     const directionParam = searchParams.get('direction')
@@ -44,30 +50,28 @@ export default function TransactionsDetail() {
   }, [txnHash, setTxnHash])
 
   // 轮询获取交易状态，直到拿到数据
-  const { data: transferData, isLoading: isTransferLoading } = useSWR(
-    txnHash ? ['transferByDepositTxn', txnHash] : null,
-    ([, hash]) => getTransferByDepositTxn(hash),
-    {
-      refreshInterval: data => {
-        // 如果已拿到数据且 is_complete 为 true，停止轮询
-        if (data?.procedure?.is_complete) return 0
-        return 3000
-      },
-      revalidateOnFocus: false,
-      onSuccess: data => setTransferData(data),
+  const { data: transferData } = useSWR(txnHash ? ['transferByDepositTxn', txnHash] : null, ([, hash]) => getTransferByDepositTxn(hash), {
+    refreshInterval: data => {
+      // 如果已拿到数据且 is_complete 为 true，停止轮询
+      if (data?.procedure?.is_complete) return 0
+      return 3000
     },
-  )
+    revalidateOnFocus: false,
+    onSuccess: data => setTransferData(data),
+  })
 
   // bridgeStatus 和 bridgeError 同步到 store 中
+  // 只在后端数据显示比当前状态更进一步时才更新状态
   useEffect(() => {
     if (!transferData) return
-    const status: BridgeStatus | undefined = (() => {
-      const procedure = transferData.procedure
-      if (!procedure) return
+    const procedure = transferData.procedure
+    if (!procedure) return
+
+    // 根据后端数据推断状态
+    const derivedStatus: BridgeStatus | undefined = (() => {
       if (procedure.is_complete || procedure.current_status === 'claimed') {
         return BridgeStatus.Completed
       }
-
       if (procedure.approval && procedure.approval.is_finalized) {
         return BridgeStatus.SubmittingClaim
       }
@@ -80,10 +84,23 @@ export default function TransactionsDetail() {
       return BridgeStatus.WaitingForIndexer
     })()
 
-    if (status) {
-      setBridgeStatus(status)
+    if (!derivedStatus) return
+
+    // 状态优先级，越大越靠后
+    const statusOrder: Record<BridgeStatus, number> = {
+      [BridgeStatus.WaitingForIndexer]: 0,
+      [BridgeStatus.CollectingValidatorSignatures]: 1,
+      [BridgeStatus.SubmittingApprove]: 2,
+      [BridgeStatus.SubmittingClaim]: 3,
+      [BridgeStatus.AlreadyClaimed]: 4,
+      [BridgeStatus.Completed]: 5,
     }
-  }, [transferData, setBridgeStatus])
+
+    // 只在后端状态比当前状态更进一步时才更新
+    if (statusOrder[derivedStatus] > statusOrder[bridgeStatus]) {
+      setBridgeStatus(derivedStatus)
+    }
+  }, [transferData, bridgeStatus, setBridgeStatus])
 
   // 当状态为 CollectingValidatorSignatures 时，开始收集签名
   useEffect(() => {
@@ -114,52 +131,13 @@ export default function TransactionsDetail() {
     collect()
   }, [bridgeStatus, direction, txnHash, signatures.length, getEvmEventIndex, setSignatures, setIsCollectingSignatures, setBridgeError])
 
-  const statusLabel = useMemo(() => {
-    const pendingCls = 'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:text-secondary-foreground/90'
-    const readyToClaimCls = 'bg-accent/20 text-accent hover:bg-accent/10 hover:text-accent/90'
-    const completedCls = 'bg-accent-foreground/20 text-accent-foreground hover:bg-accent-foreground/10 hover:text-accent-foreground/90'
-    const failedCls = 'bg-red-100 text-red-800 hover:bg-red-100/80 hover:text-red-800/90'
-    if (bridgeError)
-      return {
-        label: 'Failed',
-        cls: failedCls,
-      }
-    if (transferData?.procedure?.is_complete)
-      return {
-        label: 'Completed',
-        cls: completedCls,
-      }
-    if (transferData?.procedure?.current_status === 'claimed')
-      return {
-        label: 'Completed',
-        cls: completedCls,
-      }
-    if (transferData?.procedure?.current_status === 'approved') {
-      return {
-        label: 'Approved',
-        cls: completedCls,
-      }
-    }
-    if (transferData?.procedure?.deposit?.is_finalized)
-      return {
-        label: 'Ready to claim',
-        cls: readyToClaimCls,
-      }
-    if (bridgeStatus)
-      return {
-        label: BridgeStatusLabelMap[bridgeStatus],
-        cls: pendingCls,
-      }
-    if (isTransferLoading)
-      return {
-        label: 'Loading...',
-        cls: pendingCls,
-      }
-    return {
-      label: 'Pending',
-      cls: pendingCls,
-    }
-  }, [bridgeError, bridgeStatus, isTransferLoading, transferData])
+  // 当收集到足够的签名后，提交 approve 交易
+  useEffect(() => {
+    if (bridgeStatus !== BridgeStatus.CollectingValidatorSignatures) return
+    if (signatures.length < 3) return
+    submitApprove()
+  }, [bridgeStatus, signatures.length, submitApprove])
+
   const progressValue = useMemo(() => {
     if (bridgeError) return 0
     if (!bridgeStatus) return 0
@@ -167,20 +145,13 @@ export default function TransactionsDetail() {
     if (bridgeStatus === BridgeStatus.WaitingForIndexer) return 0
     if (bridgeStatus === BridgeStatus.CollectingValidatorSignatures) return 20
     if (bridgeStatus === BridgeStatus.SubmittingApprove) return 40
-    if (bridgeStatus === BridgeStatus.SubmittingClaim) return direction === 'starcoin_to_eth' ? 50 : 60
+    if (bridgeStatus === BridgeStatus.SubmittingClaim) return 60
     if (bridgeStatus === BridgeStatus.Completed || bridgeStatus === BridgeStatus.AlreadyClaimed) return 100
     return 0
-  }, [bridgeError, bridgeStatus, direction])
+  }, [bridgeError, bridgeStatus])
 
   const progressSteps = useMemo(() => {
-    if (direction === 'starcoin_to_eth') {
-      return [
-        { label: 'Waiting for finalization', value: 20 },
-        { label: 'Collecting signatures', value: 50 },
-        { label: 'Submitting claim', value: 80 },
-        { label: 'Completed', value: 100 },
-      ]
-    }
+    // starcoin_to_eth 和 eth_to_starcoin 都有相同的步骤
     return [
       { label: 'Waiting for finalization', value: 20 },
       { label: 'Collecting signatures', value: 40 },
@@ -188,8 +159,8 @@ export default function TransactionsDetail() {
       { label: 'Claiming tokens', value: 80 },
       { label: 'Completed', value: 100 },
     ]
-  }, [direction])
-  const progressGridClass = direction === 'starcoin_to_eth' ? 'grid-cols-4' : 'grid-cols-5'
+  }, [])
+  const progressGridClass = 'grid-cols-5'
 
   return (
     <div className="bg-secondary grid w-full p-4">
@@ -205,11 +176,7 @@ export default function TransactionsDetail() {
               </div>
             </div>
 
-            <button
-              className={`${statusLabel.cls} flex cursor-pointer items-center rounded-xl px-6 py-2.5 text-xl transition-colors duration-200`}
-            >
-              {statusLabel.label}
-            </button>
+            <StatusButton />
           </div>
 
           {/* Progress Steps Section */}
@@ -219,7 +186,10 @@ export default function TransactionsDetail() {
               {progressSteps.map((step, index) => {
                 const isCompleted = progressValue >= step.value
                 const isCurrentStep =
-                  !isCompleted && index === progressSteps.findIndex(s => progressValue < s.value) && bridgeStatus !== BridgeStatus.Completed
+                  !bridgeError &&
+                  !isCompleted &&
+                  index === progressSteps.findIndex(s => progressValue < s.value) &&
+                  bridgeStatus !== BridgeStatus.Completed
                 return (
                   <div key={index} className="grid content-start justify-center gap-y-4">
                     <div
@@ -245,10 +215,13 @@ export default function TransactionsDetail() {
             <div className="bg-secondary border-secondary-foreground/30 mt-4 flex items-center gap-x-3 rounded-xl border p-5">
               <InfoIcon />
               <div className="grid min-w-0 flex-1 gap-1">
-                {/* <div className="text-primary-foreground text-lg font-bold">
-                  {direction === 'eth_to_starcoin' ? 'Ethereum' : 'Starcoin'} may take {formatDelayTime(claimDelaySeconds)} or more
-                </div> */}
-                {bridgeStatus ? <div className="text-accent-foreground w-full text-sm">{BridgeStatusLabelMap[bridgeStatus]}</div> : null}
+                {bridgeStatus ? (
+                  <div className="text-accent-foreground w-full text-sm">
+                    {bridgeStatus === BridgeStatus.SubmittingClaim && claimDelaySeconds != null && claimDelaySeconds > 0
+                      ? `Waiting for claim delay (${claimDelaySeconds}s)...`
+                      : BridgeStatusLabelMap[bridgeStatus]}
+                  </div>
+                ) : null}
                 {bridgeError ? <div className="text-secondary-foreground w-full text-sm">{bridgeError}</div> : null}
               </div>
             </div>

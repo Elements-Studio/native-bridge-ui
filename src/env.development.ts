@@ -97,7 +97,6 @@ export default {
   bridge: {
     evm: {
       chainIdHex: '0x7a69',
-      // chainIdHex: '0xc', // 本地测试
       chainId: 12,
       bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
       destinationChainId: 2,
