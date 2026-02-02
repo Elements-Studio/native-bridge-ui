@@ -26,7 +26,7 @@ interface IProps {
 }
 export default function WalletDialog(props: IProps) {
   const { open: isOpen, title, onCancel, onOk, walletType } = props
-  const { setEvmWalletInfo } = useGlobalStore()
+  const setEvmWalletInfo = useGlobalStore(state => state.setEvmWalletInfo)
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {

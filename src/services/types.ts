@@ -46,6 +46,19 @@ export interface ClaimInfo {
   is_finalized: boolean
 }
 
+export type ProcedureStatus = 'deposited' | 'approved' | 'claimed'
+
+export interface ProcedureInfo {
+  source_chain_id: ChainId
+  destination_chain_id: ChainId
+  nonce: number
+  current_status: ProcedureStatus
+  is_complete: boolean
+  deposit: DepositInfo
+  approval: ApprovalInfo | null
+  claim: ClaimInfo | null
+}
+
 export interface Transfer {
   chain_id: ChainId
   nonce: number
@@ -86,6 +99,22 @@ export interface HealthResponse {
 
 export interface TransferDetailResponse {
   transfer: Transfer
+}
+
+export interface TransferProcedure {
+  source_chain_id: ChainId
+  destination_chain_id: ChainId
+  nonce: number
+  current_status: TransferStatus
+  is_complete: boolean
+  deposit: DepositInfo | null
+  approval: ApprovalInfo | null
+  claim: ClaimInfo | null
+}
+
+export interface TransferByDepositTxnResponse {
+  procedure: ProcedureInfo
+  claim_delay_seconds: number
 }
 
 export interface TransferListResponse {

@@ -18,21 +18,31 @@ export default function FromToCard() {
     openConnectDialog: openStarcoinConnectDialog,
     disconnect: disconnectStarcoin,
   } = useStarcoinTools()
-  const { evmWalletInfo, starcoinWalletInfo, fromWalletType, setFromWalletType, setToWalletType, mappings, setCurrentCoin } =
-    useGlobalStore()
+
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
+  const fromWalletType = useGlobalStore(state => state.fromWalletType)
+  const setFromWalletType = useGlobalStore(state => state.setFromWalletType)
+  const setToWalletType = useGlobalStore(state => state.setToWalletType)
+  const mappings = useGlobalStore(state => state.mappings)
+  const setCurrentCoin = useGlobalStore(state => state.setCurrentCoin)
+  const setInputBalance = useGlobalStore(state => state.setInputBalance)
+
   const [from, setFrom] = useState<WalletType>(fromWalletType)
   const toggleCard = useCallback(() => {
     setFrom(prev => {
       const next = prev === 'EVM' ? 'STARCOIN' : 'EVM'
       setFromWalletType(next)
       setToWalletType(prev)
-      console.log(1111111, mappings)
+
       const defaultCoin = Object.values(mappings).find(coin => coin?.walletType === next && coin.isDefault)
-      console.log(defaultCoin, 22222)
+
       if (defaultCoin) setCurrentCoin(defaultCoin)
+      setInputBalance('')
+
       return next
     })
-  }, [setFromWalletType, setToWalletType, mappings, setCurrentCoin])
+  }, [setFromWalletType, setToWalletType, mappings, setCurrentCoin, setInputBalance])
   const EvmCard = useMemo(() => {
     return (
       <div key="EvmCard" className="bg-accent/80 flex flex-col gap-4 space-y-4 p-6 text-black/90 backdrop-blur-xs">

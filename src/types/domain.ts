@@ -25,12 +25,13 @@ export type CoinItem = {
   isDefault?: boolean
   icon: string
   name: CoinsName
+  bridgeTokenName: string
   walletType: WalletType
   network: {
     name: 'mainnet' | 'sepolia' | 'anvil' | 'devnet'
     chainId: string // '0x1' | '0xfb' | '0x6a'
   }
-  gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH'
+  gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH' | 'Gwei' | 'nanoSTC'
   ca?: string | null
 }
 export type Coins = Record<CoinsName, CoinItem | undefined>

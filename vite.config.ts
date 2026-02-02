@@ -71,6 +71,16 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ],
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  esbuild: mode === 'production' ? ({ drop: ['console'] } as any) : undefined,
+  build:
+    mode === 'production'
+      ? {
+          minify: 'terser',
+          terserOptions: {
+            compress: {
+              drop_debugger: true,
+              pure_funcs: ['console.log'],
+            },
+          },
+        }
+      : undefined,
 }))

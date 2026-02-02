@@ -163,7 +163,8 @@ async function getStarcoinBalance(
 }
 
 export default function useStarcoinTools() {
-  const { setStarcoinWalletInfo, starcoinWalletInfo } = useGlobalStore()
+  const setStarcoinWalletInfo = useGlobalStore(state => state.setStarcoinWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
 
   const [isOpen, setIsOpen] = useState(false)
 

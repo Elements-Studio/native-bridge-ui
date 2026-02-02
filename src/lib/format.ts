@@ -8,6 +8,11 @@ export function normalizeEip1193Error(err: unknown): Error {
   return new Error(msg + suffix)
 }
 
+export function normalizeHash(input: string): string {
+  if (!input) return ''
+  return input.startsWith('0x') ? input.toLowerCase() : `0x${input.toLowerCase()}`
+}
+
 export function formatAddress(address: string, length = 6): string {
   if (address.length <= length * 2) {
     return address
@@ -23,5 +28,24 @@ export function toFixedWithoutRounding(num: number | string, decimalPlaces: numb
     return formattedIntegerPart
   }
   const truncatedFractionalPart = fractionalPart.slice(0, decimalPlaces)
-  return `${formattedIntegerPart}.${truncatedFractionalPart}`
+  return `${formattedIntegerPart}.${truncatedFractionalPart || '0'}`
+}
+
+export function formatDecimal(num: number | string | bigint, maxFractionDigits: number = 6): string {
+  if (num === '' || num === null || num === undefined) return ''
+  const str = typeof num === 'bigint' ? num.toString() : String(num)
+  if (str === '') return ''
+
+  const parsed = parseFloat(str)
+  if (isNaN(parsed)) return ''
+
+  const [intPart, decPart = ''] = str.split('.')
+
+  const truncatedDec = decPart.slice(0, maxFractionDigits)
+
+  if (truncatedDec) {
+    const trimmed = truncatedDec.replace(/0+$/, '')
+    return trimmed ? `${intPart}.${trimmed}` : intPart
+  }
+  return intPart
 }
