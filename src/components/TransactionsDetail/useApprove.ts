@@ -48,7 +48,8 @@ async function submitApproveToStarcoin(
   signatures: SignatureResponse[],
   ethSenderAddress: string | undefined,
   starcoinRecipientAddress: string | undefined,
-  sendTransaction: (params: { data: string }) => Promise<unknown>,
+  sendTransaction: (params: { data: string; gas?: string; gasPrice?: string }) => Promise<unknown>,
+  gasParams?: { gas?: string; gasPrice?: string } | null,
 ) {
   console.log('[Bridge][Approve] Start submitting approve on Starcoin...')
 
@@ -94,6 +95,8 @@ async function submitApproveToStarcoin(
 
   const result = await sendTransaction({
     data: bytesToHex(approvePayload),
+    gas: gasParams?.gas,
+    gasPrice: gasParams?.gasPrice,
   })
   console.log('[Bridge][Approve] Done on Starcoin:', result)
 }
@@ -200,6 +203,7 @@ export function useApprove() {
   const signatures = useTransactionsDetailStore(state => state.signatures)
   const setBridgeStatus = useTransactionsDetailStore(state => state.setBridgeStatus)
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
+  const starcoinGasParams = useTransactionsDetailStore(state => state.starcoinGasParams)
 
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
@@ -224,7 +228,13 @@ export function useApprove() {
       }
 
       if (direction === 'eth_to_starcoin') {
-        await submitApproveToStarcoin(uniqueSignatures, evmWalletInfo?.address, starcoinWalletInfo?.address, sendTransaction)
+        await submitApproveToStarcoin(
+          uniqueSignatures,
+          evmWalletInfo?.address,
+          starcoinWalletInfo?.address,
+          sendTransaction,
+          starcoinGasParams,
+        )
       } else {
         await submitApproveToEthereum(uniqueSignatures, starcoinWalletInfo?.address, evmWalletInfo?.address)
       }
@@ -240,6 +250,7 @@ export function useApprove() {
     signatures,
     evmWalletInfo?.address,
     starcoinWalletInfo?.address,
+    starcoinGasParams,
     sendTransaction,
     setBridgeStatus,
     setBridgeError,

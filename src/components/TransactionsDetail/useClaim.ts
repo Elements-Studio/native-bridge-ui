@@ -28,7 +28,11 @@ const EVM_BRIDGE_ABI = [
 /**
  * 提交 claim 到 Starcoin 链 (eth_to_starcoin 方向)
  */
-async function submitClaimToStarcoin(nonce: number, sendTransaction: (params: { data: string }) => Promise<unknown>) {
+async function submitClaimToStarcoin(
+  nonce: number,
+  sendTransaction: (params: { data: string; gas?: string; gasPrice?: string }) => Promise<unknown>,
+  gasParams?: { gas?: string; gasPrice?: string } | null,
+) {
   console.log('[Bridge][Claim] Start submitting claim on Starcoin...')
 
   // 使用默认的 claim function (claim_bridge_usdt)
@@ -46,6 +50,8 @@ async function submitClaimToStarcoin(nonce: number, sendTransaction: (params: { 
 
   const result = await sendTransaction({
     data: bytesToHex(claimPayload),
+    gas: gasParams?.gas,
+    gasPrice: gasParams?.gasPrice,
   })
   console.log('[Bridge][Claim] Done on Starcoin:', result)
 }
@@ -91,6 +97,7 @@ export function useClaim() {
   const setBridgeStatus = useTransactionsDetailStore(state => state.setBridgeStatus)
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
   const setClaimDelaySeconds = useTransactionsDetailStore(state => state.setClaimDelaySeconds)
+  const starcoinGasParams = useTransactionsDetailStore(state => state.starcoinGasParams)
 
   const { sendTransaction } = useStarcoinTools()
 
@@ -134,7 +141,7 @@ export function useClaim() {
       }
 
       if (direction === 'eth_to_starcoin') {
-        await submitClaimToStarcoin(nonce, sendTransaction)
+        await submitClaimToStarcoin(nonce, sendTransaction, starcoinGasParams)
       } else {
         await submitClaimToEthereum(sourceChainId, nonce)
       }
@@ -153,6 +160,7 @@ export function useClaim() {
     sourceChainId,
     claimDelaySeconds,
     sendTransaction,
+    starcoinGasParams,
     setBridgeStatus,
     setBridgeError,
     setClaimDelaySeconds,

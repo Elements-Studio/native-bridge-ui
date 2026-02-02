@@ -15,11 +15,21 @@ import { BridgeStatus, BridgeStatusLabelMap, useTransactionsDetailStore } from '
 import { useApprove } from './useApprove'
 import { useClaim } from './useClaim'
 
+function normalizeGasHex(value: string | null): string | undefined {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  if (/^0x[0-9a-fA-F]+$/.test(trimmed)) return `0x${trimmed.slice(2).replace(/^0+/, '') || '0'}`
+  if (/^\d+$/.test(trimmed)) return `0x${BigInt(trimmed).toString(16)}`
+  return undefined
+}
+
 export default function TransactionsDetail() {
   const [searchParams] = useSearchParams()
   const direction = useTransactionsDetailStore(state => state.direction)
   const setDirection = useTransactionsDetailStore(state => state.setDirection)
   const setTxnHash = useTransactionsDetailStore(state => state.setTxnHash)
+  const setStarcoinGasParams = useTransactionsDetailStore(state => state.setStarcoinGasParams)
   const bridgeError = useTransactionsDetailStore(state => state.bridgeError)
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
   const setTransferData = useTransactionsDetailStore(state => state.setTransferData)
@@ -40,7 +50,16 @@ export default function TransactionsDetail() {
     if (directionParam === 'starcoin_to_eth' || directionParam === 'eth_to_starcoin') {
       setDirection(directionParam)
     }
-  }, [searchParams, setDirection])
+    const gasParam = searchParams.get('gas') ?? searchParams.get('max_gas_amount')
+    const gasPriceParam = searchParams.get('gasPrice') ?? searchParams.get('gas_unit_price')
+    const gas = normalizeGasHex(gasParam)
+    const gasPrice = normalizeGasHex(gasPriceParam)
+    if (gas || gasPrice) {
+      setStarcoinGasParams({ gas, gasPrice })
+    } else {
+      setStarcoinGasParams(null)
+    }
+  }, [searchParams, setDirection, setStarcoinGasParams])
 
   // 从 URL 参数中获取 txnHash 并设置到 store 中
   const { txnHash: qsTxnHash } = useParams()

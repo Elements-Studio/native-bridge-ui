@@ -286,10 +286,23 @@ export default function useStarcoinTools() {
     from?: string
     payload?: ScriptFunctionPayload
     data?: string
+    // Optional gas params. If omitted, StarMask auto-calculates gas via dryrun.
+    gas?: string | number
+    gasPrice?: string | number
     max_gas_amount?: string | number
     gas_unit_price?: string | number
     gas_token_code?: string
     expiration_timestamp_secs?: string | number
+  }
+
+  const normalizeHexValue = (value?: string | number) => {
+    if (value === undefined || value === null) return undefined
+    if (typeof value === 'number') return `0x${BigInt(value).toString(16)}`
+    const trimmed = value.trim()
+    if (!trimmed) return undefined
+    if (/^0x[0-9a-fA-F]+$/.test(trimmed)) return `0x${trimmed.slice(2).replace(/^0+/, '') || '0'}`
+    if (/^\d+$/.test(trimmed)) return `0x${BigInt(trimmed).toString(16)}`
+    return undefined
   }
 
   const sendTransaction = useCallback(async (params: StarcoinSendTxParams) => {
@@ -303,7 +316,16 @@ export default function useStarcoinTools() {
     const from = params.from ?? accounts?.[0]
     if (!from) throw new Error('No Starcoin account')
 
-    const tx = { ...params, from }
+    const { max_gas_amount, gas_unit_price, gas, gasPrice, ...cleanParams } = params as any
+    const normalizedGas = normalizeHexValue(gas ?? max_gas_amount)
+    const normalizedGasPrice = normalizeHexValue(gasPrice ?? gas_unit_price)
+    const tx = {
+      ...cleanParams,
+      from,
+      ...(normalizedGas ? { gas: normalizedGas } : {}),
+      ...(normalizedGasPrice ? { gasPrice: normalizedGasPrice } : {}),
+    }
+
     console.info('[StarMask][sendTransaction] sender:', from)
     console.info('[StarMask][sendTransaction] data:', tx.data)
     console.info('[StarMask][sendTransaction] payload:', tx.payload)

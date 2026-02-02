@@ -27,6 +27,7 @@ type TransactionsDetailState = {
   bridgeStatus: BridgeStatus
   bridgeError: string | null
   claimDelaySeconds: number | null
+  starcoinGasParams: { gas?: string; gasPrice?: string } | null
   transferData: TransferByDepositTxnResponse | null
   signatures: SignatureResponse[]
   isCollectingSignatures: boolean
@@ -35,6 +36,7 @@ type TransactionsDetailState = {
   setBridgeStatus: (status: BridgeStatus) => void
   setBridgeError: (error: string | null) => void
   setClaimDelaySeconds: (seconds: number | null) => void
+  setStarcoinGasParams: (params: { gas?: string; gasPrice?: string } | null) => void
   setTransferData: (data: TransferByDepositTxnResponse | null) => void
   setSignatures: (signatures: SignatureResponse[]) => void
   setIsCollectingSignatures: (isCollecting: boolean) => void
@@ -47,6 +49,7 @@ const initialState = {
   bridgeStatus: BridgeStatus.WaitingForIndexer,
   bridgeError: null as string | null,
   claimDelaySeconds: null as number | null,
+  starcoinGasParams: null as { gas?: string; gasPrice?: string } | null,
   transferData: null as TransferByDepositTxnResponse | null,
   signatures: [] as SignatureResponse[],
   isCollectingSignatures: false,
@@ -59,6 +62,7 @@ export const useTransactionsDetailStore = create<TransactionsDetailState>(set =>
   setBridgeStatus: bridgeStatus => set({ bridgeStatus }),
   setBridgeError: bridgeError => set({ bridgeError }),
   setClaimDelaySeconds: claimDelaySeconds => set({ claimDelaySeconds }),
+  setStarcoinGasParams: starcoinGasParams => set({ starcoinGasParams }),
   setTransferData: data =>
     set({
       transferData: data,

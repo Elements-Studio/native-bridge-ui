@@ -147,6 +147,5 @@ vite.config.ts.timestamp-*
 
 *.pem
 
-.notes/
 .vite/
 .idea/
