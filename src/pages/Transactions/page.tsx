@@ -2,26 +2,32 @@ import { TransfersTable } from '@/components/Transactions/TransfersTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getTransferList } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 
 export default function TransactionsPage() {
-  const { evmWalletInfo, starcoinWalletInfo } = useGlobalStore()
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
+
   const [searchParams, setSearchParams] = useSearchParams()
   const [evmPage, setEvmPage] = useState(1)
   const [starcoinPage, setStarcoinPage] = useState(1)
 
-  // Get current tab from URL query, default to 'evm'
-  const currentTab = searchParams.get('chain') === 'starcoin' ? 'starcoin' : 'evm'
+  const currentTab = searchParams.get('direction') === 'starcoin_to_eth' ? 'starcoin_to_eth' : 'eth_to_starcoin'
 
-  // Handle tab change and update URL
+  useEffect(() => {
+    if (!searchParams.get('direction')) {
+      setSearchParams({ direction: 'eth_to_starcoin' }, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   const handleTabChange = (value: string) => {
-    setSearchParams({ chain: value })
+    setSearchParams({ direction: value })
   }
 
   const { data: evmData, isLoading: evmLoading } = useSWR(
-    evmWalletInfo?.address ? ['getTransferList-evm', evmWalletInfo.address, evmPage] : null,
+    currentTab === 'eth_to_starcoin' && evmWalletInfo?.address ? ['getTransferList-evm', evmWalletInfo.address, evmPage] : null,
     () => {
       const address = evmWalletInfo?.address
       if (!address) {
@@ -41,7 +47,9 @@ export default function TransactionsPage() {
   )
 
   const { data: starcoinData, isLoading: starcoinLoading } = useSWR(
-    starcoinWalletInfo?.address ? ['getTransferList-starcoin', starcoinWalletInfo.address, starcoinPage] : null,
+    currentTab === 'starcoin_to_eth' && starcoinWalletInfo?.address
+      ? ['getTransferList-starcoin', starcoinWalletInfo.address, starcoinPage]
+      : null,
     () => {
       const address = starcoinWalletInfo?.address
       if (!address) {
@@ -71,11 +79,11 @@ export default function TransactionsPage() {
           className="grid w-full grid-rows-[auto_1fr] gap-4 md:col-start-1 md:row-start-1"
         >
           <TabsList className="justify-self-center md:justify-self-end">
-            <TabsTrigger value="evm">EVM Wallet</TabsTrigger>
-            <TabsTrigger value="starcoin">Starcoin Wallet</TabsTrigger>
+            <TabsTrigger value="eth_to_starcoin">EVM Wallet</TabsTrigger>
+            <TabsTrigger value="starcoin_to_eth">Starcoin Wallet</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="evm" className="space-y-4">
+          <TabsContent value="eth_to_starcoin" className="space-y-4">
             {!evmWalletInfo?.address ? (
               <div className="py-8 text-center text-gray-500">Please connect your EVM wallet</div>
             ) : (
@@ -84,11 +92,12 @@ export default function TransactionsPage() {
                 pagination={evmData?.pagination || { page: 1, page_size: 20, total_count: 0, total_pages: 0 }}
                 isLoading={evmLoading}
                 onPageChange={setEvmPage}
+                direction="eth_to_starcoin"
               />
             )}
           </TabsContent>
 
-          <TabsContent value="starcoin" className="space-y-4">
+          <TabsContent value="starcoin_to_eth" className="space-y-4">
             {!starcoinWalletInfo?.address ? (
               <div className="py-8 text-center text-gray-500">Please connect your Starcoin wallet</div>
             ) : (
@@ -97,6 +106,7 @@ export default function TransactionsPage() {
                 pagination={starcoinData?.pagination || { page: 1, page_size: 20, total_count: 0, total_pages: 0 }}
                 isLoading={starcoinLoading}
                 onPageChange={setStarcoinPage}
+                direction="starcoin_to_eth"
               />
             )}
           </TabsContent>

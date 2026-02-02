@@ -24,7 +24,3 @@ export function normalizeHex(input: string, expectedBytes?: number): string {
   }
   return `0x${hex}`
 }
-
-export function normalizeHash(input: string): string {
-  return input.startsWith('0x') ? input.toLowerCase() : `0x${input.toLowerCase()}`
-}

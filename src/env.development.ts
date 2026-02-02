@@ -3,6 +3,7 @@ import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
 import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 import wbtcIcon from '@/assets/img/wbtc.svg'
+import type { Coins } from '@/types/domain'
 
 export default {
   apis: {
@@ -23,7 +24,7 @@ export default {
       name: 'ETH',
       walletType: 'EVM',
       network: { name: 'mainnet', chainId: '0x1' },
-      gas: 'ETH',
+      gas: 'Gwei',
       ca: null,
     },
     USDT: {
@@ -31,7 +32,7 @@ export default {
       name: 'USDT',
       walletType: 'EVM',
       network: { name: 'mainnet', chainId: '0x1' },
-      gas: 'ETH',
+      gas: 'Gwei',
       ca: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
     },
     SepoliaETH: {
@@ -39,7 +40,7 @@ export default {
       name: 'SepoliaETH',
       walletType: 'EVM',
       network: { name: 'sepolia', chainId: '0xaa36a7' },
-      gas: 'SepoliaETH',
+      gas: 'Gwei',
       ca: null,
     },
     SepoliaUSDT: {
@@ -47,7 +48,7 @@ export default {
       name: 'SepoliaUSDT',
       walletType: 'EVM',
       network: { name: 'sepolia', chainId: '0xaa36a7' },
-      gas: 'SepoliaETH',
+      gas: 'Gwei',
       ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
     },
     AnvilETH: {
@@ -55,7 +56,7 @@ export default {
       name: 'AnvilETH',
       walletType: 'EVM',
       network: { name: 'anvil', chainId: '0x7a69' },
-      gas: 'AnvilETH',
+      gas: 'Gwei',
       ca: null,
     },
     AnvilUSDT: {
@@ -64,7 +65,7 @@ export default {
       name: 'AnvilUSDT',
       walletType: 'EVM',
       network: { name: 'anvil', chainId: '0x7a69' },
-      gas: 'AnvilETH',
+      gas: 'Gwei',
       ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
     },
     WBTC: {
@@ -72,7 +73,7 @@ export default {
       name: 'WBTC',
       walletType: 'EVM',
       network: { name: 'mainnet', chainId: '0x1' },
-      gas: 'ETH',
+      gas: 'Gwei',
       ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
     },
     // STC: {
@@ -80,7 +81,7 @@ export default {
     //   name: 'STC',
     //   walletType: 'STARCOIN',
     //   network: { name: 'devnet', chainId: '0x1' },
-    //   gas: 'STC',
+    //   gas: 'nanoSTC',
     // },
     StarUSDT: {
       isDefault: true,
@@ -88,21 +89,20 @@ export default {
       name: 'StarUSDT',
       walletType: 'STARCOIN',
       network: { name: 'devnet', chainId: '0x1' },
-      gas: 'STC',
-      ca: '0xded6d62bf4db25d5fd69a714a8896424::USDT::USDT',
+      gas: 'nanoSTC',
+      ca: '0x7db7d4c5322285b8357b81aaaa1aba09::USDT::USDT',
     },
-  },
+  } as Coins,
 
   bridge: {
     evm: {
       chainIdHex: '0x7a69',
-      // chainIdHex: '0xc', // 本地测试
       chainId: 12,
       bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
       destinationChainId: 2,
     },
     starcoin: {
-      packageAddress: '0xded6d62bf4db25d5fd69a714a8896424',
+      packageAddress: '0x7db7d4c5322285b8357b81aaaa1aba09',
       chainId: 2,
     },
     tokens: {

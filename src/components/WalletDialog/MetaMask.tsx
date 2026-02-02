@@ -23,7 +23,7 @@ type MetaMaskProps = {
 export default function MetaMask({ className, onError, onDialogOk, onChange }: MetaMaskProps) {
   console.log('MetaMask component rendered')
   const [connecting, setConnecting] = useState(false)
-  const { currentCoin } = useGlobalStore()
+  const currentCoin = useGlobalStore(state => state.currentCoin)
 
   const handleClick = useCallback(async () => {
     if (connecting) return
