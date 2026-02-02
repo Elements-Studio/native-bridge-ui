@@ -3814,7 +3814,7 @@ snapshots:
       readdirp: 3.6.0
     optionalDependencies:
       fsevents: 2.3.3
-
+   
   class-variance-authority@0.7.1:
     dependencies:
       clsx: 2.1.1

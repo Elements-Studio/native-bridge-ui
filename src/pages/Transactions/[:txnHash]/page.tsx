@@ -457,6 +457,22 @@ export default function TransactionsDetailPage() {
           throw new Error('Transfer not finalized yet')
         }
 
+        // 等待倒计时结束
+        if (claimDelay > 0) {
+          console.log('[Bridge] Starting claim delay countdown:', claimDelay)
+          setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
+          while (claimDelay > 0) {
+            if (cancelled) return
+            setClaimDelaySeconds(claimDelay)
+            setBridgeStatus(`Waiting for claim delay (${claimDelay}s)...`)
+            console.log('[Bridge] Countdown tick:', claimDelay)
+            await sleep(1000)
+            claimDelay -= 1
+          }
+          setClaimDelaySeconds(0)
+          console.log('[Bridge] Claim delay finished')
+        }
+
         if (nonce === null || !Number.isFinite(nonce)) {
           throw new Error('Indexer did not return transfer nonce')
         }
