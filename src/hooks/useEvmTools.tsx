@@ -162,27 +162,32 @@ export default function useEvmTools() {
   }
 
   async function getEventIndex(txHash: string): Promise<number> {
-    const normalizedTxHash = txHash.startsWith('0x') ? txHash : `0x${txHash}`
-    const mm = await getMetaMask()
-    if (!mm) throw new Error('MetaMask not detected')
+    try {
+      const normalizedTxHash = txHash.startsWith('0x') ? txHash : `0x${txHash}`
+      const mm = await getMetaMask()
+      if (!mm) throw new Error('MetaMask not detected')
 
-    const provider = new BrowserProvider(mm)
-    const receipt = await provider.getTransactionReceipt(normalizedTxHash)
-    if (!receipt) throw new Error('Transaction receipt not found')
+      const provider = new BrowserProvider(mm)
+      const receipt = await provider.getTransactionReceipt(normalizedTxHash)
+      if (!receipt) throw new Error('Transaction receipt not found')
 
-    const iface = new Interface(BRIDGE_ABI)
-    const event = iface.getEvent('TokensDeposited')
-    const eventTopic = event?.topicHash
-    if (!eventTopic) throw new Error('TokensDeposited topic not found')
+      const iface = new Interface(BRIDGE_ABI)
+      const event = iface.getEvent('TokensDeposited')
+      const eventTopic = event?.topicHash
+      if (!eventTopic) throw new Error('TokensDeposited topic not found')
 
-    const bridgeAddress = BRIDGE_CONFIG.evm.bridgeAddress.toLowerCase()
-    const logs = receipt.logs || []
-    for (let i = 0; i < logs.length; i += 1) {
-      const log = logs[i]
-      if (!log?.address || log.address.toLowerCase() !== bridgeAddress) continue
-      if (log.topics?.[0] === eventTopic) return i
+      const bridgeAddress = BRIDGE_CONFIG.evm.bridgeAddress.toLowerCase()
+      const logs = receipt.logs || []
+      for (let i = 0; i < logs.length; i += 1) {
+        const log = logs[i]
+        if (!log?.address || log.address.toLowerCase() !== bridgeAddress) continue
+        if (log.topics?.[0] === eventTopic) return i
+      }
+      throw new Error('TokensDeposited event not found in receipt logs')
+    } catch (err) {
+      console.error('getEventIndex error:', err)
+      return 0
     }
-    throw new Error('TokensDeposited event not found in receipt logs')
   }
 
   const handleCancel = useCallback(() => {

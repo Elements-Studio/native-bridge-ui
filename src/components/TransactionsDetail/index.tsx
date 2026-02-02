@@ -114,7 +114,7 @@ export default function TransactionsDetail() {
       setIsCollectingSignatures(true)
       try {
         console.log('[Bridge] Collecting validator signatures...')
-        const eventIndex = direction === 'eth_to_starcoin' ? await getEvmEventIndex(txnHash) : 0
+        const eventIndex = direction === 'eth_to_starcoin' ? await getEvmEventIndex(txnHash) : await getEvmEventIndex(txnHash)
         console.log('[Bridge] Event index:', eventIndex)
         const sigs = await collectSignatures(direction, txnHash, eventIndex, { validatorCount: 3 })
         console.log('[Bridge] Signatures collected:', sigs.length)
@@ -164,7 +164,6 @@ export default function TransactionsDetail() {
 
   return (
     <div className="bg-secondary grid w-full p-4">
-      {bridgeStatus}
       <div className="mx-auto grid w-full max-w-300 content-start gap-4 py-6">
         <h1 className="text-2xl font-bold">Transaction Details</h1>
 
