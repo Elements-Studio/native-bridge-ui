@@ -1,3 +1,5 @@
+import ethIcon from '@/assets/img/eth.svg'
+import ststarcoinIcon from '@/assets/img/starcoin.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 import type { Coins } from './types/domain'
 
@@ -32,6 +34,7 @@ export default {
       network: { name: 'anvil', chainId: '0x7a69' },
       gas: 'Gwei',
       ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+      decimals: 6,
     },
     StarUSDT: {
       isDefault: true,
@@ -41,8 +44,9 @@ export default {
       network: { name: 'devnet', chainId: '0x1' },
       gas: 'nanoSTC',
       ca: '0x7db7d4c5322285b8357b81aaaa1aba09::USDT::USDT',
+      decimals: 6,
     },
-  } as Coins,
+  } satisfies Coins,
 
   bridge: {
     evm: {
@@ -60,5 +64,9 @@ export default {
       SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
       StarUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt', sendFunction: 'send_bridge_usdt', decimals: 6 },
     },
+  },
+  icons: {
+    ETH: ethIcon,
+    STARCOIN: ststarcoinIcon,
   },
 }

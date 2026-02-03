@@ -75,6 +75,8 @@ export interface Transfer {
 }
 
 export interface TransferListItem {
+  source_chain: string
+  destination_chain: string
   source_chain_id: ChainId
   destination_chain_id: ChainId
   nonce: number
@@ -180,7 +182,8 @@ export interface SignatureResponse {
 }
 
 export interface TransferListParams {
-  address: string
+  address?: string
+  sender?: string
   status?: TransferStatus
   finalized_only?: boolean
   chain_id?: ChainId
