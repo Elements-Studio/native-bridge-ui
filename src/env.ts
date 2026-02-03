@@ -28,6 +28,7 @@ const env = (process.env.NODE_ENV === 'development' ? devEnv : prodEnv) as {
       StarUSDT: { tokenId: number; claimFunction: 'claim_bridge_usdt'; sendFunction: 'send_bridge_usdt'; decimals: number }
     }
   }
+  icons: Record<string, string>
 }
 
 export default env

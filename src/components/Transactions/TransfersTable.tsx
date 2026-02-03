@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import env from '@/env'
 import { formatAddress } from '@/lib/format'
 import type { Pagination, TransferListItem } from '@/services/types'
 import clsx from 'clsx'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface TransfersTableProps {
@@ -45,12 +47,15 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
             <TableRow>
               <TableHead>Transaction Hash</TableHead>
               <TableHead>Nonce</TableHead>
-              <TableHead>From → To</TableHead>
+              <TableHead>
+                From
+                <ArrowRight className="inline-block h-2 w-2 align-middle" />
+                To
+              </TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Sender Address</TableHead>
               <TableHead>Block Height</TableHead>
               <TableHead>Time</TableHead>
-              <TableHead>Finalized</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -69,8 +74,16 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
                     </Link>
                   </TableCell>
                   <TableCell>{item.nonce}</TableCell>
+                  {/* From → To */}
                   <TableCell>
-                    {item.source_chain_id} → {item.destination_chain_id}
+                    <img src={env.icons[item.source_chain.toUpperCase()]} alt={item.source_chain} className="inline-block h-4 w-4" />
+                    <ArrowRight className="mx-1 inline-block h-2 w-2 align-middle" />
+                    <img
+                      src={env.icons[item.destination_chain.toUpperCase()]}
+                      alt={item.destination_chain}
+                      className="inline-block h-4 w-4"
+                    />
+                    {/* {item.source_chain} → {item.destination_chain} */}
                   </TableCell>
                   <TableCell>
                     <span className={clsx(`inline-block rounded px-2 py-1 text-xs font-medium`, getStatusColor(item.current_status))}>
@@ -85,9 +98,9 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
                   </TableCell>
                   <TableCell>{item.deposit?.block_height}</TableCell>
                   <TableCell className="text-sm">{item.deposit ? formatTimestamp(item.deposit.timestamp_ms) : '-'}</TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     {item.deposit?.is_finalized ? <span className="text-green-600">✓</span> : <span className="text-gray-400">-</span>}
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               ))
             )}

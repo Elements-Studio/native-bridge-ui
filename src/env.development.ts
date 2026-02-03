@@ -1,6 +1,7 @@
 import ethIcon from '@/assets/img/eth.svg'
 import sepoliaEthIcon from '@/assets/img/sepolia_eth.svg'
 import sepoliaUsdtIcon from '@/assets/img/sepolia_usdt.svg'
+import ststarcoinIcon from '@/assets/img/starcoin.svg'
 import usdtIcon from '@/assets/img/usdt.svg'
 import wbtcIcon from '@/assets/img/wbtc.svg'
 import type { Coins } from '@/types/domain'
@@ -26,6 +27,7 @@ export default {
       network: { name: 'mainnet', chainId: '0x1' },
       gas: 'Gwei',
       ca: null,
+      decimals: 18,
     },
     USDT: {
       icon: usdtIcon,
@@ -34,6 +36,7 @@ export default {
       network: { name: 'mainnet', chainId: '0x1' },
       gas: 'Gwei',
       ca: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      decimals: 6,
     },
     SepoliaETH: {
       icon: sepoliaEthIcon,
@@ -42,6 +45,7 @@ export default {
       network: { name: 'sepolia', chainId: '0xaa36a7' },
       gas: 'Gwei',
       ca: null,
+      decimals: 18,
     },
     SepoliaUSDT: {
       icon: sepoliaUsdtIcon,
@@ -50,6 +54,7 @@ export default {
       network: { name: 'sepolia', chainId: '0xaa36a7' },
       gas: 'Gwei',
       ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
+      decimals: 6,
     },
     AnvilETH: {
       icon: ethIcon,
@@ -58,6 +63,7 @@ export default {
       network: { name: 'anvil', chainId: '0x7a69' },
       gas: 'Gwei',
       ca: null,
+      decimals: 18,
     },
     AnvilUSDT: {
       isDefault: true,
@@ -67,6 +73,7 @@ export default {
       network: { name: 'anvil', chainId: '0x7a69' },
       gas: 'Gwei',
       ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+      decimals: 6,
     },
     WBTC: {
       icon: wbtcIcon,
@@ -75,6 +82,7 @@ export default {
       network: { name: 'mainnet', chainId: '0x1' },
       gas: 'Gwei',
       ca: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+      decimals: 8,
     },
     // STC: {
     //   icon: usdtIcon,
@@ -91,8 +99,9 @@ export default {
       network: { name: 'devnet', chainId: '0x1' },
       gas: 'nanoSTC',
       ca: '0x7db7d4c5322285b8357b81aaaa1aba09::USDT::USDT',
+      decimals: 6,
     },
-  } as Coins,
+  } satisfies Coins,
 
   bridge: {
     evm: {
@@ -110,5 +119,10 @@ export default {
       SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
       StarUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt', sendFunction: 'send_bridge_usdt', decimals: 6 },
     },
+  },
+
+  icons: {
+    ETH: ethIcon,
+    STARCOIN: ststarcoinIcon,
   },
 }

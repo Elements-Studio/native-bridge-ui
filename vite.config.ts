@@ -78,7 +78,7 @@ export default defineConfig(({ mode }) => ({
           terserOptions: {
             compress: {
               drop_debugger: true,
-              pure_funcs: ['console.log'],
+              pure_funcs: ['console.log', 'alert'],
             },
           },
         }

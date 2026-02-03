@@ -38,7 +38,7 @@ export default function TransactionsPage() {
         })
       }
       return getTransferList({
-        address,
+        sender: address,
         page: evmPage,
         page_size: 20,
         // finalized_only: true,
@@ -60,10 +60,9 @@ export default function TransactionsPage() {
         })
       }
       return getTransferList({
-        address,
+        sender: address,
         page: starcoinPage,
         page_size: 20,
-        finalized_only: true,
       })
     },
   )

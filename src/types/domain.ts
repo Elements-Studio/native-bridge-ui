@@ -22,10 +22,14 @@ export type Callbacks = {
 
 export type CoinsName = 'ETH' | 'USDT' | 'WBTC' | 'SepoliaETH' | 'SepoliaUSDT' | 'StarUSDT' | 'AnvilUSDT' | 'AnvilETH' | 'STC'
 export type CoinItem = {
+  // 是否是当前链上的默认币种
   isDefault?: boolean
+  // 币种 ICON 图标
   icon: string
+  // 币种名字
   name: CoinsName
-  bridgeTokenName: string
+
+  // 链类型
   walletType: WalletType
   network: {
     name: 'mainnet' | 'sepolia' | 'anvil' | 'devnet'
@@ -33,5 +37,6 @@ export type CoinItem = {
   }
   gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH' | 'Gwei' | 'nanoSTC'
   ca?: string | null
+  decimals: number
 }
-export type Coins = Record<CoinsName, CoinItem | undefined>
+export type Coins = Partial<Record<CoinsName, CoinItem>>
