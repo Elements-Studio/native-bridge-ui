@@ -43,7 +43,7 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'devnet', chainId: '0x1' },
       gas: 'nanoSTC',
-      ca: '0x7db7d4c5322285b8357b81aaaa1aba09::USDT::USDT',
+      ca: '0x9a03939cac576387f516efedc48ee665::USDT::USDT',
       decimals: 6,
     },
   } satisfies Coins,
@@ -56,7 +56,7 @@ export default {
       destinationChainId: 2,
     },
     starcoin: {
-      packageAddress: '0x7db7d4c5322285b8357b81aaaa1aba09',
+      packageAddress: '0x9a03939cac576387f516efedc48ee665',
       chainId: 2,
     },
     tokens: {
