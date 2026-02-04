@@ -111,7 +111,7 @@ export default {
       destinationChainId: 1,
     },
     starcoin: {
-      packageAddress: '0x93c6a07496c2d1103cea43abc3e233c2',
+      packageAddress: '0xe28b41c03c83f4c788ea2e0fc9f5799a',
       chainId: 1,
     },
     tokens: {
