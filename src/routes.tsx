@@ -1,7 +1,7 @@
 import BridgeAssets from '@/pages/BridgeAssets'
-import TransactionsPage from '@/pages/Transactions/page'
 import TransactionsDetailPage from '@/pages/Transactions/[:txnHash]/page'
-import { Route, Routes, Navigate } from 'react-router-dom'
+import TransactionsPage from '@/pages/Transactions/page'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 export function AppRoutes() {
   return (

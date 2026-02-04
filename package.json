@@ -1,7 +1,12 @@
 {
-  "name": "bridge",
+  "name": "starswap-bridge",
   "version": "0.0.0",
   "private": true,
+  "homepage": "https://bridge.starswap.xyz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elements-Studio/native-bridge-ui.git"
+  },
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {

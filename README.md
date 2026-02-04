@@ -1,75 +1,113 @@
-# React + TypeScript + Vite
+# Starcoin Bridge
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A cross-chain bridge application for transferring assets between Starcoin and Ethereum networks.
 
-Currently, two official plugins are available:
+Official website: https://bridge.starswap.xyz
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Requirements
 
-## React Compiler
+- Node.js 25+ (<https://nodejs.org>)
+- pnpm (<https://pnpm.io>)
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## mkcert
 
-Note: This will impact Vite dev & build performances.
+Install mkcert (local HTTPS certificates):
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+brew install mkcert
+brew install nss # for Firefox (optional)
+mkcert -install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Official docs: <https://github.com/FiloSottile/mkcert>
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Installation
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
 ```
+
+## Development
+
+Run the development server:
+
+```bash
+pnpm dev
+```
+
+## Build
+
+Build the application for production:
+
+```bash
+pnpm build
+```
+
+## Deployment
+
+Deploy the application:
+
+```bash
+pnpm run deploy
+```
+
+## Architecture
+
+Frontend stack
+
+- Vite + React + TypeScript
+- React Router for routing (`src/routes.tsx`)
+- Zustand for shared state (`src/stores/globalStore.ts`)
+- SWR for data fetching and polling (`src/pages/Transactions/page.tsx`, `src/components/TransactionsDetail/index.tsx`)
+- Ethers for EVM interactions and StarMask for Starcoin interactions (`src/hooks/useEvmTools.tsx`, `src/hooks/useStarcoinTools.tsx`)
+
+Environment configuration
+
+- `src/env.development.ts` and `src/env.production.ts` define API endpoints, supported coins, bridge addresses, chain IDs, and icons.
+- `src/lib/bridgeConfig.ts` exposes `BRIDGE_CONFIG` and ABIs used by bridge flows.
+
+Routes and pages
+
+- `/` Bridge UI (`src/pages/BridgeAssets.tsx` → `src/components/BridgeAssets/*`)
+- `/transactions` Transfer list with direction tabs (`src/pages/Transactions/page.tsx`)
+- `/transactions/:txnHash` Transfer detail with status progression (`src/pages/Transactions/[:txnHash]/page.tsx`)
+
+Core business flows
+
+- Bridge entry (`src/components/BridgeAssets/Panel.tsx`):
+  - Estimates fees via `getEstimateFees(direction)`.
+  - Validates wallet connections, amount, and token config.
+  - EVM → Starcoin:
+    - Switch EVM chain, check ERC20 allowance, approve if needed.
+    - Call `bridgeERC20` on the EVM bridge contract.
+    - Redirect to transaction detail with `direction=eth_to_starcoin`.
+  - Starcoin → EVM:
+    - Build Starcoin script payload (`send_bridge_usdt`) and submit via StarMask.
+    - Navigate to transaction detail with `direction=starcoin_to_eth`.
+- Wallet connect + balances (`src/components/BridgeAssets/CoinSelectorCard/*`, `src/components/BridgeAssets/FromToCard/*`):
+  - EVM uses MetaMask; Starcoin uses StarMask.
+  - Balances are fetched from the active chain and cached via `idmp`.
+  - Switching “From/To” flips direction and resets amount + coin.
+- Transfer list (`src/pages/Transactions/page.tsx`, `src/components/Transactions/TransfersTable.tsx`):
+  - Lists transfers for the connected wallet using `getTransferList`.
+  - Direction tabs map to `eth_to_starcoin` and `starcoin_to_eth`.
+- Transfer detail workflow (`src/components/TransactionsDetail/*`):
+  - Polls `getTransferByDepositTxn` until `is_complete`.
+  - Derives status based on backend procedure:
+    - Waiting for indexer → Collect signatures → Approve → Claim → Completed
+  - Collects validator signatures from committee endpoints (`collectSignatures`), requires 3 distinct signatures.
+  - Approve step:
+    - EVM → Starcoin: submit Starcoin `approve_bridge_token_transfer_three`.
+    - Starcoin → EVM: call EVM `approveTransferWithSignatures`.
+  - Claim step:
+    - EVM → Starcoin: Starcoin `claim_bridge_usdt`.
+    - Starcoin → EVM: EVM `claimApprovedTransfer`.
+  - Supports claim delay countdown if required by backend.
+
+APIs and services
+
+- `src/services/api.ts`:
+  - `/transfers` for list and detail.
+  - `/estimate_fees` for gas/fee estimates.
+  - Committee signature endpoints for validator signatures.
+  - `idmp` is used to de-duplicate and retry network requests.
