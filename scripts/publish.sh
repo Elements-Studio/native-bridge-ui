@@ -10,7 +10,7 @@ if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then
   exit 1
 fi
 
-git clone --depth 1 --branch gh-pages git@github.com-vreese:Elements-Studio/native-bridge-ui.git $root/dist-remote
+git clone --depth 1 --branch gh-pages git@github.com:Elements-Studio/native-bridge-ui.git $root/dist-remote
 cd $root/dist-remote
 /bin/rm -rf *
 
