@@ -32,7 +32,7 @@ const defaults = freeze(
     mappings,
     fromWalletType: 'EVM' as WalletType,
     toWalletType: 'STARCOIN' as WalletType,
-    currentCoin: Object.values(mappings).find(coin => coin?.isDefault)!,
+    currentCoin: Object.values(mappings).find(coin => coin?.walletType === 'EVM' && coin?.isDefault)!,
     evmWalletInfo: null,
     starcoinWalletInfo: null,
     inputBalance: '',
