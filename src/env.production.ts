@@ -48,6 +48,7 @@ export default {
     //   decimals: 18,
     // },
     SepoliaUSDT: {
+      isDefault: true,
       icon: sepoliaUsdtIcon,
       name: 'SepoliaUSDT',
       walletType: 'EVM',
