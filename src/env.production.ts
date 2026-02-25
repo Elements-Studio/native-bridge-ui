@@ -99,7 +99,7 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'halley', chainId: '0x1' },
       gas: 'nanoSTC',
-      ca: '0xe28b41c03c83f4c788ea2e0fc9f5799a::USDT::USDT',
+      ca: '0xbd8f731c6927532852241853102ca259::USDT::USDT',
       decimals: 6,
     },
   } satisfies Coins,
@@ -108,11 +108,11 @@ export default {
     evm: {
       chainIdHex: '0xaa36a7',
       chainId: 11,
-      bridgeAddress: '0x9E2da73cB30e327e03ACe3A7376C9A185dD83fDd',
+      bridgeAddress: '0x1F427ee2348043BCC0639f01e18DE92Fe0121fEb',
       destinationChainId: 1,
     },
     starcoin: {
-      packageAddress: '0xe28b41c03c83f4c788ea2e0fc9f5799a',
+      packageAddress: '0xbd8f731c6927532852241853102ca259',
       chainId: 1,
     },
     tokens: {
