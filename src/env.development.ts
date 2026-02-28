@@ -8,13 +8,13 @@ import type { Coins } from '@/types/domain'
 
 export default {
   apis: {
-    '/transfers': `https://bridge-indexer-monitor-halley2sepolia.starswap.xyz/transfers`,
-    '/estimate_fees': `https://bridge-node1-halley2sepolia.starswap.xyz/estimate_fees`,
+    '/transfers': `https://bridge-indexer-monitor-dev2anvil.starswap.xyz/transfers`,
+    '/estimate_fees': `https://bridge-node1-dev2anvil.starswap.xyz/estimate_fees`,
     committees: {
       signs: [
-        `https://bridge-node1-halley2sepolia.starswap.xyz/sign`,
-        `https://bridge-node2-halley2sepolia.starswap.xyz/sign`,
-        `https://bridge-node3-halley2sepolia.starswap.xyz/sign`,
+        `https://bridge-node1-dev2anvil.starswap.xyz/sign`,
+        `https://bridge-node2-dev2anvil.starswap.xyz/sign`,
+        `https://bridge-node3-dev2anvil.starswap.xyz/sign`,
       ],
     },
   },
@@ -47,14 +47,14 @@ export default {
     //   ca: null,
     //   decimals: 18,
     // },
-    SepoliaUSDT: {
+    AnvilUSDT: {
       isDefault: true,
       icon: sepoliaUsdtIcon,
-      name: 'SepoliaUSDT',
+      name: 'AnvilUSDT',
       walletType: 'EVM',
-      network: { name: 'sepolia', chainId: '0xaa36a7' },
+      network: { name: 'anvil', chainId: '0x7a69' },
       gas: 'Gwei',
-      ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
+      ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
       decimals: 6,
     },
     // AnvilETH: {
@@ -99,21 +99,21 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'halley', chainId: '0x1' },
       gas: 'nanoSTC',
-      ca: '0xbd8f731c6927532852241853102ca259::USDT::USDT',
+      ca: '0xa11076c5cda55e3743c0445708cb0a38::USDT::USDT',
       decimals: 6,
     },
   } satisfies Coins,
 
   bridge: {
     evm: {
-      chainIdHex: '0xaa36a7',
-      chainId: 11,
-      bridgeAddress: '0x1F427ee2348043BCC0639f01e18DE92Fe0121fEb',
-      destinationChainId: 1,
+      chainIdHex: '0x7a69',
+      chainId: 12,
+      bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
+      destinationChainId: 2,
     },
     starcoin: {
-      packageAddress: '0xbd8f731c6927532852241853102ca259',
-      chainId: 1,
+      packageAddress: '0xa11076c5cda55e3743c0445708cb0a38',
+      chainId: 2,
     },
     tokens: {
       AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
