@@ -3,7 +3,7 @@ import { BRIDGE_ABI, BRIDGE_CONFIG, normalizeHex } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, hexToBytes, serializeBytes, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { base64ToBytes, concatBytes, normalizeHexLen, serializeU64BE, sleep } from '@/lib/utils'
-import type { SignatureResponse } from '@/services'
+import { getBridgeStatus, type SignatureResponse } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Contract, Interface, getAddress } from 'ethers'
 import { useCallback, useRef } from 'react'
@@ -215,6 +215,16 @@ export function useApprove() {
     setBridgeStatus(BridgeStatus.SubmittingApprove)
 
     try {
+      // Check if bridge is paused before proceeding
+      console.log('[Bridge][Approve] Checking bridge paused status...')
+      const bridgeStatusData = await getBridgeStatus()
+      if (direction === 'eth_to_starcoin' && bridgeStatusData.stc_paused) {
+        throw new Error('The bridge is currently paused on Starcoin. Please try again later.')
+      }
+      if (direction === 'starcoin_to_eth' && bridgeStatusData.eth_paused) {
+        throw new Error('The bridge is currently paused on Ethereum. Please try again later.')
+      }
+
       const uniqueSignatures = signatures.filter((sig, index, list) => {
         const key = sig.auth_signature.authority_pub_key
         return list.findIndex(item => item.auth_signature.authority_pub_key === key) === index

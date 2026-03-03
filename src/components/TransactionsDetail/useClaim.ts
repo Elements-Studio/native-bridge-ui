@@ -3,7 +3,7 @@ import { BRIDGE_ABI, BRIDGE_CONFIG } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { sleep } from '@/lib/utils'
-import { getQuota } from '@/services'
+import { getBridgeStatus, getQuota } from '@/services'
 import { BrowserProvider, Interface, getAddress } from 'ethers'
 import { useCallback, useEffect, useRef } from 'react'
 import { BridgeStatus, useTransactionsDetailStore } from './store'
@@ -135,6 +135,24 @@ export function useClaim() {
     claimingRef.current = true
 
     try {
+      // Check if bridge is paused before proceeding
+      console.log('[Bridge][Claim] Checking bridge paused status...')
+      const bridgeStatusData = await getBridgeStatus()
+      if (direction === 'eth_to_starcoin' && bridgeStatusData.stc_paused) {
+        const errorMsg = 'The bridge is currently paused on Starcoin. Please try again later.'
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
+      }
+      if (direction === 'starcoin_to_eth' && bridgeStatusData.eth_paused) {
+        const errorMsg = 'The bridge is currently paused on Ethereum. Please try again later.'
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
+      }
+
       // Check quota before proceeding
       const depositAmount = transferData?.procedure?.deposit?.amount
       if (depositAmount) {
