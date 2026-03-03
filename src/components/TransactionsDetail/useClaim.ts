@@ -163,19 +163,24 @@ export function useClaim() {
 
         // For eth_to_starcoin, check starcoin_claim quota
         // For starcoin_to_eth, check eth_claim quota
-        const availableQuota =
-          direction === 'eth_to_starcoin'
-            ? quotaToUsdt(quotaData.starcoin_claim, decimals)
-            : quotaToUsdt(quotaData.eth_claim, decimals)
+        const rawQuota = direction === 'eth_to_starcoin' ? quotaData.starcoin_claim : quotaData.eth_claim
 
-        console.log('[Bridge][Claim] Amount:', amountUsdt, 'USDT, Available quota:', availableQuota, 'USDT')
+        if (rawQuota == null) {
+          // Quota query failed for the target chain, check error message
+          const quotaError = direction === 'eth_to_starcoin' ? quotaData.starcoin_error : quotaData.eth_error
+          console.warn('[Bridge][Claim] Quota unavailable:', quotaError ?? 'unknown error')
+          // Don't block claim if quota is unavailable - proceed with caution
+        } else {
+          const availableQuota = quotaToUsdt(rawQuota, decimals)
+          console.log('[Bridge][Claim] Amount:', amountUsdt, 'USDT, Available quota:', availableQuota, 'USDT')
 
-        if (amountUsdt > availableQuota) {
-          const errorMsg = `Quota exceeded. Available: ${availableQuota.toFixed(2)} USDT, Required: ${amountUsdt} USDT. Please try again later.`
-          console.error('[Bridge][Claim]', errorMsg)
-          setBridgeError(errorMsg)
-          claimingRef.current = false
-          return
+          if (amountUsdt > availableQuota) {
+            const errorMsg = `Quota exceeded. Available: ${availableQuota.toFixed(2)} USDT, Required: ${amountUsdt} USDT. Please try again later.`
+            console.error('[Bridge][Claim]', errorMsg)
+            setBridgeError(errorMsg)
+            claimingRef.current = false
+            return
+          }
         }
       }
 

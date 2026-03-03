@@ -30,7 +30,8 @@ export interface DepositInfo {
   sender_address: string
   recipient_address: string
   token_id: number
-  amount: number
+  /** Formatted amount string, e.g. "100.123456 USDT" */
+  amount: string
   is_finalized: boolean
 }
 
@@ -132,9 +133,16 @@ export interface TransferListResponse {
 }
 
 export interface QuotaResponse {
-  eth_claim: number
-  starcoin_claim: number
-  decimals?: number
+  /** Remaining quota for ETH claim (raw value, BigInt from json-web3). Absent if query failed. */
+  eth_claim?: number | bigint
+  /** Error message if ETH quota query failed */
+  eth_error?: string
+  /** Remaining quota for Starcoin claim (raw value, BigInt from json-web3). Absent if query failed. */
+  starcoin_claim?: number | bigint
+  /** Error message if Starcoin quota query failed */
+  starcoin_error?: string
+  /** Decimal precision for quota values (default: 8) */
+  decimals: number | bigint
 }
 
 export type StarcoinChainId = 'StarcoinTestnet' | 'StarcoinMainnet' | 'StarcoinCustom'

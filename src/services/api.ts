@@ -4,6 +4,7 @@ import idmp from 'idmp'
 import { parse, stringify } from 'json-web3'
 import { sampleSize } from 'lodash-es'
 import type {
+  BridgeStatusResponse,
   EstimateDirection,
   EstimateFeesResponse,
   HealthResponse,
@@ -53,11 +54,19 @@ async function getCommittees(): Promise<CommitteesResponse> {
   }
 }
 
+/**
+ * Derive indexer-monitor base URL from /transfers URL
+ * e.g. "https://bridge-indexer-monitor-halley2sepolia.starswap.xyz/transfers" → "https://bridge-indexer-monitor-halley2sepolia.starswap.xyz"
+ */
+function getIndexerBaseUrl(): string {
+  return env.apis['/transfers'].replace(/\/transfers$/, '')
+}
+
 // ========== Health Check ==========
 
 async function _getHealth(): Promise<HealthResponse> {
   try {
-    const response = await client.get<HealthResponse>('/health')
+    const response = await client.get<HealthResponse>(`${getIndexerBaseUrl()}/health`)
     return response.data
   } catch (error) {
     return handleError(error as AxiosError)
@@ -105,15 +114,9 @@ export async function getTransferList(params: TransferListParams): Promise<Trans
 
 // ========== Bridge Status ==========
 
-export interface BridgeStatusResponse {
-  eth_paused: boolean
-  stc_paused: boolean
-  errors?: string[]
-}
-
 export async function getBridgeStatus(): Promise<BridgeStatusResponse> {
   try {
-    const response = await client.get<BridgeStatusResponse>('/status')
+    const response = await client.get<BridgeStatusResponse>(`${getIndexerBaseUrl()}/status`)
     return response.data
   } catch (error) {
     console.error('Failed to get bridge status:', error)
@@ -126,7 +129,7 @@ export async function getBridgeStatus(): Promise<BridgeStatusResponse> {
 
 async function _getQuota(): Promise<QuotaResponse> {
   try {
-    const response = await client.get<QuotaResponse>('/quota')
+    const response = await client.get<QuotaResponse>(`${getIndexerBaseUrl()}/quota`)
     return response.data
   } catch (error) {
     return handleError(error as AxiosError)
