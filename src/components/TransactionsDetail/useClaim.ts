@@ -3,9 +3,28 @@ import { BRIDGE_ABI, BRIDGE_CONFIG } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { sleep } from '@/lib/utils'
+import { getQuota } from '@/services'
 import { BrowserProvider, Interface, getAddress } from 'ethers'
 import { useCallback, useEffect, useRef } from 'react'
 import { BridgeStatus, useTransactionsDetailStore } from './store'
+
+/**
+ * Parse amount string like "1.5 USDT" to number (in USDT units)
+ */
+function parseAmountString(amountStr: string): number {
+  const match = amountStr.match(/^([\d.]+)/)
+  if (!match) return 0
+  return parseFloat(match[1])
+}
+
+/**
+ * Convert quota from 8 decimals to USDT units
+ */
+function quotaToUsdt(quota: number | bigint, decimals: number | bigint = 8): number {
+  const q = typeof quota === 'bigint' ? Number(quota) : quota
+  const d = typeof decimals === 'bigint' ? Number(decimals) : decimals
+  return q / Math.pow(10, d)
+}
 
 // Chain ID 映射表
 const CHAIN_ID_MAP: Record<string, number> = {
@@ -116,6 +135,32 @@ export function useClaim() {
     claimingRef.current = true
 
     try {
+      // Check quota before proceeding
+      const depositAmount = transferData?.procedure?.deposit?.amount
+      if (depositAmount) {
+        console.log('[Bridge][Claim] Checking quota before claim...')
+        const quotaData = await getQuota()
+        const decimals = quotaData.decimals ?? 8
+        const amountUsdt = parseAmountString(depositAmount)
+
+        // For eth_to_starcoin, check starcoin_claim quota
+        // For starcoin_to_eth, check eth_claim quota
+        const availableQuota =
+          direction === 'eth_to_starcoin'
+            ? quotaToUsdt(quotaData.starcoin_claim, decimals)
+            : quotaToUsdt(quotaData.eth_claim, decimals)
+
+        console.log('[Bridge][Claim] Amount:', amountUsdt, 'USDT, Available quota:', availableQuota, 'USDT')
+
+        if (amountUsdt > availableQuota) {
+          const errorMsg = `Quota exceeded. Available: ${availableQuota.toFixed(2)} USDT, Required: ${amountUsdt} USDT. Please try again later.`
+          console.error('[Bridge][Claim]', errorMsg)
+          setBridgeError(errorMsg)
+          claimingRef.current = false
+          return
+        }
+      }
+
       // 检查是否需要倒计时
       let remainingDelay = claimDelaySeconds ?? 0
       if (remainingDelay > 0) {
@@ -152,6 +197,7 @@ export function useClaim() {
     nonce,
     sourceChainId,
     claimDelaySeconds,
+    transferData,
     sendTransaction,
     setBridgeStatus,
     setBridgeError,

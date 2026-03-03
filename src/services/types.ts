@@ -128,6 +128,7 @@ export interface TransferListResponse {
 export interface QuotaResponse {
   eth_claim: number
   starcoin_claim: number
+  decimals?: number
 }
 
 export type StarcoinChainId = 'StarcoinTestnet' | 'StarcoinMainnet' | 'StarcoinCustom'
