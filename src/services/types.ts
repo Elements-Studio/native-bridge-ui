@@ -2,6 +2,12 @@ export type ChainId = number
 export type TransferStatus = 'deposited' | 'approved' | 'claimed'
 export type DataSource = 'STARCOIN' | 'ETH'
 
+export interface BridgeStatusResponse {
+  eth_paused: boolean
+  stc_paused: boolean
+  errors?: string[]
+}
+
 export interface TransferData {
   destination_chain: ChainId
   recipient_address: string
@@ -128,6 +134,7 @@ export interface TransferListResponse {
 export interface QuotaResponse {
   eth_claim: number
   starcoin_claim: number
+  decimals?: number
 }
 
 export type StarcoinChainId = 'StarcoinTestnet' | 'StarcoinMainnet' | 'StarcoinCustom'

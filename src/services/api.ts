@@ -103,6 +103,25 @@ export async function getTransferList(params: TransferListParams): Promise<Trans
   }
 }
 
+// ========== Bridge Status ==========
+
+export interface BridgeStatusResponse {
+  eth_paused: boolean
+  stc_paused: boolean
+  errors?: string[]
+}
+
+export async function getBridgeStatus(): Promise<BridgeStatusResponse> {
+  try {
+    const response = await client.get<BridgeStatusResponse>('/status')
+    return response.data
+  } catch (error) {
+    console.error('Failed to get bridge status:', error)
+    // Return safe default on error - assume not paused
+    return { eth_paused: false, stc_paused: false, errors: [(error as Error).message] }
+  }
+}
+
 // ========== Quota ==========
 
 async function _getQuota(): Promise<QuotaResponse> {

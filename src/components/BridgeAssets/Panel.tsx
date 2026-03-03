@@ -5,7 +5,7 @@ import { BRIDGE_ABI, BRIDGE_CONFIG, ERC20_ABI, normalizeHex } from '@/lib/bridge
 import { getMetaMask } from '@/lib/evmProvider'
 import { formatDecimal } from '@/lib/format'
 import { bytesToHex, hexToBytes, serializeBytes, serializeScriptFunctionPayload, serializeU128, serializeU8 } from '@/lib/starcoinBcs'
-import { getEstimateFees, type EstimateFeesResponse } from '@/services'
+import { getBridgeStatus, getEstimateFees, type EstimateFeesResponse } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Contract, getAddress, getBytes, parseUnits } from 'ethers'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -80,6 +80,16 @@ export default function BridgeAssetPanel() {
 
     setIsBridging(true)
     try {
+      // Check if bridge is paused before proceeding
+      const bridgeStatusData = await getBridgeStatus()
+      if (direction === 'eth_to_starcoin' && bridgeStatusData.eth_paused) {
+        setBridgeError('The bridge is currently paused on Ethereum. Please try again later.')
+        return
+      }
+      if (direction === 'starcoin_to_eth' && bridgeStatusData.stc_paused) {
+        setBridgeError('The bridge is currently paused on Starcoin. Please try again later.')
+        return
+      }
       if (direction === 'eth_to_starcoin') {
         if (!evmWalletInfo?.address) {
           setBridgeError('Please connect your EVM wallet.')
