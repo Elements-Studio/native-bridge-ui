@@ -32,7 +32,7 @@ export type CoinItem = {
   // 链类型
   walletType: WalletType
   network: {
-    name: 'mainnet' | 'sepolia' | 'anvil' | 'devnet' | 'halley'
+    name: 'mainnet' | 'sepolia' | 'anvil' | 'devnet' | 'halley' | 'main'
     chainId: string // '0x1' | '0xfb' | '0x6a'
   }
   gas: 'ETH' | 'SepoliaETH' | 'STC' | 'AnvilETH' | 'Gwei' | 'nanoSTC'

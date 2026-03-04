@@ -23,8 +23,9 @@ const env = (process.env.NODE_ENV === 'development' ? devEnv : prodEnv) as {
       chainId: number
     }
     tokens: {
-      AnvilUSDT: { tokenId: number; claimFunction: 'claim_bridge_usdt' }
-      SepoliaUSDT: { tokenId: number; claimFunction: 'claim_bridge_usdt' }
+      USDT?: { tokenId: number; claimFunction: 'claim_bridge_usdt' }
+      AnvilUSDT?: { tokenId: number; claimFunction: 'claim_bridge_usdt' }
+      SepoliaUSDT?: { tokenId: number; claimFunction: 'claim_bridge_usdt' }
       StarUSDT: { tokenId: number; claimFunction: 'claim_bridge_usdt'; sendFunction: 'send_bridge_usdt'; decimals: number }
     }
   }

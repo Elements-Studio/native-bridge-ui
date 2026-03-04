@@ -18,7 +18,9 @@ function parseAmountString(amountStr: string): number {
 }
 
 /**
- * Convert quota from 8 decimals to USDT units
+ * Convert quota to USD units.
+ * Quota values from the API are in USD with 8 decimal precision (set by the limiter contract),
+ * which is independent of the USDT token precision (6 decimals).
  */
 function quotaToUsdt(quota: number | bigint, decimals: number | bigint = 8): number {
   const q = typeof quota === 'bigint' ? Number(quota) : quota
