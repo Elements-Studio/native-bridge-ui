@@ -5,10 +5,10 @@ import type { Coins } from '@/types/domain'
 
 export default {
   apis: {
-    '/transfers': `http://165.245.144.221/transfers`,
-    '/estimate_fees': `http://163.47.10.179/estimate_fees`,
+    '/transfers': `http://bridge-indexer-monitor.starswap.xyz/transfers`,
+    '/estimate_fees': `http://bridge-indexer-monitor.starswap.xyz/estimate_fees`,
     committees: {
-      signs: [`http://163.47.10.179/sign`, `http://165.245.144.215/sign`, `http://165.245.144.216/sign`],
+      signs: [`https://bridge-node0.starswap.xyz/sign`, `https://bridge-node1.starswap.xyz/sign`, `https://bridge-node2.starswap.xyz/sign`],
     },
   },
 
