@@ -5,8 +5,8 @@ import type { Coins } from '@/types/domain'
 
 export default {
   apis: {
-    '/transfers': `http://bridge-indexer-monitor.starswap.xyz/transfers`,
-    '/estimate_fees': `http://bridge-indexer-monitor.starswap.xyz/estimate_fees`,
+    '/transfers': `https://bridge-indexer-monitor.starswap.xyz/transfers`,
+    '/estimate_fees': `https://bridge-indexer-monitor.starswap.xyz/estimate_fees`,
     committees: {
       signs: [`https://bridge-node0.starswap.xyz/sign`, `https://bridge-node1.starswap.xyz/sign`, `https://bridge-node2.starswap.xyz/sign`],
     },
