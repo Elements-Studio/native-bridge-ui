@@ -8,7 +8,8 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    https: {},
+    // Disable HTTPS for local development (mkcert requires interactive auth)
+    // // // // // https: {}, // Disabled for local dev // Disabled for local dev // Disabled for local dev // Disabled for local dev
     proxy: {
       '/api/transfers': {
         target: 'http://143.198.220.234:9800',
@@ -60,7 +61,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
-    mkcert(),
+    // // // // // mkcert(), // Disabled for local dev // Disabled for local dev // Disabled for local dev // Disabled for local dev // Disabled for local dev without HTTPS
     tailwindcss(),
     htmlMinifier({
       minify: true,
