@@ -30,7 +30,7 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'main', chainId: '0x1' },
       gas: 'nanoSTC',
-      ca: '0xbd8f731c6927532852241853102ca259::USDT::USDT',
+      ca: '0x88d4db8660b9a4c5d91b8d0b40c578e2::USDT::USDT',
       decimals: 6,
     },
   } satisfies Coins,
@@ -39,11 +39,11 @@ export default {
     evm: {
       chainIdHex: '0x1',
       chainId: 10,
-      bridgeAddress: '0x088Afa555ed74FD44DA5A370a814C0a582981066',
+      bridgeAddress: '0x4f6dCd85eDc3C3C323AAb9eFDaC176A563cb85d2',
       destinationChainId: 0,
     },
     starcoin: {
-      packageAddress: '0xbd8f731c6927532852241853102ca259',
+      packageAddress: '0x88d4db8660b9a4c5d91b8d0b40c578e2',
       chainId: 0,
     },
     tokens: {
