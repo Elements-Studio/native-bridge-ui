@@ -161,7 +161,7 @@ export default function CoinSelectorCard() {
           className="ring-offset-background focus-visible:ring-ring border-border hover:bg-secondary/10 hover:text-accent-foreground inline-flex h-10 cursor-pointer items-center justify-center rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           type="button"
           onClick={setMax}
-          disabled={isPending || !totalBalance}
+          disabled={isPending || !totalBalance || Number(totalBalance) <= 0}
         >
           Max
         </button>
@@ -177,7 +177,7 @@ export default function CoinSelectorCard() {
         onClick={connectWallet}
         type="text"
         inputMode="decimal"
-        disabled={isPending || !totalBalance}
+        disabled={isPending || !totalBalance || Number(totalBalance) <= 0}
       />
 
       {/* balance */}

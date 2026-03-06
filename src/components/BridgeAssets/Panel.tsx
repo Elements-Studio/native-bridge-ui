@@ -234,7 +234,7 @@ export default function BridgeAssetPanel() {
 
         <Button
           className="bg-accent hover:bg-accent/80 cursor-pointer text-gray-100 transition-colors duration-300 disabled:cursor-not-allowed"
-          disabled={isBridging || balanceLoading}
+          disabled={isBridging || balanceLoading || !inputBalance || Number(inputBalance) <= 0}
           onClick={handleBridge}
         >
           {isBridging ? <Spinner className="me-[0.2em]" /> : null}
