@@ -151,15 +151,18 @@ export default function useEvmTools() {
     }
   }, [])
 
-  const getBalance = (chainId: string, ca?: string | null) => {
-    const key = `getBalance:${chainId}:${ca || 'native'}`
-    return idmp(key, async () => {
-      const res = await _getBalance(chainId, ca)
-      console.log('getBalance result:', res, 2222222)
-      if (res) return res
-      idmp.flush(key)
-    })
-  }
+  const getBalance = useCallback(
+    (chainId: string, ca?: string | null) => {
+      const key = `getBalance:${chainId}:${ca || 'native'}`
+      return idmp(key, async () => {
+        const res = await _getBalance(chainId, ca)
+        console.log('getBalance result:', res, 2222222)
+        if (res) return res
+        idmp.flush(key)
+      })
+    },
+    [_getBalance],
+  )
 
   async function getEventIndex(txHash: string): Promise<number> {
     try {

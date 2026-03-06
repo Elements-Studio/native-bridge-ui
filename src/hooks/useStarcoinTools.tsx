@@ -266,14 +266,17 @@ export default function useStarcoinTools() {
     return getStarcoinBalance(provider, address, targetTag, targetDecimals)
   }, [])
 
-  const getBalance = (chainId: string, ca?: string | null) => {
-    const key = `getStarcoinBalance:${chainId}:${ca || 'native'}`
-    return idmp(key, async () => {
-      const res = await _getBalance(chainId, ca)
-      if (res) return res
-      idmp.flush(key)
-    })
-  }
+  const getBalance = useCallback(
+    (chainId: string, ca?: string | null) => {
+      const key = `getStarcoinBalance:${chainId}:${ca || 'native'}`
+      return idmp(key, async () => {
+        const res = await _getBalance(chainId, ca)
+        if (res) return res
+        idmp.flush(key)
+      })
+    },
+    [_getBalance],
+  )
 
   type ScriptFunctionPayload = {
     type: 'script_function'

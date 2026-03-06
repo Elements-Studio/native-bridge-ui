@@ -21,6 +21,7 @@ export default function BridgeAssetPanel() {
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
   const inputBalance = useGlobalStore(state => state.inputBalance)
+  const balanceLoading = useGlobalStore(state => state.balanceLoading)
 
   const { sendTransaction } = useStarcoinTools()
   const [fees, setFees] = useState<EstimateFeesResponse | null>(null)
@@ -233,7 +234,7 @@ export default function BridgeAssetPanel() {
 
         <Button
           className="bg-accent hover:bg-accent/80 cursor-pointer text-gray-100 transition-colors duration-300 disabled:cursor-not-allowed"
-          disabled={isBridging}
+          disabled={isBridging || balanceLoading}
           onClick={handleBridge}
         >
           {isBridging ? <Spinner className="me-[0.2em]" /> : null}

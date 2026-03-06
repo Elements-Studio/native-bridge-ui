@@ -8,14 +8,10 @@ import type { Coins } from '@/types/domain'
 
 export default {
   apis: {
-    '/transfers': `https://bridge-indexer-monitor-dev2anvil.starswap.xyz/transfers`,
-    '/estimate_fees': `https://bridge-node1-dev2anvil.starswap.xyz/estimate_fees`,
+    '/transfers': `http://209.38.58.127/transfers`,
+    '/estimate_fees': `http://209.38.58.127/estimate_fees`,
     committees: {
-      signs: [
-        `https://bridge-node1-dev2anvil.starswap.xyz/sign`,
-        `https://bridge-node2-dev2anvil.starswap.xyz/sign`,
-        `https://bridge-node3-dev2anvil.starswap.xyz/sign`,
-      ],
+      signs: [`http://165.245.144.102/sign`, `http://167.172.7.198/sign`, `http://165.245.144.103/sign`],
     },
   },
 
@@ -47,16 +43,16 @@ export default {
     //   ca: null,
     //   decimals: 18,
     // },
-    AnvilUSDT: {
-      isDefault: true,
-      icon: sepoliaUsdtIcon,
-      name: 'AnvilUSDT',
-      walletType: 'EVM',
-      network: { name: 'anvil', chainId: '0x7a69' },
-      gas: 'Gwei',
-      ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
-      decimals: 6,
-    },
+    // AnvilUSDT: {
+    //   isDefault: true,
+    //   icon: sepoliaUsdtIcon,
+    //   name: 'AnvilUSDT',
+    //   walletType: 'EVM',
+    //   network: { name: 'anvil', chainId: '0x7a69' },
+    //   gas: 'Gwei',
+    //   ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+    //   decimals: 6,
+    // },
     // AnvilETH: {
     //   icon: ethIcon,
     //   name: 'AnvilETH',
@@ -76,6 +72,18 @@ export default {
     //   ca: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
     //   decimals: 6,
     // },
+
+    SepoliaUSDT: {
+      isDefault: true,
+      icon: sepoliaUsdtIcon,
+      name: 'SepoliaUSDT',
+      walletType: 'EVM',
+      network: { name: 'sepolia', chainId: '0xaa36a7' },
+      gas: 'Gwei',
+      ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
+      decimals: 6,
+    },
+
     // WBTC: {
     //   icon: wbtcIcon,
     //   name: 'WBTC',
@@ -99,24 +107,24 @@ export default {
       walletType: 'STARCOIN',
       network: { name: 'halley', chainId: '0x1' },
       gas: 'nanoSTC',
-      ca: '0xa11076c5cda55e3743c0445708cb0a38::USDT::USDT',
+      ca: '0x34aa399de7b439fd802daa9afefe0e9d::USDT::USDT',
       decimals: 6,
     },
   } satisfies Coins,
 
   bridge: {
     evm: {
-      chainIdHex: '0x7a69',
+      chainIdHex: '0xaa36a7',
       chainId: 12,
-      bridgeAddress: '0x0B306BF915C4d645ff596e518fAf3F9669b97016',
+      bridgeAddress: '0xCB8286D34Af287DDA3491965a8586770dADE03c6',
       destinationChainId: 2,
     },
     starcoin: {
-      packageAddress: '0xa11076c5cda55e3743c0445708cb0a38',
+      packageAddress: '0x34aa399de7b439fd802daa9afefe0e9d',
       chainId: 2,
     },
     tokens: {
-      AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
+      // AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
       SepoliaUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
       StarUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt', sendFunction: 'send_bridge_usdt', decimals: 6 },
     },

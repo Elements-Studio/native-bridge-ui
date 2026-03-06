@@ -9,8 +9,9 @@ import { useCallback, useEffect, useState } from 'react'
 import CoinSelector from './CoinSelector'
 
 export default function CoinSelectorCard() {
-  const [isPending, setIsPending] = useState(false)
   const currentCoin = useGlobalStore(state => state.currentCoin)
+  const isPending = useGlobalStore(state => state.balanceLoading)
+  const setIsPending = useGlobalStore(state => state.setBalanceLoading)
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
   const inputBalance = useGlobalStore(state => state.inputBalance)
@@ -22,7 +23,7 @@ export default function CoinSelectorCard() {
     contextHolder: starcoinContextHolder,
     openConnectDialog: openStarcoinConnectDialog,
   } = useStarcoinTools()
-  const [totalBalance, setTotalBalance] = useState<string>('')
+  const [totalBalance, setTotalBalance] = useState('')
 
   useEffect(() => {
     if (currentCoin?.walletType !== 'EVM') return
@@ -75,7 +76,7 @@ export default function CoinSelectorCard() {
       }
     }
     fetchBalance()
-  }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getEvmBalance, getStarcoinBalance])
+  }, [evmWalletInfo, starcoinWalletInfo, currentCoin, getEvmBalance, getStarcoinBalance, setIsPending])
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,17 +86,13 @@ export default function CoinSelectorCard() {
         return
       }
 
-      if (value.includes('e') || value.includes('E')) {
+      // Only allow digits and dot
+      if (!/^\d*\.?\d*$/.test(value)) {
         return
       }
 
       const [intPart, decPart] = value.split('.')
-      if (intPart && intPart.replace('-', '').length > 18) {
-        return
-      }
-
-      const numValue = Number(value)
-      if (numValue < 0) {
+      if (intPart && intPart.length > 18) {
         return
       }
 
@@ -103,16 +100,24 @@ export default function CoinSelectorCard() {
       if (decPart && decPart.length > maxDecimals) {
         return
       }
+
+      // Cap to max balance
+      const maxBalance = Number(totalBalance) || 0
+      if (maxBalance > 0 && value !== '.' && value !== '0.' && Number(value) > maxBalance) {
+        setInputBalance(maxBalance.toFixed(currentCoin?.decimals ?? 3).toString())
+        return
+      }
+
       setInputBalance(value)
     },
-    [setInputBalance, currentCoin],
+    [setInputBalance, currentCoin, totalBalance],
   )
 
   const handleInputBlur = useCallback(() => {
     if (!inputBalance) return
     const numValue = Number(inputBalance)
     const maxBalance = Number(totalBalance) || 0
-    if (numValue > maxBalance) {
+    if (maxBalance > 0 && numValue > maxBalance) {
       setInputBalance(maxBalance.toFixed(currentCoin?.decimals ?? 3).toString())
     }
   }, [inputBalance, totalBalance, setInputBalance, currentCoin])
@@ -156,6 +161,7 @@ export default function CoinSelectorCard() {
           className="ring-offset-background focus-visible:ring-ring border-border hover:bg-secondary/10 hover:text-accent-foreground inline-flex h-10 cursor-pointer items-center justify-center rounded-full border px-4 py-4 text-sm font-medium whitespace-nowrap transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
           type="button"
           onClick={setMax}
+          disabled={isPending || !totalBalance}
         >
           Max
         </button>
@@ -163,7 +169,7 @@ export default function CoinSelectorCard() {
       {/* input */}
       <input
         name="inputBalance"
-        className="h-10 w-full cursor-text [appearance:textfield] bg-transparent font-mono text-4xl ring-0 outline-none focus-visible:ring-0 focus-visible:outline-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+        className="h-10 w-full cursor-text [appearance:textfield] bg-transparent font-mono text-4xl ring-0 outline-none focus-visible:ring-0 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
         placeholder="0.0"
         value={inputBalance}
         onChange={handleInputChange}
@@ -171,6 +177,7 @@ export default function CoinSelectorCard() {
         onClick={connectWallet}
         type="text"
         inputMode="decimal"
+        disabled={isPending || !totalBalance}
       />
 
       {/* balance */}

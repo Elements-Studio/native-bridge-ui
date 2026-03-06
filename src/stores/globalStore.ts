@@ -25,6 +25,9 @@ interface GlobalState {
 
   inputBalance: string
   setInputBalance: (balance: string) => void
+
+  balanceLoading: boolean
+  setBalanceLoading: (loading: boolean) => void
 }
 
 const defaults = freeze(
@@ -36,6 +39,7 @@ const defaults = freeze(
     evmWalletInfo: null,
     starcoinWalletInfo: null,
     inputBalance: '',
+    balanceLoading: false,
   },
   true,
 )
@@ -63,5 +67,8 @@ export const useGlobalStore = create<GlobalState>(set => ({
   },
   setInputBalance: (balance: string) => {
     set({ inputBalance: balance })
+  },
+  setBalanceLoading: (loading: boolean) => {
+    set({ balanceLoading: loading })
   },
 }))
