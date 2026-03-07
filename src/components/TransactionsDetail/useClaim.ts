@@ -1,4 +1,4 @@
-import useStarcoinTools from '@/hooks/useStarcoinTools'
+import useStarcoinTools, { waitForStarcoinTransaction } from '@/hooks/useStarcoinTools'
 import { BRIDGE_ABI, BRIDGE_CONFIG } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
@@ -65,10 +65,26 @@ async function submitClaimToStarcoin(nonce: number, sendTransaction: (params: { 
     args: claimArgs,
   })
 
-  const result = await sendTransaction({
+  const txHash = (await sendTransaction({
     data: bytesToHex(claimPayload),
-  })
-  console.log('[Bridge][Claim] Done on Starcoin:', result)
+  })) as string
+
+  console.log('[Bridge][Claim] Starcoin TX submitted:', txHash)
+
+  // Wait for transaction confirmation
+  console.log('[Bridge][Claim] Waiting for Starcoin transaction confirmation...')
+  try {
+    const result = await waitForStarcoinTransaction(txHash, { timeout: 120000, pollInterval: 2000 })
+    console.log('[Bridge][Claim] Starcoin TX confirmed:', result)
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err)
+    // Check if it's a known "already claimed" error
+    if (errMsg.includes('ALREADY_CLAIMED') || errMsg.includes('already claimed')) {
+      console.warn('[Bridge][Claim] Transaction indicates already claimed, continuing...')
+      return
+    }
+    throw new Error(`Starcoin claim transaction failed: ${errMsg}`)
+  }
 }
 
 /**
