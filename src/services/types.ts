@@ -209,10 +209,12 @@ export interface TransferListParams {
 export type EstimateDirection = 'starcoin_to_eth' | 'eth_to_starcoin'
 
 export interface EstimateFeesResponse {
-  source_tx_estimate: string
-  combined_approve_and_claim_estimate: string
-  approve_estimate: string
-  claim_estimate: string
+  eth_to_starcoin_deposit_gas: number
+  eth_to_starcoin_approval_gas: number
+  eth_to_starcoin_claim_gas: number
+  starcoin_to_eth_deposit_gas: number
+  starcoin_to_eth_approval_gas: number
+  starcoin_to_eth_claim_gas: number
 }
 
 export type BridgeRecordStatus = 'INITIATED' | 'VERIFYING' | 'CLAIM' | 'DELIVER'

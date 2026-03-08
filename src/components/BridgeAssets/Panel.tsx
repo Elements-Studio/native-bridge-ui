@@ -69,8 +69,17 @@ export default function BridgeAssetPanel() {
     if (loading) return <Spinner className="me-[0.2em]" />
     if (error) return <span className="text-red-300">--</span>
     if (!fees) return '-'
-    return `≈ ${fees.combined_approve_and_claim_estimate}`
-  }, [fees, loading, error])
+    
+    // Calculate approve + claim gas based on direction
+    let totalGas: number
+    if (direction === 'eth_to_starcoin') {
+      totalGas = fees.eth_to_starcoin_approval_gas + fees.eth_to_starcoin_claim_gas
+    } else {
+      totalGas = fees.starcoin_to_eth_approval_gas + fees.starcoin_to_eth_claim_gas
+    }
+    
+    return `≈ ${totalGas.toLocaleString()}`
+  }, [fees, loading, error, direction])
 
   const handleBridge = useCallback(async () => {
     setBridgeError(null)
