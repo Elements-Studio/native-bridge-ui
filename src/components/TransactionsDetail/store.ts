@@ -30,10 +30,8 @@ type TransactionsDetailState = {
   transferData: TransferByDepositTxnResponse | null
   signatures: SignatureResponse[]
   isCollectingSignatures: boolean
-  /** Whether claim has failed and needs manual retry */
+  /** Whether claim has failed and needs page refresh to retry */
   claimFailed: boolean
-  /** Number of claim retry attempts */
-  claimRetryCount: number
   setDirection: (direction: EstimateDirection) => void
   setTxnHash: (hash: string | null) => void
   setBridgeStatus: (status: BridgeStatus) => void
@@ -43,7 +41,6 @@ type TransactionsDetailState = {
   setSignatures: (signatures: SignatureResponse[]) => void
   setIsCollectingSignatures: (isCollecting: boolean) => void
   setClaimFailed: (failed: boolean) => void
-  incrementClaimRetryCount: () => void
   reset: () => void
 }
 
@@ -57,7 +54,6 @@ const initialState = {
   signatures: [] as SignatureResponse[],
   isCollectingSignatures: false,
   claimFailed: false,
-  claimRetryCount: 0,
 }
 
 export const useTransactionsDetailStore = create<TransactionsDetailState>(set => ({
@@ -75,6 +71,5 @@ export const useTransactionsDetailStore = create<TransactionsDetailState>(set =>
   setSignatures: signatures => set({ signatures }),
   setIsCollectingSignatures: isCollectingSignatures => set({ isCollectingSignatures }),
   setClaimFailed: claimFailed => set({ claimFailed }),
-  incrementClaimRetryCount: () => set(state => ({ claimRetryCount: state.claimRetryCount + 1 })),
   reset: () => set({ ...initialState }),
 }))

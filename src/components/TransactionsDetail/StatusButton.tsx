@@ -1,7 +1,6 @@
 import { useGlobalStore } from '@/stores/globalStore'
 import { useEffect, useState } from 'react'
 import { BridgeStatus, useTransactionsDetailStore } from './store'
-import { useClaim } from './useClaim'
 
 // 延遲時間，避免初始加載時閃爍
 const WALLET_CHECK_DELAY_MS = 1500
@@ -9,11 +8,10 @@ const WALLET_CHECK_DELAY_MS = 1500
 export default function StatusButton() {
   const bridgeError = useTransactionsDetailStore(state => state.bridgeError)
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
+  const claimFailed = useTransactionsDetailStore(state => state.claimFailed)
 
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
-
-  const { retryClaim, claimFailed, claimRetryCount } = useClaim()
 
   // 初始狀態設為 true，延遲後再檢查實際狀態
   const [isWalletsConnected, setIsWalletsConnected] = useState(true)
@@ -32,6 +30,7 @@ export default function StatusButton() {
   // 計算是否應該顯示按鈕
   const shouldShowButton =
     bridgeError ||
+    claimFailed ||
     bridgeStatus === BridgeStatus.SubmittingClaim ||
     bridgeStatus === BridgeStatus.Completed ||
     (!isCheckingWallets && !isWalletsConnected)
@@ -40,29 +39,11 @@ export default function StatusButton() {
     return null
   }
 
-  // Show retry button if claim failed
-  if (claimFailed && bridgeError) {
-    return (
-      <div className="flex flex-col items-center gap-2">
-        <div className="text-red-600 text-sm text-center max-w-md">
-          Claim failed: {bridgeError}
-          {claimRetryCount > 0 && <span className="text-gray-500"> (Retry #{claimRetryCount})</span>}
-        </div>
-        <button
-          onClick={retryClaim}
-          className="flex items-center rounded-xl px-6 py-2.5 text-xl transition-colors duration-200 bg-accent-foreground text-white hover:bg-accent-foreground/80 cursor-pointer"
-        >
-          Retry Claim
-        </button>
-      </div>
-    )
-  }
-
   // 計算按鈕樣式
   const getButtonClassName = () => {
     const baseClass = 'flex items-center rounded-xl px-6 py-2.5 text-xl transition-colors duration-200 cursor-not-allowed'
 
-    if (bridgeError || (!isCheckingWallets && !isWalletsConnected)) {
+    if (bridgeError || claimFailed || (!isCheckingWallets && !isWalletsConnected)) {
       return `${baseClass} bg-red-100 text-red-800`
     }
     if (bridgeStatus === BridgeStatus.Completed) {
@@ -79,8 +60,8 @@ export default function StatusButton() {
     if (!isCheckingWallets && !isWalletsConnected) {
       return 'Please connect wallets'
     }
-    if (bridgeError) {
-      return 'Failed, reload the page and try again later'
+    if (claimFailed || bridgeError) {
+      return 'Claim failed. Please refresh the page to retry.'
     }
 
     return 'Waiting for claim...'
