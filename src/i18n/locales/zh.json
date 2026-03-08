@@ -9,7 +9,14 @@
     "copy": "复制",
     "copied": "已复制！",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "connect": "连接",
+    "disconnect": "断开连接",
+    "explorer": "浏览器",
+    "connectWallet": "连接钱包",
+    "previous": "上一页",
+    "next": "下一页",
+    "page": "第 {{current}} / {{total}} 页 (共 {{count}} 条)"
   },
   "wallet": {
     "connect": "连接钱包",
@@ -18,7 +25,9 @@
     "connectStarcoin": "连接 Starcoin 钱包",
     "connectEthWallet": "请连接您的以太坊钱包",
     "connectStcWallet": "请连接您的 Starcoin 钱包",
-    "connectWallets": "请连接钱包"
+    "connectWallets": "请连接钱包",
+    "evmWallet": "以太坊钱包",
+    "starcoinWallet": "Starcoin 钱包"
   },
   "bridge": {
     "title": "资产跨链",
@@ -26,6 +35,10 @@
     "connectBothWallets": "请连接两个钱包以继续",
     "from": "从",
     "to": "到",
+    "fromEthereum": "从 以太坊",
+    "toEthereum": "到 以太坊",
+    "fromStarcoin": "从 STARCOIN",
+    "toStarcoin": "到 STARCOIN",
     "amount": "数量",
     "enterAmount": "请输入数量",
     "estimatedGas": "预估 Gas",
@@ -42,6 +55,8 @@
   },
   "transaction": {
     "title": "交易详情",
+    "transactions": "交易记录",
+    "transactionDetails": "交易详情",
     "fromEthToStc": "从以太坊到 Starcoin",
     "fromStcToEth": "从 Starcoin 到以太坊",
     "txnHash": "交易哈希",
@@ -49,13 +64,18 @@
     "timestamp": "时间戳",
     "senderAddress": "发送地址",
     "recipientAddress": "接收地址",
+    "claimerAddress": "领取地址",
     "amount": "数量",
+    "tokenId": "代币 ID",
     "gasUsage": "Gas 消耗",
     "dataSource": "数据来源",
     "finalized": "已确认",
     "viewOnExplorer": "在浏览器中查看",
     "nonce": "Nonce",
-    "status": "状态"
+    "status": "状态",
+    "noTransactionsFound": "暂无交易记录",
+    "transactionHash": "交易哈希",
+    "time": "时间"
   },
   "status": {
     "waitingForFinalization": "等待最终确认",
@@ -69,7 +89,11 @@
     "submittingClaim": "提交领取中",
     "alreadyClaimed": "已领取",
     "waitingForClaim": "等待领取...",
-    "claimingIn": "{{time}} 后领取..."
+    "claimingIn": "{{time}} 后领取...",
+    "waitingForClaimDelay": "等待领取延迟 ({{seconds}}秒)...",
+    "deposited": "已存入",
+    "approved": "已批准",
+    "claimed": "已领取"
   },
   "error": {
     "approveFailed": "批准失败，请刷新页面重试。",
@@ -77,7 +101,8 @@
     "txTimeout": "交易确认超时",
     "txHashNotReturned": "未返回交易哈希",
     "metaMaskNotDetected": "未检测到 MetaMask",
-    "starMaskNotDetected": "未检测到 StarMask"
+    "starMaskNotDetected": "未检测到 StarMask",
+    "failedToCollectSignatures": "收集签名失败"
   },
   "transfers": {
     "title": "转账记录",
@@ -91,5 +116,12 @@
   },
   "footer": {
     "poweredBy": "Powered by Starcoin"
+  },
+  "progress": {
+    "waitingForFinalization": "等待最终确认",
+    "collectingSignatures": "收集签名中",
+    "approvingTransfer": "批准转账中",
+    "claimingTokens": "领取代币中",
+    "completed": "已完成"
   }
 }

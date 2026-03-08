@@ -4,6 +4,7 @@ import { normalizeHash } from '@/lib/format'
 import { collectSignatures, getTransferByDepositTxn } from '@/services'
 import { ArrowBigRight, CheckIcon, InfoIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 import { Spinner } from '../ui/spinner'
@@ -11,11 +12,12 @@ import ApprovalCard from './ApprovalCard'
 import ClaimCard from './ClaimCard'
 import DepositCard from './DepositCard'
 import StatusButton from './StatusButton'
-import { BridgeStatus, BridgeStatusLabelMap, useTransactionsDetailStore } from './store'
+import { BridgeStatus, useTransactionsDetailStore } from './store'
 import { useApprove } from './useApprove'
 import { useClaim } from './useClaim'
 
 export default function TransactionsDetail() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const direction = useTransactionsDetailStore(state => state.direction)
   const setDirection = useTransactionsDetailStore(state => state.setDirection)
@@ -153,11 +155,11 @@ export default function TransactionsDetail() {
   const progressSteps = useMemo(() => {
     // starcoin_to_eth 和 eth_to_starcoin 都有相同的步骤
     return [
-      { label: 'Waiting for finalization', value: 20 },
-      { label: 'Collecting signatures', value: 40 },
-      { label: 'Approving transfer', value: 60 },
-      { label: 'Claiming tokens', value: 80 },
-      { label: 'Completed', value: 100 },
+      { labelKey: 'progress.waitingForFinalization', value: 20 },
+      { labelKey: 'progress.collectingSignatures', value: 40 },
+      { labelKey: 'progress.approvingTransfer', value: 60 },
+      { labelKey: 'progress.claimingTokens', value: 80 },
+      { labelKey: 'progress.completed', value: 100 },
     ]
   }, [])
   const progressGridClass = 'grid-cols-5'
@@ -165,13 +167,13 @@ export default function TransactionsDetail() {
   return (
     <div className="bg-secondary grid w-full p-4">
       <div className="mx-auto grid w-full max-w-300 content-start gap-4 py-6">
-        <h1 className="text-2xl font-bold">Transaction Details</h1>
+        <h1 className="text-2xl font-bold">{t('transaction.transactionDetails')}</h1>
 
         <div className="bg-accent/20 border-accent-foreground/10 grid gap-y-5 rounded-3xl border p-7.5">
           <div className="flex items-center justify-between">
             <div className="grid gap-1.5">
               <div className="text-secondary-foreground text-lg font-bold">
-                {direction === 'eth_to_starcoin' ? 'From Ethereum to Starcoin' : 'From Starcoin to Ethereum'}
+                {direction === 'eth_to_starcoin' ? t('transaction.fromEthToStc') : t('transaction.fromStcToEth')}
               </div>
             </div>
 
@@ -202,7 +204,7 @@ export default function TransactionsDetail() {
                     >
                       {isCompleted ? <CheckIcon /> : isCurrentStep ? <Spinner /> : null}
                     </div>
-                    <span className="text-primary-foreground text-center text-sm font-semibold uppercase md:text-lg">{step.label}</span>
+                    <span className="text-primary-foreground text-center text-sm font-semibold uppercase md:text-lg">{t(step.labelKey)}</span>
                   </div>
                 )
               })}
@@ -217,8 +219,8 @@ export default function TransactionsDetail() {
                 {bridgeStatus ? (
                   <div className="text-accent-foreground w-full text-sm">
                     {bridgeStatus === BridgeStatus.SubmittingClaim && claimDelaySeconds != null && claimDelaySeconds > 0
-                      ? `Waiting for claim delay (${claimDelaySeconds}s)...`
-                      : BridgeStatusLabelMap[bridgeStatus]}
+                      ? t('status.waitingForClaimDelay', { seconds: claimDelaySeconds })
+                      : t(`status.${bridgeStatus.charAt(0).toLowerCase() + bridgeStatus.slice(1)}`)}
                   </div>
                 ) : null}
                 {bridgeError ? <div className="text-secondary-foreground w-full text-sm">{bridgeError}</div> : null}

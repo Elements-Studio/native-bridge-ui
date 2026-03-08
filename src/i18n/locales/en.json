@@ -9,7 +9,14 @@
     "copy": "Copy",
     "copied": "Copied!",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "explorer": "Explorer",
+    "connectWallet": "Connect wallet",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{current}} of {{total}} (Total: {{count}})"
   },
   "wallet": {
     "connect": "Connect Wallet",
@@ -18,7 +25,9 @@
     "connectStarcoin": "Connect Starcoin Wallet",
     "connectEthWallet": "Please connect your Ethereum wallet",
     "connectStcWallet": "Please connect your Starcoin wallet",
-    "connectWallets": "Please connect wallets"
+    "connectWallets": "Please connect wallets",
+    "evmWallet": "EVM Wallet",
+    "starcoinWallet": "Starcoin Wallet"
   },
   "bridge": {
     "title": "Bridge Assets",
@@ -26,6 +35,10 @@
     "connectBothWallets": "Please connect both wallets to continue",
     "from": "From",
     "to": "To",
+    "fromEthereum": "FROM ETHEREUM",
+    "toEthereum": "TO ETHEREUM",
+    "fromStarcoin": "FROM STARCOIN",
+    "toStarcoin": "TO STARCOIN",
     "amount": "Amount",
     "enterAmount": "Please enter an amount",
     "estimatedGas": "Estimated Gas",
@@ -42,6 +55,8 @@
   },
   "transaction": {
     "title": "Transaction Details",
+    "transactions": "Transactions",
+    "transactionDetails": "Transaction Details",
     "fromEthToStc": "From Ethereum to Starcoin",
     "fromStcToEth": "From Starcoin to Ethereum",
     "txnHash": "Txn Hash",
@@ -49,13 +64,18 @@
     "timestamp": "Timestamp",
     "senderAddress": "Sender Address",
     "recipientAddress": "Recipient Address",
+    "claimerAddress": "Claimer Address",
     "amount": "Amount",
+    "tokenId": "Token ID",
     "gasUsage": "Gas Usage",
     "dataSource": "Data Source",
     "finalized": "Finalized",
     "viewOnExplorer": "View on Explorer",
     "nonce": "Nonce",
-    "status": "Status"
+    "status": "Status",
+    "noTransactionsFound": "No transactions found",
+    "transactionHash": "Transaction Hash",
+    "time": "Time"
   },
   "status": {
     "waitingForFinalization": "Waiting for finalization",
@@ -69,7 +89,11 @@
     "submittingClaim": "Submitting claim",
     "alreadyClaimed": "Already claimed",
     "waitingForClaim": "Waiting for claim...",
-    "claimingIn": "Claiming in {{time}}..."
+    "claimingIn": "Claiming in {{time}}...",
+    "waitingForClaimDelay": "Waiting for claim delay ({{seconds}}s)...",
+    "deposited": "Deposited",
+    "approved": "Approved",
+    "claimed": "Claimed"
   },
   "error": {
     "approveFailed": "Approve failed. Please refresh the page to retry.",
@@ -77,7 +101,8 @@
     "txTimeout": "Transaction confirmation timeout",
     "txHashNotReturned": "Transaction hash not returned",
     "metaMaskNotDetected": "MetaMask not detected",
-    "starMaskNotDetected": "StarMask not detected"
+    "starMaskNotDetected": "StarMask not detected",
+    "failedToCollectSignatures": "Failed to collect signatures"
   },
   "transfers": {
     "title": "Transfers",
@@ -91,5 +116,12 @@
   },
   "footer": {
     "poweredBy": "Powered by Starcoin"
+  },
+  "progress": {
+    "waitingForFinalization": "Waiting for finalization",
+    "collectingSignatures": "Collecting signatures",
+    "approvingTransfer": "Approving transfer",
+    "claimingTokens": "Claiming tokens",
+    "completed": "Completed"
   }
 }

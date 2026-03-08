@@ -3,10 +3,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getTransferList } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import useSWR from 'swr'
 
 export default function TransactionsPage() {
+  const { t } = useTranslation()
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
 
@@ -70,7 +72,7 @@ export default function TransactionsPage() {
   return (
     <div className="bg-secondary grid w-full p-4">
       <div className="mx-auto grid w-full max-w-300 content-start gap-4 py-6 md:content-stretch">
-        <h1 className="text-2xl font-bold md:col-start-1 md:row-start-1 md:mt-2">Transactions</h1>
+        <h1 className="text-2xl font-bold md:col-start-1 md:row-start-1 md:mt-2">{t('transaction.transactions')}</h1>
 
         <Tabs
           value={currentTab}
@@ -78,13 +80,13 @@ export default function TransactionsPage() {
           className="grid w-full grid-rows-[auto_1fr] gap-4 md:col-start-1 md:row-start-1"
         >
           <TabsList className="justify-self-center md:justify-self-end">
-            <TabsTrigger value="eth_to_starcoin">EVM Wallet</TabsTrigger>
-            <TabsTrigger value="starcoin_to_eth">Starcoin Wallet</TabsTrigger>
+            <TabsTrigger value="eth_to_starcoin">{t('wallet.evmWallet')}</TabsTrigger>
+            <TabsTrigger value="starcoin_to_eth">{t('wallet.starcoinWallet')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="eth_to_starcoin" className="space-y-4">
             {!evmWalletInfo?.address ? (
-              <div className="py-8 text-center text-gray-500">Please connect your EVM wallet</div>
+              <div className="py-8 text-center text-gray-500">{t('wallet.connectEthWallet')}</div>
             ) : (
               <TransfersTable
                 data={evmData?.transfers || []}
@@ -98,7 +100,7 @@ export default function TransactionsPage() {
 
           <TabsContent value="starcoin_to_eth" className="space-y-4">
             {!starcoinWalletInfo?.address ? (
-              <div className="py-8 text-center text-gray-500">Please connect your Starcoin wallet</div>
+              <div className="py-8 text-center text-gray-500">{t('wallet.connectStcWallet')}</div>
             ) : (
               <TransfersTable
                 data={starcoinData?.transfers || []}

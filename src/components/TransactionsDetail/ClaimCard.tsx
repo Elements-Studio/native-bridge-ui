@@ -4,9 +4,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { formatAddress, normalizeHash } from '@/lib/format'
 import { ChevronRight } from 'lucide-react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTransactionsDetailStore } from './store'
 
 export default function ClaimCard() {
+  const { t } = useTranslation()
   const direction = useTransactionsDetailStore(state => state.direction)
   const transferData = useTransactionsDetailStore(state => state.transferData)
   const claimData = useMemo(() => transferData?.procedure?.claim, [transferData?.procedure?.claim])
@@ -23,7 +25,7 @@ export default function ClaimCard() {
         <div className="grid gap-3 p-5">
           {claimData.txn_hash ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Txn Hash</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.txnHash')}</div>
               <Tooltip>
                 <TooltipContent>{normalizeHash(claimData.txn_hash)}</TooltipContent>
                 <TooltipTrigger>
@@ -36,13 +38,13 @@ export default function ClaimCard() {
           ) : null}
           {claimData.block_height != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Block Height</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.blockHeight')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{claimData.block_height}</div>
             </div>
           ) : null}
           {claimData.timestamp_ms != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Timestamp</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.timestamp')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
                 {new Date(claimData.timestamp_ms).toLocaleString()}
               </div>
@@ -50,7 +52,7 @@ export default function ClaimCard() {
           ) : null}
           {claimData.claimer_address ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Claimer Address</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.claimerAddress')}</div>
               <Tooltip>
                 <TooltipContent>{claimData.claimer_address}</TooltipContent>
                 <TooltipTrigger>
@@ -63,21 +65,21 @@ export default function ClaimCard() {
           ) : null}
           {claimData.gas_usage != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Gas Usage</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.gasUsage')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{claimData.gas_usage}</div>
             </div>
           ) : null}
           {claimData.data_source ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Data Source</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.dataSource')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{claimData.data_source}</div>
             </div>
           ) : null}
           {claimData.is_finalized != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Finalized</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
-                {claimData.is_finalized ? 'Yes' : 'No'}
+                {claimData.is_finalized ? t('common.yes') : t('common.no')}
               </div>
             </div>
           ) : null}
@@ -94,7 +96,7 @@ export default function ClaimCard() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                View on Explorer
+                {t('transaction.viewOnExplorer')}
                 <ChevronRight />
               </a>
             </div>
