@@ -96,6 +96,11 @@ async function submitApproveToStarcoin(
     data: bytesToHex(approvePayload),
   })) as string
 
+  // Validate txHash - wallet may return null/undefined if user cancels or error occurs
+  if (!txHash || typeof txHash !== 'string') {
+    throw new Error('Transaction was not submitted. Please try again.')
+  }
+
   console.log('[Bridge][Approve] Starcoin TX submitted:', txHash)
 
   // Wait for transaction confirmation
@@ -191,7 +196,15 @@ async function submitApproveToEthereum(
     console.log('[Bridge] Approve calldata selector:', approveData.slice(0, 10))
     try {
       const approveTx = await signer.sendTransaction({ to: bridgeAddress, data: approveData })
-      await approveTx.wait()
+
+      // Wait for tx confirmation with timeout (120s)
+      const TX_TIMEOUT_MS = 120000
+      const waitPromise = approveTx.wait()
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${approveTx.hash}`)), TX_TIMEOUT_MS),
+      )
+
+      await Promise.race([waitPromise, timeoutPromise])
       console.log('[Bridge][Approve] Done on Ethereum')
     } catch (err) {
       const messageText = err instanceof Error ? err.message : String(err)

@@ -69,6 +69,11 @@ async function submitClaimToStarcoin(nonce: number, sendTransaction: (params: { 
     data: bytesToHex(claimPayload),
   })) as string
 
+  // Validate txHash - wallet may return null/undefined if user cancels or error occurs
+  if (!txHash || typeof txHash !== 'string') {
+    throw new Error('Transaction was not submitted. Please try again.')
+  }
+
   console.log('[Bridge][Claim] Starcoin TX submitted:', txHash)
 
   // Wait for transaction confirmation
@@ -110,7 +115,15 @@ async function submitClaimToEthereum(sourceChainId: number, nonce: number) {
   console.log('[Bridge] Claim calldata selector:', claimData.slice(0, 10))
 
   const claimTx = await signer.sendTransaction({ to: bridgeAddress, data: claimData })
-  await claimTx.wait()
+
+  // Wait for tx confirmation with timeout (120s)
+  const TX_TIMEOUT_MS = 120000
+  const waitPromise = claimTx.wait()
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${claimTx.hash}`)), TX_TIMEOUT_MS),
+  )
+
+  await Promise.race([waitPromise, timeoutPromise])
   console.log('[Bridge][Claim] Done on Ethereum')
 }
 
