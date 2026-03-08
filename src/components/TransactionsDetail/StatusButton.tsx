@@ -1,6 +1,7 @@
 import { useGlobalStore } from '@/stores/globalStore'
 import { useEffect, useState } from 'react'
 import { BridgeStatus, useTransactionsDetailStore } from './store'
+import { useClaim } from './useClaim'
 
 // 延遲時間，避免初始加載時閃爍
 const WALLET_CHECK_DELAY_MS = 1500
@@ -11,6 +12,8 @@ export default function StatusButton() {
 
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
+
+  const { retryClaim, claimFailed, claimRetryCount } = useClaim()
 
   // 初始狀態設為 true，延遲後再檢查實際狀態
   const [isWalletsConnected, setIsWalletsConnected] = useState(true)
@@ -35,6 +38,24 @@ export default function StatusButton() {
 
   if (!shouldShowButton) {
     return null
+  }
+
+  // Show retry button if claim failed
+  if (claimFailed && bridgeError) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-red-600 text-sm text-center max-w-md">
+          Claim failed: {bridgeError}
+          {claimRetryCount > 0 && <span className="text-gray-500"> (Retry #{claimRetryCount})</span>}
+        </div>
+        <button
+          onClick={retryClaim}
+          className="flex items-center rounded-xl px-6 py-2.5 text-xl transition-colors duration-200 bg-accent-foreground text-white hover:bg-accent-foreground/80 cursor-pointer"
+        >
+          Retry Claim
+        </button>
+      </div>
+    )
   }
 
   // 計算按鈕樣式

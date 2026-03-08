@@ -125,9 +125,14 @@ export function useClaim() {
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
   const transferData = useTransactionsDetailStore(state => state.transferData)
   const claimDelaySeconds = useTransactionsDetailStore(state => state.claimDelaySeconds)
+  const claimFailed = useTransactionsDetailStore(state => state.claimFailed)
+  const claimRetryCount = useTransactionsDetailStore(state => state.claimRetryCount)
+  const txnHash = useTransactionsDetailStore(state => state.txnHash)
   const setBridgeStatus = useTransactionsDetailStore(state => state.setBridgeStatus)
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
   const setClaimDelaySeconds = useTransactionsDetailStore(state => state.setClaimDelaySeconds)
+  const setClaimFailed = useTransactionsDetailStore(state => state.setClaimFailed)
+  const incrementClaimRetryCount = useTransactionsDetailStore(state => state.incrementClaimRetryCount)
 
   const { sendTransaction } = useStarcoinTools()
 
@@ -225,10 +230,21 @@ export function useClaim() {
         await submitClaimToEthereum(sourceChainId, nonce)
       }
 
+      // Claim succeeded - clear failure state
+      setClaimFailed(false)
+      if (txnHash) {
+        localStorage.removeItem(`bridge_claim_failed_${txnHash}`)
+      }
       setBridgeStatus(BridgeStatus.Completed)
     } catch (err) {
       console.error('[Bridge][Claim] Failed:', err)
-      setBridgeError(err instanceof Error ? err.message : 'Claim failed')
+      const errMsg = err instanceof Error ? err.message : 'Claim failed'
+      setBridgeError(errMsg)
+      // Mark claim as failed so user can manually retry
+      setClaimFailed(true)
+      if (txnHash) {
+        localStorage.setItem(`bridge_claim_failed_${txnHash}`, JSON.stringify({ error: errMsg, timestamp: Date.now() }))
+      }
     } finally {
       claimingRef.current = false
     }
@@ -239,11 +255,31 @@ export function useClaim() {
     sourceChainId,
     claimDelaySeconds,
     transferData,
+    txnHash,
     sendTransaction,
     setBridgeStatus,
     setBridgeError,
     setClaimDelaySeconds,
+    setClaimFailed,
   ])
+
+  // Restore claim failure state from localStorage on mount
+  useEffect(() => {
+    if (!txnHash) return
+    const stored = localStorage.getItem(`bridge_claim_failed_${txnHash}`)
+    if (stored) {
+      try {
+        const data = JSON.parse(stored)
+        console.log('[Bridge][Claim] Restored failure state from localStorage:', data)
+        setClaimFailed(true)
+        if (data.error) {
+          setBridgeError(data.error)
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, [txnHash, setClaimFailed, setBridgeError])
 
   // 当状态变为 SubmittingClaim 时自动开始 claim 流程
   useEffect(() => {
@@ -257,12 +293,33 @@ export function useClaim() {
       return
     }
 
+    // If claim has failed before, don't auto-retry - wait for manual retry
+    if (claimFailed) {
+      console.log('[Bridge][Claim] Previous claim failed, waiting for manual retry')
+      return
+    }
+
     submitClaim()
-  }, [bridgeStatus, nonce, transferData?.procedure?.current_status, transferData?.procedure?.is_complete, submitClaim, setBridgeStatus])
+  }, [bridgeStatus, nonce, claimFailed, transferData?.procedure?.current_status, transferData?.procedure?.is_complete, submitClaim, setBridgeStatus])
+
+  // Manual retry function
+  const retryClaim = useCallback(() => {
+    console.log('[Bridge][Claim] Manual retry triggered')
+    setClaimFailed(false)
+    setBridgeError(null)
+    incrementClaimRetryCount()
+    if (txnHash) {
+      localStorage.removeItem(`bridge_claim_failed_${txnHash}`)
+    }
+    // submitClaim will be triggered by the useEffect above after claimFailed becomes false
+  }, [txnHash, setClaimFailed, setBridgeError, incrementClaimRetryCount])
 
   return {
     submitClaim,
+    retryClaim,
     isClaiming: claimingRef.current,
     countdownSeconds: countdownRef.current,
+    claimFailed,
+    claimRetryCount,
   }
 }
