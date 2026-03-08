@@ -30,6 +30,8 @@ type TransactionsDetailState = {
   transferData: TransferByDepositTxnResponse | null
   signatures: SignatureResponse[]
   isCollectingSignatures: boolean
+  /** Whether approve has failed and needs page refresh to retry */
+  approveFailed: boolean
   /** Whether claim has failed and needs page refresh to retry */
   claimFailed: boolean
   setDirection: (direction: EstimateDirection) => void
@@ -40,6 +42,7 @@ type TransactionsDetailState = {
   setTransferData: (data: TransferByDepositTxnResponse | null) => void
   setSignatures: (signatures: SignatureResponse[]) => void
   setIsCollectingSignatures: (isCollecting: boolean) => void
+  setApproveFailed: (failed: boolean) => void
   setClaimFailed: (failed: boolean) => void
   reset: () => void
 }
@@ -53,6 +56,7 @@ const initialState = {
   transferData: null as TransferByDepositTxnResponse | null,
   signatures: [] as SignatureResponse[],
   isCollectingSignatures: false,
+  approveFailed: false,
   claimFailed: false,
 }
 
@@ -70,6 +74,7 @@ export const useTransactionsDetailStore = create<TransactionsDetailState>(set =>
     }),
   setSignatures: signatures => set({ signatures }),
   setIsCollectingSignatures: isCollectingSignatures => set({ isCollectingSignatures }),
+  setApproveFailed: approveFailed => set({ approveFailed }),
   setClaimFailed: claimFailed => set({ claimFailed }),
   reset: () => set({ ...initialState }),
 }))

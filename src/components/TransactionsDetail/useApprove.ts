@@ -229,8 +229,10 @@ export function useApprove() {
   const signatures = useTransactionsDetailStore(state => state.signatures)
   const transferData = useTransactionsDetailStore(state => state.transferData)
   const txnHash = useTransactionsDetailStore(state => state.txnHash)
+  const approveFailed = useTransactionsDetailStore(state => state.approveFailed)
   const setBridgeStatus = useTransactionsDetailStore(state => state.setBridgeStatus)
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
+  const setApproveFailed = useTransactionsDetailStore(state => state.setApproveFailed)
 
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
@@ -292,9 +294,16 @@ export function useApprove() {
       } else {
         await submitApproveToEthereum(uniqueSignatures, starcoinWalletInfo?.address, evmWalletInfo?.address)
       }
+
+      // Approve succeeded - clear failure state and move to claim
+      setApproveFailed(false)
+      setBridgeStatus(BridgeStatus.SubmittingClaim)
     } catch (err) {
       console.error('[Bridge][Approve] Failed:', err)
-      setBridgeError(err instanceof Error ? err.message : 'Approve failed')
+      const errMsg = err instanceof Error ? err.message : 'Approve failed'
+      setBridgeError(errMsg)
+      // Mark approve as failed so user knows to refresh
+      setApproveFailed(true)
     } finally {
       approvingRef.current = false
     }
@@ -309,10 +318,12 @@ export function useApprove() {
     sendTransaction,
     setBridgeStatus,
     setBridgeError,
+    setApproveFailed,
   ])
 
   return {
     submitApprove,
     isApproving: approvingRef.current,
+    approveFailed,
   }
 }

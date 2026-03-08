@@ -8,6 +8,7 @@ const WALLET_CHECK_DELAY_MS = 1500
 export default function StatusButton() {
   const bridgeError = useTransactionsDetailStore(state => state.bridgeError)
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
+  const approveFailed = useTransactionsDetailStore(state => state.approveFailed)
   const claimFailed = useTransactionsDetailStore(state => state.claimFailed)
 
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
@@ -30,6 +31,7 @@ export default function StatusButton() {
   // 計算是否應該顯示按鈕
   const shouldShowButton =
     bridgeError ||
+    approveFailed ||
     claimFailed ||
     bridgeStatus === BridgeStatus.SubmittingClaim ||
     bridgeStatus === BridgeStatus.Completed ||
@@ -43,7 +45,7 @@ export default function StatusButton() {
   const getButtonClassName = () => {
     const baseClass = 'flex items-center rounded-xl px-6 py-2.5 text-xl transition-colors duration-200 cursor-not-allowed'
 
-    if (bridgeError || claimFailed || (!isCheckingWallets && !isWalletsConnected)) {
+    if (bridgeError || approveFailed || claimFailed || (!isCheckingWallets && !isWalletsConnected)) {
       return `${baseClass} bg-red-100 text-red-800`
     }
     if (bridgeStatus === BridgeStatus.Completed) {
@@ -59,6 +61,9 @@ export default function StatusButton() {
     }
     if (!isCheckingWallets && !isWalletsConnected) {
       return 'Please connect wallets'
+    }
+    if (approveFailed) {
+      return 'Approve failed. Please refresh the page to retry.'
     }
     if (claimFailed || bridgeError) {
       return 'Claim failed. Please refresh the page to retry.'
