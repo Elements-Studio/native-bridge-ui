@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import useStarcoinTools from '@/hooks/useStarcoinTools'
+import useStarcoinTools, { waitForStarcoinTransaction } from '@/hooks/useStarcoinTools'
 import { BRIDGE_ABI, BRIDGE_CONFIG, ERC20_ABI, normalizeHex } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { formatDecimal } from '@/lib/format'
@@ -144,7 +144,17 @@ export default function BridgeAssetPanel() {
         const bridge = new Contract(bridgeAddress, BRIDGE_ABI, signer)
         const tx = await bridge.bridgeERC20(tokenConfig.tokenId, amount, recipientBytes, BRIDGE_CONFIG.evm.destinationChainId)
         const txHash = tx.hash as string
-        setBridgeStatus('Transaction submitted. Redirecting...')
+
+        // Wait for tx confirmation with timeout
+        setBridgeStatus('Waiting for transaction confirmation...')
+        const TX_TIMEOUT_MS = 120000
+        const waitPromise = tx.wait()
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Transaction confirmation timeout. TX hash: ${txHash}`)), TX_TIMEOUT_MS),
+        )
+        await Promise.race([waitPromise, timeoutPromise])
+
+        setBridgeStatus('Transaction confirmed! Redirecting...')
 
         window.onbeforeunload = null
         window.location.href = `/transactions/${txHash}?direction=${direction}`
@@ -197,7 +207,11 @@ export default function BridgeAssetPanel() {
         throw new Error('Starcoin transaction hash not returned')
       }
 
-      setBridgeStatus('Transaction submitted. Redirecting...')
+      // Wait for tx confirmation
+      setBridgeStatus('Waiting for transaction confirmation...')
+      await waitForStarcoinTransaction(txHash, { timeout: 120000, pollInterval: 2000 })
+
+      setBridgeStatus('Transaction confirmed! Redirecting...')
       navigate(`/transactions/${txHash}?direction=starcoin_to_eth`)
       return
     } catch (err) {
@@ -206,6 +220,29 @@ export default function BridgeAssetPanel() {
       setIsBridging(false)
     }
   }, [direction, evmWalletInfo, starcoinWalletInfo, inputBalance, currentCoin, navigate, sendTransaction])
+
+  // Compute button disabled state and message
+  const isWalletsConnected = Boolean(evmWalletInfo?.address && starcoinWalletInfo?.address)
+  const hasValidAmount = inputBalance && Number(inputBalance) > 0
+  const isButtonDisabled = isBridging || !isWalletsConnected || !hasValidAmount || !direction
+
+  const getButtonHint = () => {
+    if (!evmWalletInfo?.address && !starcoinWalletInfo?.address) {
+      return 'Please connect both wallets to continue'
+    }
+    if (!evmWalletInfo?.address) {
+      return 'Please connect your Ethereum wallet'
+    }
+    if (!starcoinWalletInfo?.address) {
+      return 'Please connect your Starcoin wallet'
+    }
+    if (!hasValidAmount) {
+      return 'Please enter an amount'
+    }
+    return null
+  }
+
+  const buttonHint = getButtonHint()
 
   return (
     <div className="i-panel bg-accent/20 relative grid gap-4 rounded-3xl p-4 backdrop-blur-3xl">
@@ -233,13 +270,14 @@ export default function BridgeAssetPanel() {
         </div>
 
         <Button
-          className="bg-accent hover:bg-accent/80 cursor-pointer text-gray-100 transition-colors duration-300 disabled:cursor-not-allowed"
-          disabled={isBridging || balanceLoading || !inputBalance || Number(inputBalance) <= 0}
+          className="bg-accent hover:bg-accent/80 cursor-pointer text-gray-100 transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isButtonDisabled}
           onClick={handleBridge}
         >
           {isBridging ? <Spinner className="me-[0.2em]" /> : null}
           Bridge assets
         </Button>
+        {buttonHint ? <div className="text-xs text-center text-yellow-400">{buttonHint}</div> : null}
         {bridgeStatus ? <div className="text-xs text-[#abbdcc]">{bridgeStatus}</div> : null}
         {bridgeError ? <div className="text-xs wrap-break-word break-all text-red-300">{bridgeError}</div> : null}
       </div>
