@@ -1,0 +1,95 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "confirm": "确认",
+    "cancel": "取消",
+    "close": "关闭",
+    "copy": "复制",
+    "copied": "已复制！",
+    "yes": "是",
+    "no": "否"
+  },
+  "wallet": {
+    "connect": "连接钱包",
+    "disconnect": "断开连接",
+    "connectEvm": "连接以太坊钱包",
+    "connectStarcoin": "连接 Starcoin 钱包",
+    "connectEthWallet": "请连接您的以太坊钱包",
+    "connectStcWallet": "请连接您的 Starcoin 钱包",
+    "connectWallets": "请连接钱包"
+  },
+  "bridge": {
+    "title": "资产跨链",
+    "bridgeAssets": "跨链转账",
+    "connectBothWallets": "请连接两个钱包以继续",
+    "from": "从",
+    "to": "到",
+    "amount": "数量",
+    "enterAmount": "请输入数量",
+    "estimatedGas": "预估 Gas",
+    "youReceive": "您将收到",
+    "bridgePausedEth": "跨链桥在以太坊侧暂停中，请稍后再试。",
+    "bridgePausedStc": "跨链桥在 Starcoin 侧暂停中，请稍后再试。",
+    "tokenNotSupported": "所选代币不支持",
+    "preparingTx": "准备交易中...",
+    "approvingErc20": "正在授权 ERC20...",
+    "depositing": "存入中...",
+    "waitingConfirmation": "等待交易确认...",
+    "txConfirmed": "交易已确认！正在跳转...",
+    "bridgeFailed": "跨链失败"
+  },
+  "transaction": {
+    "title": "交易详情",
+    "fromEthToStc": "从以太坊到 Starcoin",
+    "fromStcToEth": "从 Starcoin 到以太坊",
+    "txnHash": "交易哈希",
+    "blockHeight": "区块高度",
+    "timestamp": "时间戳",
+    "senderAddress": "发送地址",
+    "recipientAddress": "接收地址",
+    "amount": "数量",
+    "gasUsage": "Gas 消耗",
+    "dataSource": "数据来源",
+    "finalized": "已确认",
+    "viewOnExplorer": "在浏览器中查看",
+    "nonce": "Nonce",
+    "status": "状态"
+  },
+  "status": {
+    "waitingForFinalization": "等待最终确认",
+    "collectingSignatures": "收集签名中",
+    "approvingTransfer": "批准转账中",
+    "claimingTokens": "领取代币中",
+    "completed": "已完成",
+    "waitingForIndexer": "等待索引器，可能需要几分钟",
+    "collectingValidatorSignatures": "收集验证者签名中",
+    "submittingApprove": "提交批准中",
+    "submittingClaim": "提交领取中",
+    "alreadyClaimed": "已领取",
+    "waitingForClaim": "等待领取...",
+    "claimingIn": "{{time}} 后领取..."
+  },
+  "error": {
+    "approveFailed": "批准失败，请刷新页面重试。",
+    "claimFailed": "领取失败，请刷新页面重试。",
+    "txTimeout": "交易确认超时",
+    "txHashNotReturned": "未返回交易哈希",
+    "metaMaskNotDetected": "未检测到 MetaMask",
+    "starMaskNotDetected": "未检测到 StarMask"
+  },
+  "transfers": {
+    "title": "转账记录",
+    "noTransactions": "暂无交易记录",
+    "ethToStarcoin": "ETH → Starcoin",
+    "starcoinToEth": "Starcoin → ETH"
+  },
+  "header": {
+    "bridgeAssets": "跨链转账",
+    "transactions": "交易记录"
+  },
+  "footer": {
+    "poweredBy": "Powered by Starcoin"
+  }
+}

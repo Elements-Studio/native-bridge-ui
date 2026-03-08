@@ -9,12 +9,14 @@ import { getBridgeStatus, getEstimateFees, type EstimateFeesResponse } from '@/s
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Contract, getAddress, getBytes, parseUnits } from 'ethers'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import CoinSelectorCard from './CoinSelectorCard'
 import FromToCard from './FromToCard'
 import './panel.styl'
 
 export default function BridgeAssetPanel() {
+  const { t } = useTranslation()
   const fromWalletType = useGlobalStore(state => state.fromWalletType)
   const toWalletType = useGlobalStore(state => state.toWalletType)
   const currentCoin = useGlobalStore(state => state.currentCoin)
@@ -228,16 +230,16 @@ export default function BridgeAssetPanel() {
 
   const getButtonHint = () => {
     if (!evmWalletInfo?.address && !starcoinWalletInfo?.address) {
-      return 'Please connect both wallets to continue'
+      return t('bridge.connectBothWallets')
     }
     if (!evmWalletInfo?.address) {
-      return 'Please connect your Ethereum wallet'
+      return t('wallet.connectEthWallet')
     }
     if (!starcoinWalletInfo?.address) {
-      return 'Please connect your Starcoin wallet'
+      return t('wallet.connectStcWallet')
     }
     if (!hasValidAmount) {
-      return 'Please enter an amount'
+      return t('bridge.enterAmount')
     }
     return null
   }
@@ -256,13 +258,13 @@ export default function BridgeAssetPanel() {
       <div className="flex flex-col gap-6 rounded-b-4xl">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between px-2 text-[#abbdcc]">
-            <div className="text-sm font-normal">Estimated Gas</div>
+            <div className="text-sm font-normal">{t('bridge.estimatedGas')}</div>
             <div className="flex items-center text-sm font-normal">
               {estimatedGas} {currentCoin.gas}
             </div>
           </div>
           <div className="flex justify-between px-2 text-[#abbdcc]">
-            <div className="text-sm font-normal">You receive</div>
+            <div className="text-sm font-normal">{t('bridge.youReceive')}</div>
             <div className="text-sm font-normal">
               {formatDecimal(inputBalance) || '0.00'} {currentCoin.name}
             </div>
@@ -275,7 +277,7 @@ export default function BridgeAssetPanel() {
           onClick={handleBridge}
         >
           {isBridging ? <Spinner className="me-[0.2em]" /> : null}
-          Bridge assets
+          {t('bridge.bridgeAssets')}
         </Button>
         {buttonHint ? <div className="text-xs text-center text-yellow-400">{buttonHint}</div> : null}
         {bridgeStatus ? <div className="text-xs text-[#abbdcc]">{bridgeStatus}</div> : null}

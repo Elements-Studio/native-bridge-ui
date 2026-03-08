@@ -1,5 +1,6 @@
 import { useGlobalStore } from '@/stores/globalStore'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BridgeStatus, useTransactionsDetailStore } from './store'
 
 // 延遲時間，避免初始加載時閃爍
@@ -16,6 +17,7 @@ function formatCountdown(seconds: number): string {
 }
 
 export default function StatusButton() {
+  const { t } = useTranslation()
   const bridgeError = useTransactionsDetailStore(state => state.bridgeError)
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
   const approveFailed = useTransactionsDetailStore(state => state.approveFailed)
@@ -68,24 +70,24 @@ export default function StatusButton() {
   // 計算按鈕文案
   const getButtonText = () => {
     if (bridgeStatus === BridgeStatus.Completed) {
-      return 'Completed'
+      return t('status.completed')
     }
     if (!isCheckingWallets && !isWalletsConnected) {
-      return 'Please connect wallets'
+      return t('wallet.connectWallets')
     }
     if (approveFailed) {
-      return 'Approve failed. Please refresh the page to retry.'
+      return t('error.approveFailed')
     }
     if (claimFailed || bridgeError) {
-      return 'Claim failed. Please refresh the page to retry.'
+      return t('error.claimFailed')
     }
 
     // Show countdown if in claim stage with delay
     if (bridgeStatus === BridgeStatus.SubmittingClaim && claimDelaySeconds != null && claimDelaySeconds > 0) {
-      return `Claiming in ${formatCountdown(claimDelaySeconds)}...`
+      return t('status.claimingIn', { time: formatCountdown(claimDelaySeconds) })
     }
 
-    return 'Waiting for claim...'
+    return t('status.waitingForClaim')
   }
 
   return (

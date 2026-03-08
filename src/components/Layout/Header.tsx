@@ -1,22 +1,25 @@
 import logoIcon from '@/assets/img/logo.png'
 import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 import EvmConnectBtn from './EvmConnectBtn'
+import LanguageSwitcher from './LanguageSwitcher'
 import StartconConnectBtn from './StarcoinConnectBtn'
 
 const menuItems = [
   {
-    title: 'Bridge assets',
+    titleKey: 'header.bridgeAssets',
     path: '/',
   },
   {
-    title: 'Transactions',
+    titleKey: 'header.transactions',
     path: '/transactions',
   },
 ]
 
 export default function Header() {
   const location = useLocation()
+  const { t } = useTranslation()
 
   return (
     <header className="bg-primary/70 border-border sticky top-0 z-50 border-b backdrop-blur-md">
@@ -41,12 +44,13 @@ export default function Header() {
                   isActive ? 'text-accent-foreground font-bold' : 'text-primary-foreground font-normal',
                 )}
               >
-                {item.title}
+                {t(item.titleKey)}
               </Link>
             )
           })}
         </div>
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
+          <LanguageSwitcher />
           <EvmConnectBtn />
           <StartconConnectBtn />
         </div>

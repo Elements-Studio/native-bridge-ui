@@ -1,0 +1,95 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "wallet": {
+    "connect": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "connectEvm": "Connect Ethereum Wallet",
+    "connectStarcoin": "Connect Starcoin Wallet",
+    "connectEthWallet": "Please connect your Ethereum wallet",
+    "connectStcWallet": "Please connect your Starcoin wallet",
+    "connectWallets": "Please connect wallets"
+  },
+  "bridge": {
+    "title": "Bridge Assets",
+    "bridgeAssets": "Bridge assets",
+    "connectBothWallets": "Please connect both wallets to continue",
+    "from": "From",
+    "to": "To",
+    "amount": "Amount",
+    "enterAmount": "Please enter an amount",
+    "estimatedGas": "Estimated Gas",
+    "youReceive": "You receive",
+    "bridgePausedEth": "The bridge is currently paused on Ethereum. Please try again later.",
+    "bridgePausedStc": "The bridge is currently paused on Starcoin. Please try again later.",
+    "tokenNotSupported": "Selected token is not supported",
+    "preparingTx": "Preparing transaction...",
+    "approvingErc20": "Approving ERC20 spend...",
+    "depositing": "Depositing...",
+    "waitingConfirmation": "Waiting for transaction confirmation...",
+    "txConfirmed": "Transaction confirmed! Redirecting...",
+    "bridgeFailed": "Bridge failed"
+  },
+  "transaction": {
+    "title": "Transaction Details",
+    "fromEthToStc": "From Ethereum to Starcoin",
+    "fromStcToEth": "From Starcoin to Ethereum",
+    "txnHash": "Txn Hash",
+    "blockHeight": "Block Height",
+    "timestamp": "Timestamp",
+    "senderAddress": "Sender Address",
+    "recipientAddress": "Recipient Address",
+    "amount": "Amount",
+    "gasUsage": "Gas Usage",
+    "dataSource": "Data Source",
+    "finalized": "Finalized",
+    "viewOnExplorer": "View on Explorer",
+    "nonce": "Nonce",
+    "status": "Status"
+  },
+  "status": {
+    "waitingForFinalization": "Waiting for finalization",
+    "collectingSignatures": "Collecting signatures",
+    "approvingTransfer": "Approving transfer",
+    "claimingTokens": "Claiming tokens",
+    "completed": "Completed",
+    "waitingForIndexer": "Waiting for indexer, it may take a few minutes",
+    "collectingValidatorSignatures": "Collecting validator signatures",
+    "submittingApprove": "Submitting approve",
+    "submittingClaim": "Submitting claim",
+    "alreadyClaimed": "Already claimed",
+    "waitingForClaim": "Waiting for claim...",
+    "claimingIn": "Claiming in {{time}}..."
+  },
+  "error": {
+    "approveFailed": "Approve failed. Please refresh the page to retry.",
+    "claimFailed": "Claim failed. Please refresh the page to retry.",
+    "txTimeout": "Transaction confirmation timeout",
+    "txHashNotReturned": "Transaction hash not returned",
+    "metaMaskNotDetected": "MetaMask not detected",
+    "starMaskNotDetected": "StarMask not detected"
+  },
+  "transfers": {
+    "title": "Transfers",
+    "noTransactions": "No transactions found",
+    "ethToStarcoin": "ETH → Starcoin",
+    "starcoinToEth": "Starcoin → ETH"
+  },
+  "header": {
+    "bridgeAssets": "Bridge assets",
+    "transactions": "Transactions"
+  },
+  "footer": {
+    "poweredBy": "Powered by Starcoin"
+  }
+}

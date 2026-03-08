@@ -1,3 +1,4 @@
+import '@/i18n' // Initialize i18n before app
 import App from '@/App.tsx'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
