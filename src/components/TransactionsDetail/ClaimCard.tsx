@@ -75,14 +75,12 @@ export default function ClaimCard() {
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{claimData.data_source}</div>
             </div>
           ) : null}
-          {claimData.is_finalized != null ? (
-            <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
-              <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
-                {claimData.is_finalized ? t('common.yes') : t('common.no')}
-              </div>
+          <div className="flex items-center justify-between gap-x-3">
+            <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
+            <div className={`font-inter text-md font-medium wrap-break-word ${claimData.is_finalized ? 'text-green-400' : 'text-yellow-400'}`}>
+              {claimData.is_finalized ? t('status.indexerFinalized') : t('status.indexerFoundWaitingFinalized')}
             </div>
-          ) : null}
+          </div>
 
           {claimData.txn_hash && (
             <div className="mt-4 flex flex-row items-center justify-around">

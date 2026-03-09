@@ -56,14 +56,12 @@ export default function ApprovalCard() {
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{approvalData.data_source}</div>
             </div>
           ) : null}
-          {approvalData.is_finalized != null ? (
-            <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
-              <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
-                {approvalData.is_finalized ? t('common.yes') : t('common.no')}
-              </div>
+          <div className="flex items-center justify-between gap-x-3">
+            <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
+            <div className={`font-inter text-md font-medium wrap-break-word ${approvalData.is_finalized ? 'text-green-400' : 'text-yellow-400'}`}>
+              {approvalData.is_finalized ? t('status.indexerFinalized') : t('status.indexerFoundWaitingFinalized')}
             </div>
-          ) : null}
+          </div>
 
           {approvalData.txn_hash && (
             <div className="mt-4 flex flex-row items-center justify-around">

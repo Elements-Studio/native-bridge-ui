@@ -89,14 +89,12 @@ export default function DepositCard() {
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{depositData.amount}</div>
             </div>
           ) : null}
-          {depositData.is_finalized != null ? (
-            <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
-              <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
-                {depositData.is_finalized ? t('common.yes') : t('common.no')}
-              </div>
+          <div className="flex items-center justify-between gap-x-3">
+            <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
+            <div className={`font-inter text-md font-medium wrap-break-word ${depositData.is_finalized ? 'text-green-400' : 'text-yellow-400'}`}>
+              {depositData.is_finalized ? t('status.indexerFinalized') : t('status.indexerFoundWaitingFinalized')}
             </div>
-          ) : null}
+          </div>
 
           {depositData.txn_hash && (
             <div className="mt-4 flex flex-row items-center justify-around">
@@ -117,8 +115,9 @@ export default function DepositCard() {
           )}
         </div>
       ) : (
-        <div className="flex min-h-50 items-center justify-center p-5">
+        <div className="flex min-h-50 flex-col items-center justify-center gap-3 p-5">
           <Spinner />
+          <div className="text-sm text-yellow-400">{t('status.indexerNotFound')}</div>
         </div>
       )}
     </div>
