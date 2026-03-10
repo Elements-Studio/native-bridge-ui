@@ -87,17 +87,6 @@ export default {
     //   decimals: 6,
     // },
 
-    SepoliaUSDT: {
-      isDefault: true,
-      icon: sepoliaUsdtIcon,
-      name: 'SepoliaUSDT',
-      walletType: 'EVM',
-      network: { name: 'sepolia', chainId: '0xaa36a7' },
-      gas: 'Gwei',
-      ca: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0',
-      decimals: 6,
-    },
-
     // WBTC: {
     //   icon: wbtcIcon,
     //   name: 'WBTC',
