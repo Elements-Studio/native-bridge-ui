@@ -88,7 +88,7 @@ async function submitClaimToStarcoin(nonce: number, sendTransaction: (params: { 
       console.warn('[Bridge][Claim] Transaction indicates already claimed, continuing...')
       return
     }
-    throw new Error(`Starcoin claim transaction failed: ${errMsg}`)
+    throw new Error(`Starcoin claim transaction failed: ${errMsg}`, { cause: err })
   }
 }
 
@@ -120,7 +120,10 @@ async function submitClaimToEthereum(sourceChainId: number, nonce: number) {
   const TX_TIMEOUT_MS = 120000
   const waitPromise = claimTx.wait()
   const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${claimTx.hash}`)), TX_TIMEOUT_MS),
+    setTimeout(
+      () => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${claimTx.hash}`)),
+      TX_TIMEOUT_MS,
+    ),
   )
 
   await Promise.race([waitPromise, timeoutPromise])
@@ -304,7 +307,15 @@ export function useClaim() {
     }
 
     submitClaim()
-  }, [bridgeStatus, nonce, claimFailed, transferData?.procedure?.current_status, transferData?.procedure?.is_complete, submitClaim, setBridgeStatus])
+  }, [
+    bridgeStatus,
+    nonce,
+    claimFailed,
+    transferData?.procedure?.current_status,
+    transferData?.procedure?.is_complete,
+    submitClaim,
+    setBridgeStatus,
+  ])
 
   return {
     submitClaim,

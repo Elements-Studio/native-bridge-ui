@@ -204,7 +204,9 @@ export default function TransactionsDetail() {
                     >
                       {isCompleted ? <CheckIcon /> : isCurrentStep ? <Spinner /> : null}
                     </div>
-                    <span className="text-primary-foreground text-center text-sm font-semibold uppercase md:text-lg">{t(step.labelKey)}</span>
+                    <span className="text-primary-foreground text-center text-sm font-semibold uppercase md:text-lg">
+                      {t(step.labelKey)}
+                    </span>
                   </div>
                 )
               })}

@@ -11,7 +11,7 @@ const localEnv = localModules['./env.local.ts']
 // Otherwise use devEnv (development) or prodEnv (production)
 const useLocalDebug = import.meta.env.VITE_BRIDGE_LOCAL_DEBUG === 'true'
 
-const env = ((useLocalDebug && localEnv) ? localEnv : (import.meta.env.MODE === 'development' ? devEnv : prodEnv)) as {
+const env = (useLocalDebug && localEnv ? localEnv : import.meta.env.MODE === 'development' ? devEnv : prodEnv) as {
   apis: {
     '/transfers': string
     '/estimate_fees': string

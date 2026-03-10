@@ -115,7 +115,7 @@ async function submitApproveToStarcoin(
       console.warn('[Bridge][Approve] Transaction indicates already approved, continuing...')
       return
     }
-    throw new Error(`Starcoin approve transaction failed: ${errMsg}`)
+    throw new Error(`Starcoin approve transaction failed: ${errMsg}`, { cause: err })
   }
 }
 
@@ -201,7 +201,10 @@ async function submitApproveToEthereum(
       const TX_TIMEOUT_MS = 120000
       const waitPromise = approveTx.wait()
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${approveTx.hash}`)), TX_TIMEOUT_MS),
+        setTimeout(
+          () => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${approveTx.hash}`)),
+          TX_TIMEOUT_MS,
+        ),
       )
 
       await Promise.race([waitPromise, timeoutPromise])

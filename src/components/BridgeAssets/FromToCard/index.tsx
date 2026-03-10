@@ -49,7 +49,9 @@ export default function FromToCard() {
     return (
       <div key="EvmCard" className="bg-accent/80 flex flex-col gap-4 space-y-4 p-6 text-black/90 backdrop-blur-xs">
         <div className="relative flex w-full flex-1 items-center justify-between">
-          <div className="text-sm leading-4 font-medium tracking-[0.6px]">{from === 'EVM' ? t('bridge.fromEthereum') : t('bridge.toEthereum')}</div>
+          <div className="text-sm leading-4 font-medium tracking-[0.6px]">
+            {from === 'EVM' ? t('bridge.fromEthereum') : t('bridge.toEthereum')}
+          </div>
         </div>
         {evmWalletInfo?.address ? (
           <div className="ring-offset-background focus-visible:ring-ring flex w-full items-center justify-between rounded-full text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
@@ -88,7 +90,9 @@ export default function FromToCard() {
     return (
       <div key="StarcoinCard" className="bg-secondary/80 flex flex-col gap-4 space-y-4 p-6 backdrop-blur-xs">
         <div className="relative flex w-full flex-1 items-center justify-between">
-          <div className="text-sm leading-4 font-medium tracking-[0.6px] text-zinc-200">{from === 'EVM' ? t('bridge.toStarcoin') : t('bridge.fromStarcoin')}</div>
+          <div className="text-sm leading-4 font-medium tracking-[0.6px] text-zinc-200">
+            {from === 'EVM' ? t('bridge.toStarcoin') : t('bridge.fromStarcoin')}
+          </div>
           {/* <button
             className="ring-offset-background focus-visible:ring-ring inline-flex items-center justify-center rounded-full px-2 py-1 text-sm leading-none font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
             type="button"

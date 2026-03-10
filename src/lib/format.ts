@@ -3,9 +3,14 @@ export function normalizeEip1193Error(err: unknown): Error {
   const code = error?.code
   const msg = error?.message || String(err)
   // 4001: user rejected
-  // -32002: request already pending
+  // -32002: request already pending or RPC errors
+  if (code === -32002 && msg.includes('RPC endpoint returned too many errors')) {
+    return new Error('RPC endpoint is experiencing issues. Please try switching to a different RPC endpoint in your wallet settings.', {
+      cause: err,
+    })
+  }
   const suffix = code != null ? ` (code: ${code})` : ''
-  return new Error(msg + suffix)
+  return new Error(msg + suffix, { cause: err })
 }
 
 export function normalizeHash(input: string): string {

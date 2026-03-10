@@ -58,7 +58,9 @@ export default function ApprovalCard() {
           ) : null}
           <div className="flex items-center justify-between gap-x-3">
             <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
-            <div className={`font-inter text-md font-medium wrap-break-word ${approvalData.is_finalized ? 'text-green-400' : 'text-yellow-400'}`}>
+            <div
+              className={`font-inter text-md font-medium wrap-break-word ${approvalData.is_finalized ? 'text-green-400' : 'text-yellow-400'}`}
+            >
               {approvalData.is_finalized ? t('status.indexerFinalized') : t('status.indexerFoundWaitingFinalized')}
             </div>
           </div>

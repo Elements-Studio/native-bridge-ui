@@ -69,7 +69,7 @@ export default function BridgeAssetPanel() {
     if (loading) return <Spinner className="me-[0.2em]" />
     if (error) return <span className="text-red-300">--</span>
     if (!fees) return '-'
-    
+
     // Calculate approve + claim gas based on direction
     let totalGas: number
     if (direction === 'eth_to_starcoin') {
@@ -77,7 +77,7 @@ export default function BridgeAssetPanel() {
     } else {
       totalGas = fees.starcoin_to_eth_approval_gas + fees.starcoin_to_eth_claim_gas
     }
-    
+
     return `≈ ${totalGas.toLocaleString()}`
   }, [fees, loading, error, direction])
 
@@ -288,7 +288,7 @@ export default function BridgeAssetPanel() {
           {isBridging ? <Spinner className="me-[0.2em]" /> : null}
           {t('bridge.bridgeAssets')}
         </Button>
-        {buttonHint ? <div className="text-xs text-center text-yellow-400">{buttonHint}</div> : null}
+        {buttonHint ? <div className="text-center text-xs text-yellow-400">{buttonHint}</div> : null}
         {bridgeStatus ? <div className="text-xs text-[#abbdcc]">{bridgeStatus}</div> : null}
         {bridgeError ? <div className="text-xs wrap-break-word break-all text-red-300">{bridgeError}</div> : null}
       </div>
