@@ -118,13 +118,13 @@ export default {
   bridge: {
     evm: {
       chainIdHex: '0xaa36a7',
-      chainId: 12,
+      chainId: 11,
       bridgeAddress: '0xCB8286D34Af287DDA3491965a8586770dADE03c6',
-      destinationChainId: 2,
+      destinationChainId: 1,
     },
     starcoin: {
       packageAddress: '0x34aa399de7b439fd802daa9afefe0e9d',
-      chainId: 2,
+      chainId: 1,
     },
     tokens: {
       // AnvilUSDT: { tokenId: 4, claimFunction: 'claim_bridge_usdt' },
