@@ -190,35 +190,43 @@ export function useClaim() {
         return
       }
 
-      // Check quota before proceeding
+      // Check quota before proceeding to avoid wasting gas
       const depositAmount = transferData?.procedure?.deposit?.amount
-      if (depositAmount) {
-        console.log('[Bridge][Claim] Checking quota before claim...')
-        const quotaData = await getQuota()
-        const decimals = quotaData.decimals ?? 8
-        const amountUsdt = parseAmountString(depositAmount)
+      if (!depositAmount) {
+        const errorMsg = 'Cannot verify quota: deposit amount is unavailable. Please refresh and try again.'
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
+      }
 
-        // For eth_to_starcoin, check starcoin_claim quota
-        // For starcoin_to_eth, check eth_claim quota
-        const rawQuota = direction === 'eth_to_starcoin' ? quotaData.starcoin_claim : quotaData.eth_claim
+      console.log('[Bridge][Claim] Checking quota before claim...')
+      const quotaData = await getQuota()
+      const decimals = quotaData.decimals ?? 8
+      const amountUsdt = parseAmountString(depositAmount)
 
-        if (rawQuota == null) {
-          // Quota query failed for the target chain, check error message
-          const quotaError = direction === 'eth_to_starcoin' ? quotaData.starcoin_error : quotaData.eth_error
-          console.warn('[Bridge][Claim] Quota unavailable:', quotaError ?? 'unknown error')
-          // Don't block claim if quota is unavailable - proceed with caution
-        } else {
-          const availableQuota = quotaToUsdt(rawQuota, decimals)
-          console.log('[Bridge][Claim] Amount:', amountUsdt, 'USDT, Available quota:', availableQuota, 'USDT')
+      // For eth_to_starcoin, check starcoin_claim quota
+      // For starcoin_to_eth, check eth_claim quota
+      const rawQuota = direction === 'eth_to_starcoin' ? quotaData.starcoin_claim : quotaData.eth_claim
 
-          if (amountUsdt > availableQuota) {
-            const errorMsg = `Quota exceeded. Available: ${availableQuota.toFixed(2)} USDT, Required: ${amountUsdt} USDT. Please try again later.`
-            console.error('[Bridge][Claim]', errorMsg)
-            setBridgeError(errorMsg)
-            claimingRef.current = false
-            return
-          }
-        }
+      if (rawQuota == null) {
+        const quotaError = direction === 'eth_to_starcoin' ? quotaData.starcoin_error : quotaData.eth_error
+        const errorMsg = `Cannot verify quota: ${quotaError ?? 'quota service unavailable'}. Please try again later.`
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
+      }
+
+      const availableQuota = quotaToUsdt(rawQuota, decimals)
+      console.log('[Bridge][Claim] Amount:', amountUsdt, 'USDT, Available quota:', availableQuota, 'USDT')
+
+      if (amountUsdt > availableQuota) {
+        const errorMsg = `Quota exceeded. Available: ${availableQuota.toFixed(2)} USDT, Required: ${amountUsdt} USDT. Please try again later.`
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
       }
 
       // 检查是否需要倒计时
