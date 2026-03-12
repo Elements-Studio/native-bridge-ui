@@ -61,7 +61,7 @@ export async function connectStarMask(targetChainId?: number): Promise<WalletInf
   const account = accounts?.[0]
   if (!account) throw new Error('No account returned from StarMask')
 
-  let chainId: string | number | null = null
+  let chainId: string | number | null
   try {
     chainId = (await provider.request({ method: 'chain.id' })) as string | number | null
   } catch (error) {
