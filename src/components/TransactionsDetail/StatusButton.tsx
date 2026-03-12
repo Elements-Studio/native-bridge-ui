@@ -1,13 +1,28 @@
 import { useGlobalStore } from '@/stores/globalStore'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BridgeStatus, useTransactionsDetailStore } from './store'
 
 // 延遲時間，避免初始加載時閃爍
 const WALLET_CHECK_DELAY_MS = 1500
 
+function formatCountdown(seconds: number): string {
+  if (seconds <= 0) return ''
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  if (mins > 0) {
+    return `${mins}m ${secs}s`
+  }
+  return `${secs}s`
+}
+
 export default function StatusButton() {
+  const { t } = useTranslation()
   const bridgeError = useTransactionsDetailStore(state => state.bridgeError)
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
+  const approveFailed = useTransactionsDetailStore(state => state.approveFailed)
+  const claimFailed = useTransactionsDetailStore(state => state.claimFailed)
+  const claimDelaySeconds = useTransactionsDetailStore(state => state.claimDelaySeconds)
 
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
@@ -29,6 +44,8 @@ export default function StatusButton() {
   // 計算是否應該顯示按鈕
   const shouldShowButton =
     bridgeError ||
+    approveFailed ||
+    claimFailed ||
     bridgeStatus === BridgeStatus.SubmittingClaim ||
     bridgeStatus === BridgeStatus.Completed ||
     (!isCheckingWallets && !isWalletsConnected)
@@ -41,7 +58,7 @@ export default function StatusButton() {
   const getButtonClassName = () => {
     const baseClass = 'flex items-center rounded-xl px-6 py-2.5 text-xl transition-colors duration-200 cursor-not-allowed'
 
-    if (bridgeError || (!isCheckingWallets && !isWalletsConnected)) {
+    if (bridgeError || approveFailed || claimFailed || (!isCheckingWallets && !isWalletsConnected)) {
       return `${baseClass} bg-red-100 text-red-800`
     }
     if (bridgeStatus === BridgeStatus.Completed) {
@@ -53,16 +70,24 @@ export default function StatusButton() {
   // 計算按鈕文案
   const getButtonText = () => {
     if (bridgeStatus === BridgeStatus.Completed) {
-      return 'Completed'
+      return t('status.completed')
     }
     if (!isCheckingWallets && !isWalletsConnected) {
-      return 'Please connect wallets'
+      return t('wallet.connectWallets')
     }
-    if (bridgeError) {
-      return 'Failed, reload the page and try again later'
+    if (approveFailed) {
+      return t('error.approveFailed')
+    }
+    if (claimFailed || bridgeError) {
+      return t('error.claimFailed')
     }
 
-    return 'Waiting for claim...'
+    // Show countdown if in claim stage with delay
+    if (bridgeStatus === BridgeStatus.SubmittingClaim && claimDelaySeconds != null && claimDelaySeconds > 0) {
+      return t('status.claimingIn', { time: formatCountdown(claimDelaySeconds) })
+    }
+
+    return t('status.waitingForClaim')
   }
 
   return (

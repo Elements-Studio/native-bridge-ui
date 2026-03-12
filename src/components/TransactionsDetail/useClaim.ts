@@ -1,4 +1,4 @@
-import useStarcoinTools from '@/hooks/useStarcoinTools'
+import useStarcoinTools, { waitForStarcoinTransaction } from '@/hooks/useStarcoinTools'
 import { BRIDGE_ABI, BRIDGE_CONFIG } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
@@ -65,10 +65,31 @@ async function submitClaimToStarcoin(nonce: number, sendTransaction: (params: { 
     args: claimArgs,
   })
 
-  const result = await sendTransaction({
+  const txHash = (await sendTransaction({
     data: bytesToHex(claimPayload),
-  })
-  console.log('[Bridge][Claim] Done on Starcoin:', result)
+  })) as string
+
+  // Validate txHash - wallet may return null/undefined if user cancels or error occurs
+  if (!txHash || typeof txHash !== 'string') {
+    throw new Error('Transaction was not submitted. Please try again.')
+  }
+
+  console.log('[Bridge][Claim] Starcoin TX submitted:', txHash)
+
+  // Wait for transaction confirmation
+  console.log('[Bridge][Claim] Waiting for Starcoin transaction confirmation...')
+  try {
+    const result = await waitForStarcoinTransaction(txHash, { timeout: 120000, pollInterval: 2000 })
+    console.log('[Bridge][Claim] Starcoin TX confirmed:', result)
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err)
+    // Check if it's a known "already claimed" error
+    if (errMsg.includes('ALREADY_CLAIMED') || errMsg.includes('already claimed')) {
+      console.warn('[Bridge][Claim] Transaction indicates already claimed, continuing...')
+      return
+    }
+    throw new Error(`Starcoin claim transaction failed: ${errMsg}`, { cause: err })
+  }
 }
 
 /**
@@ -94,7 +115,18 @@ async function submitClaimToEthereum(sourceChainId: number, nonce: number) {
   console.log('[Bridge] Claim calldata selector:', claimData.slice(0, 10))
 
   const claimTx = await signer.sendTransaction({ to: bridgeAddress, data: claimData })
-  await claimTx.wait()
+
+  // Wait for tx confirmation with timeout (120s)
+  const TX_TIMEOUT_MS = 120000
+  const waitPromise = claimTx.wait()
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${claimTx.hash}`)),
+      TX_TIMEOUT_MS,
+    ),
+  )
+
+  await Promise.race([waitPromise, timeoutPromise])
   console.log('[Bridge][Claim] Done on Ethereum')
 }
 
@@ -109,9 +141,12 @@ export function useClaim() {
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
   const transferData = useTransactionsDetailStore(state => state.transferData)
   const claimDelaySeconds = useTransactionsDetailStore(state => state.claimDelaySeconds)
+  const claimFailed = useTransactionsDetailStore(state => state.claimFailed)
+  const txnHash = useTransactionsDetailStore(state => state.txnHash)
   const setBridgeStatus = useTransactionsDetailStore(state => state.setBridgeStatus)
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
   const setClaimDelaySeconds = useTransactionsDetailStore(state => state.setClaimDelaySeconds)
+  const setClaimFailed = useTransactionsDetailStore(state => state.setClaimFailed)
 
   const { sendTransaction } = useStarcoinTools()
 
@@ -155,35 +190,43 @@ export function useClaim() {
         return
       }
 
-      // Check quota before proceeding
+      // Check quota before proceeding to avoid wasting gas
       const depositAmount = transferData?.procedure?.deposit?.amount
-      if (depositAmount) {
-        console.log('[Bridge][Claim] Checking quota before claim...')
-        const quotaData = await getQuota()
-        const decimals = quotaData.decimals ?? 8
-        const amountUsdt = parseAmountString(depositAmount)
+      if (!depositAmount) {
+        const errorMsg = 'Cannot verify quota: deposit amount is unavailable. Please refresh and try again.'
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
+      }
 
-        // For eth_to_starcoin, check starcoin_claim quota
-        // For starcoin_to_eth, check eth_claim quota
-        const rawQuota = direction === 'eth_to_starcoin' ? quotaData.starcoin_claim : quotaData.eth_claim
+      console.log('[Bridge][Claim] Checking quota before claim...')
+      const quotaData = await getQuota()
+      const decimals = quotaData.decimals ?? 8
+      const amountUsdt = parseAmountString(depositAmount)
 
-        if (rawQuota == null) {
-          // Quota query failed for the target chain, check error message
-          const quotaError = direction === 'eth_to_starcoin' ? quotaData.starcoin_error : quotaData.eth_error
-          console.warn('[Bridge][Claim] Quota unavailable:', quotaError ?? 'unknown error')
-          // Don't block claim if quota is unavailable - proceed with caution
-        } else {
-          const availableQuota = quotaToUsdt(rawQuota, decimals)
-          console.log('[Bridge][Claim] Amount:', amountUsdt, 'USDT, Available quota:', availableQuota, 'USDT')
+      // For eth_to_starcoin, check starcoin_claim quota
+      // For starcoin_to_eth, check eth_claim quota
+      const rawQuota = direction === 'eth_to_starcoin' ? quotaData.starcoin_claim : quotaData.eth_claim
 
-          if (amountUsdt > availableQuota) {
-            const errorMsg = `Quota exceeded. Available: ${availableQuota.toFixed(2)} USDT, Required: ${amountUsdt} USDT. Please try again later.`
-            console.error('[Bridge][Claim]', errorMsg)
-            setBridgeError(errorMsg)
-            claimingRef.current = false
-            return
-          }
-        }
+      if (rawQuota == null) {
+        const quotaError = direction === 'eth_to_starcoin' ? quotaData.starcoin_error : quotaData.eth_error
+        const errorMsg = `Cannot verify quota: ${quotaError ?? 'quota service unavailable'}. Please try again later.`
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
+      }
+
+      const availableQuota = quotaToUsdt(rawQuota, decimals)
+      console.log('[Bridge][Claim] Amount:', amountUsdt, 'USDT, Available quota:', availableQuota, 'USDT')
+
+      if (amountUsdt > availableQuota) {
+        const errorMsg = `Quota exceeded. Available: ${availableQuota.toFixed(2)} USDT, Required: ${amountUsdt} USDT. Please try again later.`
+        console.error('[Bridge][Claim]', errorMsg)
+        setBridgeError(errorMsg)
+        claimingRef.current = false
+        return
       }
 
       // 检查是否需要倒计时
@@ -209,10 +252,21 @@ export function useClaim() {
         await submitClaimToEthereum(sourceChainId, nonce)
       }
 
+      // Claim succeeded - clear failure state
+      setClaimFailed(false)
+      if (txnHash) {
+        localStorage.removeItem(`bridge_claim_failed_${txnHash}`)
+      }
       setBridgeStatus(BridgeStatus.Completed)
     } catch (err) {
       console.error('[Bridge][Claim] Failed:', err)
-      setBridgeError(err instanceof Error ? err.message : 'Claim failed')
+      const errMsg = err instanceof Error ? err.message : 'Claim failed'
+      setBridgeError(errMsg)
+      // Mark claim as failed so user can manually retry
+      setClaimFailed(true)
+      if (txnHash) {
+        localStorage.setItem(`bridge_claim_failed_${txnHash}`, JSON.stringify({ error: errMsg, timestamp: Date.now() }))
+      }
     } finally {
       claimingRef.current = false
     }
@@ -223,11 +277,24 @@ export function useClaim() {
     sourceChainId,
     claimDelaySeconds,
     transferData,
+    txnHash,
     sendTransaction,
     setBridgeStatus,
     setBridgeError,
     setClaimDelaySeconds,
+    setClaimFailed,
   ])
+
+  // On page refresh, clear any previous failure state so claim will auto-retry
+  useEffect(() => {
+    if (!txnHash) return
+    const stored = localStorage.getItem(`bridge_claim_failed_${txnHash}`)
+    if (stored) {
+      console.log('[Bridge][Claim] Page refreshed, clearing previous failure state to retry')
+      localStorage.removeItem(`bridge_claim_failed_${txnHash}`)
+      // Don't restore failure state - let it auto-retry on refresh
+    }
+  }, [txnHash])
 
   // 当状态变为 SubmittingClaim 时自动开始 claim 流程
   useEffect(() => {
@@ -241,12 +308,27 @@ export function useClaim() {
       return
     }
 
+    // If claim has failed in this session, don't auto-retry
+    if (claimFailed) {
+      console.log('[Bridge][Claim] Claim failed, waiting for page refresh to retry')
+      return
+    }
+
     submitClaim()
-  }, [bridgeStatus, nonce, transferData?.procedure?.current_status, transferData?.procedure?.is_complete, submitClaim, setBridgeStatus])
+  }, [
+    bridgeStatus,
+    nonce,
+    claimFailed,
+    transferData?.procedure?.current_status,
+    transferData?.procedure?.is_complete,
+    submitClaim,
+    setBridgeStatus,
+  ])
 
   return {
     submitClaim,
     isClaiming: claimingRef.current,
     countdownSeconds: countdownRef.current,
+    claimFailed,
   }
 }

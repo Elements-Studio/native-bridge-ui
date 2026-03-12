@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import useStarcoinTools from '@/hooks/useStarcoinTools'
+import useStarcoinTools, { waitForStarcoinTransaction } from '@/hooks/useStarcoinTools'
 import { BRIDGE_ABI, BRIDGE_CONFIG, ERC20_ABI, normalizeHex } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { formatDecimal } from '@/lib/format'
@@ -9,12 +9,14 @@ import { getBridgeStatus, getEstimateFees, type EstimateFeesResponse } from '@/s
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Contract, getAddress, getBytes, parseUnits } from 'ethers'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import CoinSelectorCard from './CoinSelectorCard'
 import FromToCard from './FromToCard'
 import './panel.styl'
 
 export default function BridgeAssetPanel() {
+  const { t } = useTranslation()
   const fromWalletType = useGlobalStore(state => state.fromWalletType)
   const toWalletType = useGlobalStore(state => state.toWalletType)
   const currentCoin = useGlobalStore(state => state.currentCoin)
@@ -67,8 +69,17 @@ export default function BridgeAssetPanel() {
     if (loading) return <Spinner className="me-[0.2em]" />
     if (error) return <span className="text-red-300">--</span>
     if (!fees) return '-'
-    return `≈ ${fees.combined_approve_and_claim_estimate}`
-  }, [fees, loading, error])
+
+    // Calculate approve + claim gas based on direction
+    let totalGas: number
+    if (direction === 'eth_to_starcoin') {
+      totalGas = fees.eth_to_starcoin_approval_gas + fees.eth_to_starcoin_claim_gas
+    } else {
+      totalGas = fees.starcoin_to_eth_approval_gas + fees.starcoin_to_eth_claim_gas
+    }
+
+    return `≈ ${totalGas.toLocaleString()}`
+  }, [fees, loading, error, direction])
 
   const handleBridge = useCallback(async () => {
     setBridgeError(null)
@@ -144,7 +155,17 @@ export default function BridgeAssetPanel() {
         const bridge = new Contract(bridgeAddress, BRIDGE_ABI, signer)
         const tx = await bridge.bridgeERC20(tokenConfig.tokenId, amount, recipientBytes, BRIDGE_CONFIG.evm.destinationChainId)
         const txHash = tx.hash as string
-        setBridgeStatus('Transaction submitted. Redirecting...')
+
+        // Wait for tx confirmation with timeout
+        setBridgeStatus('Waiting for transaction confirmation...')
+        const TX_TIMEOUT_MS = 120000
+        const waitPromise = tx.wait()
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Transaction confirmation timeout. TX hash: ${txHash}`)), TX_TIMEOUT_MS),
+        )
+        await Promise.race([waitPromise, timeoutPromise])
+
+        setBridgeStatus('Transaction confirmed! Redirecting...')
 
         window.onbeforeunload = null
         window.location.href = `/transactions/${txHash}?direction=${direction}`
@@ -197,7 +218,11 @@ export default function BridgeAssetPanel() {
         throw new Error('Starcoin transaction hash not returned')
       }
 
-      setBridgeStatus('Transaction submitted. Redirecting...')
+      // Wait for tx confirmation
+      setBridgeStatus('Waiting for transaction confirmation...')
+      await waitForStarcoinTransaction(txHash, { timeout: 120000, pollInterval: 2000 })
+
+      setBridgeStatus('Transaction confirmed! Redirecting...')
       navigate(`/transactions/${txHash}?direction=starcoin_to_eth`)
       return
     } catch (err) {
@@ -206,6 +231,29 @@ export default function BridgeAssetPanel() {
       setIsBridging(false)
     }
   }, [direction, evmWalletInfo, starcoinWalletInfo, inputBalance, currentCoin, navigate, sendTransaction])
+
+  // Compute button disabled state and message
+  const isWalletsConnected = Boolean(evmWalletInfo?.address && starcoinWalletInfo?.address)
+  const hasValidAmount = inputBalance && Number(inputBalance) > 0
+  const isButtonDisabled = isBridging || !isWalletsConnected || !hasValidAmount || !direction
+
+  const getButtonHint = () => {
+    if (!evmWalletInfo?.address && !starcoinWalletInfo?.address) {
+      return t('bridge.connectBothWallets')
+    }
+    if (!evmWalletInfo?.address) {
+      return t('wallet.connectEthWallet')
+    }
+    if (!starcoinWalletInfo?.address) {
+      return t('wallet.connectStcWallet')
+    }
+    if (!hasValidAmount) {
+      return t('bridge.enterAmount')
+    }
+    return null
+  }
+
+  const buttonHint = getButtonHint()
 
   return (
     <div className="i-panel bg-accent/20 relative grid gap-4 rounded-3xl p-4 backdrop-blur-3xl">
@@ -219,13 +267,13 @@ export default function BridgeAssetPanel() {
       <div className="flex flex-col gap-6 rounded-b-4xl">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between px-2 text-[#abbdcc]">
-            <div className="text-sm font-normal">Estimated Gas</div>
+            <div className="text-sm font-normal">{t('bridge.estimatedGas')}</div>
             <div className="flex items-center text-sm font-normal">
               {estimatedGas} {currentCoin.gas}
             </div>
           </div>
           <div className="flex justify-between px-2 text-[#abbdcc]">
-            <div className="text-sm font-normal">You receive</div>
+            <div className="text-sm font-normal">{t('bridge.youReceive')}</div>
             <div className="text-sm font-normal">
               {formatDecimal(inputBalance) || '0.00'} {currentCoin.name}
             </div>
@@ -233,13 +281,14 @@ export default function BridgeAssetPanel() {
         </div>
 
         <Button
-          className="bg-accent hover:bg-accent/80 cursor-pointer text-gray-100 transition-colors duration-300 disabled:cursor-not-allowed"
-          disabled={isBridging || balanceLoading || !inputBalance || Number(inputBalance) <= 0}
+          className="bg-accent hover:bg-accent/80 cursor-pointer text-gray-100 transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isButtonDisabled}
           onClick={handleBridge}
         >
           {isBridging ? <Spinner className="me-[0.2em]" /> : null}
-          Bridge assets
+          {t('bridge.bridgeAssets')}
         </Button>
+        {buttonHint ? <div className="text-center text-xs text-yellow-400">{buttonHint}</div> : null}
         {bridgeStatus ? <div className="text-xs text-[#abbdcc]">{bridgeStatus}</div> : null}
         {bridgeError ? <div className="text-xs wrap-break-word break-all text-red-300">{bridgeError}</div> : null}
       </div>

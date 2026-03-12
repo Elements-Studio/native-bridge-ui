@@ -1,9 +1,9 @@
-import useStarcoinTools from '@/hooks/useStarcoinTools'
+import useStarcoinTools, { waitForStarcoinTransaction } from '@/hooks/useStarcoinTools'
 import { BRIDGE_ABI, BRIDGE_CONFIG, normalizeHex } from '@/lib/bridgeConfig'
 import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, hexToBytes, serializeBytes, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { base64ToBytes, concatBytes, normalizeHexLen, serializeU64BE, sleep } from '@/lib/utils'
-import { getBridgeStatus, type SignatureResponse } from '@/services'
+import { getBridgeStatus, getTransferByDepositTxn, type SignatureResponse } from '@/services'
 import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Contract, Interface, getAddress } from 'ethers'
 import { useCallback, useRef } from 'react'
@@ -92,10 +92,31 @@ async function submitApproveToStarcoin(
     args: approveArgs,
   })
 
-  const result = await sendTransaction({
+  const txHash = (await sendTransaction({
     data: bytesToHex(approvePayload),
-  })
-  console.log('[Bridge][Approve] Done on Starcoin:', result)
+  })) as string
+
+  // Validate txHash - wallet may return null/undefined if user cancels or error occurs
+  if (!txHash || typeof txHash !== 'string') {
+    throw new Error('Transaction was not submitted. Please try again.')
+  }
+
+  console.log('[Bridge][Approve] Starcoin TX submitted:', txHash)
+
+  // Wait for transaction confirmation
+  console.log('[Bridge][Approve] Waiting for Starcoin transaction confirmation...')
+  try {
+    const result = await waitForStarcoinTransaction(txHash, { timeout: 120000, pollInterval: 2000 })
+    console.log('[Bridge][Approve] Starcoin TX confirmed:', result)
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err)
+    // Check if it's a known "already approved" error
+    if (errMsg.includes('ALREADY_APPROVED') || errMsg.includes('already approved')) {
+      console.warn('[Bridge][Approve] Transaction indicates already approved, continuing...')
+      return
+    }
+    throw new Error(`Starcoin approve transaction failed: ${errMsg}`, { cause: err })
+  }
 }
 
 /**
@@ -175,7 +196,18 @@ async function submitApproveToEthereum(
     console.log('[Bridge] Approve calldata selector:', approveData.slice(0, 10))
     try {
       const approveTx = await signer.sendTransaction({ to: bridgeAddress, data: approveData })
-      await approveTx.wait()
+
+      // Wait for tx confirmation with timeout (120s)
+      const TX_TIMEOUT_MS = 120000
+      const waitPromise = approveTx.wait()
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Transaction confirmation timeout after ${TX_TIMEOUT_MS / 1000}s. TX hash: ${approveTx.hash}`)),
+          TX_TIMEOUT_MS,
+        ),
+      )
+
+      await Promise.race([waitPromise, timeoutPromise])
       console.log('[Bridge][Approve] Done on Ethereum')
     } catch (err) {
       const messageText = err instanceof Error ? err.message : String(err)
@@ -198,8 +230,12 @@ export function useApprove() {
   const direction = useTransactionsDetailStore(state => state.direction)
   const bridgeStatus = useTransactionsDetailStore(state => state.bridgeStatus)
   const signatures = useTransactionsDetailStore(state => state.signatures)
+  const transferData = useTransactionsDetailStore(state => state.transferData)
+  const txnHash = useTransactionsDetailStore(state => state.txnHash)
+  const approveFailed = useTransactionsDetailStore(state => state.approveFailed)
   const setBridgeStatus = useTransactionsDetailStore(state => state.setBridgeStatus)
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
+  const setApproveFailed = useTransactionsDetailStore(state => state.setApproveFailed)
 
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
@@ -215,6 +251,29 @@ export function useApprove() {
     setBridgeStatus(BridgeStatus.SubmittingApprove)
 
     try {
+      // Check if already approved via indexer data (handles page refresh case)
+      if (transferData?.procedure?.approval) {
+        console.log('[Bridge][Approve] Already approved according to cached indexer data, skipping approve step')
+        // Move directly to claim step
+        setBridgeStatus(BridgeStatus.SubmittingClaim)
+        return
+      }
+
+      // Re-fetch latest status from indexer before submitting (in case of indexer delay)
+      if (txnHash) {
+        try {
+          console.log('[Bridge][Approve] Re-checking indexer for latest approval status...')
+          const latestData = await getTransferByDepositTxn(txnHash)
+          if (latestData?.procedure?.approval) {
+            console.log('[Bridge][Approve] Already approved according to latest indexer data, skipping approve step')
+            setBridgeStatus(BridgeStatus.SubmittingClaim)
+            return
+          }
+        } catch (err) {
+          console.warn('[Bridge][Approve] Failed to re-fetch from indexer, continuing with approve:', err)
+        }
+      }
+
       // Check if bridge is paused before proceeding
       console.log('[Bridge][Approve] Checking bridge paused status...')
       const bridgeStatusData = await getBridgeStatus()
@@ -238,9 +297,16 @@ export function useApprove() {
       } else {
         await submitApproveToEthereum(uniqueSignatures, starcoinWalletInfo?.address, evmWalletInfo?.address)
       }
+
+      // Approve succeeded - clear failure state and move to claim
+      setApproveFailed(false)
+      setBridgeStatus(BridgeStatus.SubmittingClaim)
     } catch (err) {
       console.error('[Bridge][Approve] Failed:', err)
-      setBridgeError(err instanceof Error ? err.message : 'Approve failed')
+      const errMsg = err instanceof Error ? err.message : 'Approve failed'
+      setBridgeError(errMsg)
+      // Mark approve as failed so user knows to refresh
+      setApproveFailed(true)
     } finally {
       approvingRef.current = false
     }
@@ -248,15 +314,19 @@ export function useApprove() {
     bridgeStatus,
     direction,
     signatures,
+    transferData,
+    txnHash,
     evmWalletInfo?.address,
     starcoinWalletInfo?.address,
     sendTransaction,
     setBridgeStatus,
     setBridgeError,
+    setApproveFailed,
   ])
 
   return {
     submitApprove,
     isApproving: approvingRef.current,
+    approveFailed,
   }
 }

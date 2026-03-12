@@ -1,86 +1,105 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import htmlMinifier from 'vite-plugin-html-minifier'
-import mkcert from 'vite-plugin-mkcert'
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    https: {},
-    proxy: {
-      '/api/transfers': {
-        target: 'http://143.198.220.234:9800',
-        changeOrigin: true,
-        rewrite: (path: string) => {
-          return path.replace(/^\/api/, '')
-        },
-      },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const isLocalDebug = env.VITE_BRIDGE_LOCAL_DEBUG === 'true'
 
-      '/api0/sign': {
-        // target: 'http://143.198.220.234:60002', // 线上
-        target: 'http://143.198.220.234:50002', // 本地测试
-        changeOrigin: true,
-        rewrite: (path: string) => {
-          return path.replace(/^\/api0/, '')
-        },
-      },
-      '/api1/sign': {
-        // target: 'http://143.198.220.234:60003', // 线上
-        target: 'http://143.198.220.234:50003', // 本地测试
-        changeOrigin: true,
-        rewrite: (path: string) => {
-          return path.replace(/^\/api1/, '')
-        },
-      },
-      '/api2/sign': {
-        // target: 'http://143.198.220.234:60004', // 线上
-        target: 'http://143.198.220.234:50004', // 本地测试
-        changeOrigin: true,
-        rewrite: (path: string) => {
-          return path.replace(/^\/api2/, '')
-        },
-      },
+  // Local debug targets (127.0.0.1 services)
+  const localTargets = {
+    transfers: 'http://127.0.0.1:3001',
+    estimateFees: 'http://127.0.0.1:50002',
+    sign0: 'http://127.0.0.1:50002',
+    sign1: 'http://127.0.0.1:50003',
+    sign2: 'http://127.0.0.1:50004',
+  }
 
-      '/api/estimate_fees': {
-        // target: 'http://143.198.220.234:60002',
-        target: 'http://143.198.220.234:50004', // 本地测试
-        changeOrigin: true,
-        rewrite: (path: string) => {
-          console.log(333333, path.replace(/^\/api/, ''))
-          return path.replace(/^\/api/, '')
-        },
-      },
-    },
-  },
-  resolve: {
-    alias: {
-      '@': '/src',
-    },
-  },
-  plugins: [
-    mkcert(),
-    tailwindcss(),
-    htmlMinifier({
-      minify: true,
-    }),
-    react({
-      babel: {
-        plugins: [['babel-plugin-react-compiler']],
-      },
-    }),
-  ],
-  build:
-    mode === 'production'
-      ? {
-          minify: 'terser',
-          terserOptions: {
-            compress: {
-              drop_debugger: true,
-              pure_funcs: ['console.log', 'alert'],
-            },
+  // Remote targets (starswap.xyz services)
+  const remoteTargets = {
+    transfers: 'http://143.198.220.234:9800',
+    estimateFees: 'http://143.198.220.234:50004',
+    sign0: 'http://143.198.220.234:50002',
+    sign1: 'http://143.198.220.234:50003',
+    sign2: 'http://143.198.220.234:50004',
+  }
+
+  const targets = isLocalDebug ? localTargets : remoteTargets
+
+  return {
+    server: {
+      // Disable HTTPS for local development (mkcert requires interactive auth)
+      proxy: {
+        '/api/transfers': {
+          target: targets.transfers,
+          changeOrigin: true,
+          rewrite: (path: string) => {
+            return path.replace(/^\/api/, '')
           },
-        }
-      : undefined,
-}))
+        },
+
+        '/api0/sign': {
+          target: targets.sign0,
+          changeOrigin: true,
+          rewrite: (path: string) => {
+            return path.replace(/^\/api0/, '')
+          },
+        },
+        '/api1/sign': {
+          target: targets.sign1,
+          changeOrigin: true,
+          rewrite: (path: string) => {
+            return path.replace(/^\/api1/, '')
+          },
+        },
+        '/api2/sign': {
+          target: targets.sign2,
+          changeOrigin: true,
+          rewrite: (path: string) => {
+            return path.replace(/^\/api2/, '')
+          },
+        },
+
+        '/api/estimate_fees': {
+          target: targets.estimateFees,
+          changeOrigin: true,
+          rewrite: (path: string) => {
+            return path.replace(/^\/api/, '')
+          },
+        },
+      },
+    },
+    resolve: {
+      alias: {
+        '@': '/src',
+      },
+    },
+    plugins: [
+      // // // // // // // mkcert(), // Disabled for local dev // Disabled for local dev // Disabled for local dev // Disabled for local dev // Disabled for local dev // Disabled for local dev // Disabled for local dev without HTTPS
+      tailwindcss(),
+      htmlMinifier({
+        minify: true,
+      }),
+      react({
+        babel: {
+          plugins: [['babel-plugin-react-compiler']],
+        },
+      }),
+    ],
+    build:
+      mode === 'production'
+        ? {
+            minify: 'terser',
+            terserOptions: {
+              compress: {
+                drop_debugger: true,
+                pure_funcs: ['console.log', 'alert'],
+              },
+            },
+          }
+        : undefined,
+  }
+})

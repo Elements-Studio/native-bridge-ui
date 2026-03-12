@@ -4,9 +4,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { formatAddress, normalizeHash } from '@/lib/format'
 import { ChevronRight } from 'lucide-react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useTransactionsDetailStore } from './store'
 
 export default function ApprovalCard() {
+  const { t } = useTranslation()
   const direction = useTransactionsDetailStore(state => state.direction)
   const transferData = useTransactionsDetailStore(state => state.transferData)
   const approvalData = useMemo(() => transferData?.procedure?.approval, [transferData?.procedure?.approval])
@@ -23,7 +25,7 @@ export default function ApprovalCard() {
         <div className="grid gap-3 p-5">
           {approvalData.txn_hash ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Txn Hash</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.txnHash')}</div>
               <Tooltip>
                 <TooltipContent>{normalizeHash(approvalData.txn_hash)}</TooltipContent>
                 <TooltipTrigger>
@@ -36,13 +38,13 @@ export default function ApprovalCard() {
           ) : null}
           {approvalData.block_height != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Block Height</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.blockHeight')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{approvalData.block_height}</div>
             </div>
           ) : null}
           {approvalData.timestamp_ms != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Timestamp</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.timestamp')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
                 {new Date(approvalData.timestamp_ms).toLocaleString()}
               </div>
@@ -50,18 +52,18 @@ export default function ApprovalCard() {
           ) : null}
           {approvalData.data_source ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Data Source</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.dataSource')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{approvalData.data_source}</div>
             </div>
           ) : null}
-          {approvalData.is_finalized != null ? (
-            <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Finalized</div>
-              <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
-                {approvalData.is_finalized ? 'Yes' : 'No'}
-              </div>
+          <div className="flex items-center justify-between gap-x-3">
+            <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
+            <div
+              className={`font-inter text-md font-medium wrap-break-word ${approvalData.is_finalized ? 'text-green-400' : 'text-yellow-400'}`}
+            >
+              {approvalData.is_finalized ? t('status.indexerFinalized') : t('status.indexerFoundWaitingFinalized')}
             </div>
-          ) : null}
+          </div>
 
           {approvalData.txn_hash && (
             <div className="mt-4 flex flex-row items-center justify-around">
@@ -75,7 +77,7 @@ export default function ApprovalCard() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                View on Explorer
+                {t('transaction.viewOnExplorer')}
                 <ChevronRight />
               </a>
             </div>

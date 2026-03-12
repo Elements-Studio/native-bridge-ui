@@ -1,0 +1,31 @@
+nohup: VITE_BRIDGE_LOCAL_DEBUG=true: No such file or directory
+nohup: VITE_BRIDGE_LOCAL_DEBUG=true: No such file or directory
+nohup: VITE_BRIDGE_LOCAL_DEBUG=true: No such file or directory
+
+> starswap-bridge@0.0.0 dev /Volumes/SSD/chidanta/bridge/native-bridge-ui
+> vite
+
+
+  ROLLDOWN-VITE v7.3.1  ready in 502 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+10:58:20 AM [vite] vite.config.ts changed, restarting server...
+10:58:20 AM [vite] (client) hmr update /src/pages/Transactions/page.tsx, /src/components/Layout/EvmConnectBtn.tsx, /src/components/Layout/GlobalInitial.tsx, /src/components/TransactionsDetail/index.tsx, /src/components/BridgeAssets/CoinSelectorCard/index.tsx, /src/components/BridgeAssets/FromToCard/index.tsx, /src/components/BridgeAssets/CoinSelectorCard/CoinSelector.tsx, /src/components/Layout/StarcoinConnectBtn.tsx, /src/components/BridgeAssets/Panel.tsx, /src/components/TransactionsDetail/StatusButton.tsx, /src/components/WalletDialog/index.tsx, /src/components/WalletDialog/MetaMask.tsx, /src/components/WalletDialog/StarMask.tsx, /src/components/Transactions/TransfersTable.tsx
+failed to load config from /Volumes/SSD/chidanta/bridge/native-bridge-ui/vite.config.ts
+10:58:20 AM [vite] Build failed with 1 error:
+
+[31m[PARSE_ERROR] Error:[0m Expected a semicolon or an implicit semicolon after a statement, but found none
+     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m vite.config.ts:105:2 [38;5;246m][0m
+     [38;5;246m│[0m
+ [38;5;246m105 │[0m [38;5;249m}[0m[38;5;249m)[0m[38;5;249m)[0m
+ [38;5;240m    │[0m  │ 
+ [38;5;240m    │[0m  ╰─ 
+ [38;5;240m    │[0m 
+ [38;5;240m    │[0m [38;5;115mHelp[0m: Try inserting a semicolon here
+[38;5;246m─────╯[0m
+
+10:58:20 AM [vite] server restart failed
+10:58:39 AM [vite] vite.config.ts changed, restarting server...
+10:58:39 AM [vite] server restarted.

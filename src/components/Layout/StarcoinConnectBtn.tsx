@@ -12,9 +12,11 @@ import { formatAddress } from '@/lib/format'
 import { useGlobalStore } from '@/stores/globalStore'
 import { ArrowUpRight, ChevronDown, Copy, CopyCheck, Unlink } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Spinner } from '../ui/spinner'
 
 export default function ConnectBtn() {
+  const { t } = useTranslation()
   const [isPending, setIsPending] = useState(false)
   const { contextHolder, openConnectDialog, disconnect } = useStarcoinTools()
 
@@ -50,7 +52,7 @@ export default function ConnectBtn() {
         >
           <div className="flex items-center gap-2">
             {Icon}
-            <div className="text-md font-medium wrap-break-word">Connect</div>
+            <div className="text-md font-medium wrap-break-word">{t('common.connect')}</div>
           </div>
         </button>
       </>
@@ -75,7 +77,7 @@ export default function ConnectBtn() {
         <Tooltip>
           <TooltipTrigger asChild>
             <DropdownMenuItem className="cursor-pointer" onClick={() => copyAddress(address)}>
-              Copy
+              {t('common.copy')}
               <DropdownMenuShortcut>{copied ? <CopyCheck color="green" /> : <Copy />}</DropdownMenuShortcut>
             </DropdownMenuItem>
           </TooltipTrigger>
@@ -83,7 +85,7 @@ export default function ConnectBtn() {
         </Tooltip>
         <DropdownMenuItem className="cursor-pointer">
           <a href={explorerUrl} className="flex w-full cursor-pointer" target="_blank" rel="noopener noreferrer">
-            Explorer
+            {t('common.explorer')}
             <DropdownMenuShortcut>
               <ArrowUpRight />
             </DropdownMenuShortcut>
@@ -99,7 +101,7 @@ export default function ConnectBtn() {
               setIsPending(false)
             }}
           >
-            Disconnect
+            {t('common.disconnect')}
             <DropdownMenuShortcut>
               <Unlink />
             </DropdownMenuShortcut>

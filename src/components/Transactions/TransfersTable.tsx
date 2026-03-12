@@ -6,6 +6,7 @@ import { formatAddress } from '@/lib/format'
 import type { Pagination, TransferListItem } from '@/services/types'
 import clsx from 'clsx'
 import { ArrowRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 interface TransfersTableProps {
@@ -17,6 +18,7 @@ interface TransfersTableProps {
 }
 
 export function TransfersTable({ data, pagination, isLoading, onPageChange, direction }: TransfersTableProps) {
+  const { t } = useTranslation()
   const formatTimestamp = (ms: number) => {
     return new Date(ms).toLocaleString()
   }
@@ -45,24 +47,24 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
         <Table className="w-full">
           <TableHeader>
             <TableRow>
-              <TableHead>Transaction Hash</TableHead>
-              <TableHead>Nonce</TableHead>
+              <TableHead>{t('transaction.transactionHash')}</TableHead>
+              <TableHead>{t('transaction.nonce')}</TableHead>
               <TableHead>
-                From
+                {t('bridge.from')}
                 <ArrowRight className="inline-block h-2 w-2 align-middle" />
-                To
+                {t('bridge.to')}
               </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Sender Address</TableHead>
-              <TableHead>Block Height</TableHead>
-              <TableHead>Time</TableHead>
+              <TableHead>{t('transaction.status')}</TableHead>
+              <TableHead>{t('transaction.senderAddress')}</TableHead>
+              <TableHead>{t('transaction.blockHeight')}</TableHead>
+              <TableHead>{t('transaction.time')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-8 text-center text-gray-500">
-                  {isLoading ? 'Loading...' : 'No transactions found'}
+                  {isLoading ? t('common.loading') : t('transaction.noTransactionsFound')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -111,7 +113,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          Page {pagination.page} of {pagination.total_pages} (Total: {pagination.total_count})
+          {t('common.page', { current: pagination.page, total: pagination.total_pages, count: pagination.total_count })}
         </div>
         <div className="flex gap-2">
           <Button
@@ -120,7 +122,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
             onClick={() => onPageChange(pagination.page - 1)}
             disabled={pagination.page === 1 || isLoading}
           >
-            Previous
+            {t('common.previous')}
           </Button>
           <Button
             variant="outline"
@@ -128,7 +130,7 @@ export function TransfersTable({ data, pagination, isLoading, onPageChange, dire
             onClick={() => onPageChange(pagination.page + 1)}
             disabled={pagination.page === pagination.total_pages || isLoading}
           >
-            Next
+            {t('common.next')}
           </Button>
         </div>
       </div>

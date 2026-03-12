@@ -4,10 +4,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { formatAddress, normalizeHash } from '@/lib/format'
 import { ChevronRight } from 'lucide-react'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Spinner } from '../ui/spinner'
 import { useTransactionsDetailStore } from './store'
 
 export default function DepositCard() {
+  const { t } = useTranslation()
   const direction = useTransactionsDetailStore(state => state.direction)
   const transferData = useTransactionsDetailStore(state => state.transferData)
   const depositData = useMemo(() => transferData?.procedure?.deposit, [transferData?.procedure?.deposit])
@@ -24,7 +26,7 @@ export default function DepositCard() {
         <div className="grid gap-3 p-5">
           {depositData.txn_hash ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Txn Hash</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.txnHash')}</div>
               <Tooltip>
                 <TooltipContent>{normalizeHash(depositData.txn_hash)}</TooltipContent>
                 <TooltipTrigger>
@@ -37,13 +39,13 @@ export default function DepositCard() {
           ) : null}
           {depositData.block_height != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Block Height</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.blockHeight')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{depositData.block_height}</div>
             </div>
           ) : null}
           {depositData.timestamp_ms != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Timestamp</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.timestamp')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
                 {new Date(depositData.timestamp_ms).toLocaleString()}
               </div>
@@ -51,7 +53,7 @@ export default function DepositCard() {
           ) : null}
           {depositData.sender_address ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Sender Address</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.senderAddress')}</div>
               <Tooltip>
                 <TooltipContent>{depositData.sender_address}</TooltipContent>
                 <TooltipTrigger>
@@ -64,7 +66,7 @@ export default function DepositCard() {
           ) : null}
           {depositData.recipient_address ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Recipient Address</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.recipientAddress')}</div>
               <Tooltip>
                 <TooltipContent>{depositData.recipient_address}</TooltipContent>
                 <TooltipTrigger>
@@ -77,24 +79,24 @@ export default function DepositCard() {
           ) : null}
           {depositData.token_id != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Token ID</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.tokenId')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{depositData.token_id}</div>
             </div>
           ) : null}
           {depositData.amount != null ? (
             <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Amount</div>
+              <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.amount')}</div>
               <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">{depositData.amount}</div>
             </div>
           ) : null}
-          {depositData.is_finalized != null ? (
-            <div className="flex items-center justify-between gap-x-3">
-              <div className="text-md text-secondary-foreground font-medium wrap-break-word">Finalized</div>
-              <div className="font-inter text-md text-primary-foreground font-medium wrap-break-word">
-                {depositData.is_finalized ? 'Yes' : 'No'}
-              </div>
+          <div className="flex items-center justify-between gap-x-3">
+            <div className="text-md text-secondary-foreground font-medium wrap-break-word">{t('transaction.finalized')}</div>
+            <div
+              className={`font-inter text-md font-medium wrap-break-word ${depositData.is_finalized ? 'text-green-400' : 'text-yellow-400'}`}
+            >
+              {depositData.is_finalized ? t('status.indexerFinalized') : t('status.indexerFoundWaitingFinalized')}
             </div>
-          ) : null}
+          </div>
 
           {depositData.txn_hash && (
             <div className="mt-4 flex flex-row items-center justify-around">
@@ -108,15 +110,16 @@ export default function DepositCard() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                View on Explorer
+                {t('transaction.viewOnExplorer')}
                 <ChevronRight />
               </a>
             </div>
           )}
         </div>
       ) : (
-        <div className="flex min-h-50 items-center justify-center p-5">
+        <div className="flex min-h-50 flex-col items-center justify-center gap-3 p-5">
           <Spinner />
+          <div className="text-sm text-yellow-400">{t('status.indexerNotFound')}</div>
         </div>
       )}
     </div>

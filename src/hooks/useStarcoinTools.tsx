@@ -162,6 +162,56 @@ async function getStarcoinBalance(
   }
 }
 
+/**
+ * Wait for a Starcoin transaction to be confirmed.
+ * Returns the transaction info on success, throws on failure or timeout.
+ */
+export async function waitForStarcoinTransaction(
+  txHash: string,
+  options: { timeout?: number; pollInterval?: number } = {},
+): Promise<{ status: string; gasUsed?: number }> {
+  const { timeout = 120000, pollInterval = 2000 } = options
+  const provider = getStarMaskProvider()
+  if (!provider) throw new Error('StarMask not found')
+
+  const startTime = Date.now()
+  let lastError: Error | null = null
+
+  while (Date.now() - startTime < timeout) {
+    try {
+      const info = (await provider.request({
+        method: 'chain.get_transaction_info',
+        params: [txHash],
+      })) as { status?: string; gas_used?: string | number } | null
+
+      if (info) {
+        const status = info.status ?? 'Unknown'
+        console.log('[Starcoin][waitForTransaction] status:', status, 'info:', info)
+
+        if (status === 'Executed') {
+          return {
+            status,
+            gasUsed: typeof info.gas_used === 'string' ? parseInt(info.gas_used, 10) : info.gas_used,
+          }
+        }
+
+        // Transaction failed with a known status
+        if (status !== 'Pending' && status !== 'Unknown') {
+          throw new Error(`Transaction failed with status: ${status}`)
+        }
+      }
+    } catch (err) {
+      // RPC error, keep polling
+      lastError = err instanceof Error ? err : new Error(String(err))
+      console.warn('[Starcoin][waitForTransaction] RPC error, retrying...', err)
+    }
+
+    await new Promise(resolve => setTimeout(resolve, pollInterval))
+  }
+
+  throw lastError ?? new Error(`Transaction confirmation timeout after ${timeout / 1000}s. Please check the transaction manually.`)
+}
+
 export default function useStarcoinTools() {
   const setStarcoinWalletInfo = useGlobalStore(state => state.setStarcoinWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)

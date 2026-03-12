@@ -192,7 +192,7 @@ export const connect = async (targetChainId?: string): Promise<WalletInfo | null
     } catch (error: unknown) {
       const err = error as Record<string, unknown>
       if (err?.code === -32603) {
-        throw new Error(`Network ${targetChainId} not found in wallet`)
+        throw new Error(`Network ${targetChainId} not found in wallet`, { cause: error })
       }
       throw error
     }
