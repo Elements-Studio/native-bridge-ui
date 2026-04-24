@@ -23,7 +23,6 @@ export default function BridgeAssetPanel() {
   const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
   const inputBalance = useGlobalStore(state => state.inputBalance)
-  const balanceLoading = useGlobalStore(state => state.balanceLoading)
 
   const { sendTransaction } = useStarcoinTools()
   const [fees, setFees] = useState<EstimateFeesResponse | null>(null)
