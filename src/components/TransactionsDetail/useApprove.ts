@@ -241,10 +241,12 @@ export function useApprove() {
   const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
 
   const { sendTransaction } = useStarcoinTools()
+  const isApprovalWalletConnected = direction === 'eth_to_starcoin' ? Boolean(starcoinWalletInfo?.address) : Boolean(evmWalletInfo?.address)
 
   const submitApprove = useCallback(async () => {
     if (bridgeStatus !== BridgeStatus.CollectingValidatorSignatures) return
     if (signatures.length < 3) return
+    if (!isApprovalWalletConnected) return
     if (approvingRef.current) return
     await sleep(3000)
     approvingRef.current = true
@@ -314,6 +316,7 @@ export function useApprove() {
     bridgeStatus,
     direction,
     signatures,
+    isApprovalWalletConnected,
     transferData,
     txnHash,
     evmWalletInfo?.address,

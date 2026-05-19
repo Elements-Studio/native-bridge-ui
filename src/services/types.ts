@@ -56,6 +56,8 @@ export interface ClaimInfo {
 export type ProcedureStatus = 'deposited' | 'approved' | 'claimed'
 
 export interface ProcedureInfo {
+  source_chain?: DataSource
+  destination_chain?: DataSource
   source_chain_id: ChainId
   destination_chain_id: ChainId
   nonce: number

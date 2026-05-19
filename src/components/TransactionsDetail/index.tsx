@@ -2,6 +2,8 @@ import { Progress } from '@/components/ui/progress'
 import useEvmTools from '@/hooks/useEvmTools'
 import { normalizeHash } from '@/lib/format'
 import { collectSignatures, getTransferByDepositTxn } from '@/services'
+import type { EstimateDirection, ProcedureInfo } from '@/services/types'
+import { useGlobalStore } from '@/stores/globalStore'
 import { ArrowBigRight, CheckIcon, InfoIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -16,6 +18,23 @@ import { BridgeStatus, useTransactionsDetailStore } from './store'
 import { useApprove } from './useApprove'
 import { useClaim } from './useClaim'
 
+const STARCOIN_CHAIN_IDS = new Set([0, 1, 2])
+const ETH_CHAIN_IDS = new Set([10, 11, 12])
+
+function inferDirectionFromProcedure(procedure: ProcedureInfo | null | undefined): EstimateDirection | null {
+  if (!procedure) return null
+
+  const sourceChain = procedure.source_chain?.toUpperCase()
+  const destinationChain = procedure.destination_chain?.toUpperCase()
+  if (sourceChain === 'STARCOIN' && destinationChain === 'ETH') return 'starcoin_to_eth'
+  if (sourceChain === 'ETH' && destinationChain === 'STARCOIN') return 'eth_to_starcoin'
+
+  if (STARCOIN_CHAIN_IDS.has(procedure.source_chain_id) && ETH_CHAIN_IDS.has(procedure.destination_chain_id)) return 'starcoin_to_eth'
+  if (ETH_CHAIN_IDS.has(procedure.source_chain_id) && STARCOIN_CHAIN_IDS.has(procedure.destination_chain_id)) return 'eth_to_starcoin'
+
+  return null
+}
+
 export default function TransactionsDetail() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
@@ -29,9 +48,14 @@ export default function TransactionsDetail() {
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
   const setSignatures = useTransactionsDetailStore(state => state.setSignatures)
   const setIsCollectingSignatures = useTransactionsDetailStore(state => state.setIsCollectingSignatures)
+  const setApproveFailed = useTransactionsDetailStore(state => state.setApproveFailed)
+  const setClaimFailed = useTransactionsDetailStore(state => state.setClaimFailed)
   const signatures = useTransactionsDetailStore(state => state.signatures)
   const claimDelaySeconds = useTransactionsDetailStore(state => state.claimDelaySeconds)
   const collectingSignaturesRef = useRef(false)
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
+  const isApprovalWalletConnected = direction === 'eth_to_starcoin' ? Boolean(starcoinWalletInfo?.address) : Boolean(evmWalletInfo?.address)
 
   const { getEventIndex: getEvmEventIndex } = useEvmTools()
   const { submitApprove } = useApprove()
@@ -61,6 +85,17 @@ export default function TransactionsDetail() {
     revalidateOnFocus: false,
     onSuccess: data => setTransferData(data),
   })
+
+  useEffect(() => {
+    const indexedDirection = inferDirectionFromProcedure(transferData?.procedure)
+    if (!indexedDirection || indexedDirection === direction) return
+
+    setDirection(indexedDirection)
+    setBridgeError(null)
+    setApproveFailed(false)
+    setClaimFailed(false)
+    setSignatures([])
+  }, [transferData?.procedure, direction, setDirection, setBridgeError, setApproveFailed, setClaimFailed, setSignatures])
 
   // bridgeStatus 和 bridgeError 同步到 store 中
   // 只在后端数据显示比当前状态更进一步时才更新状态
@@ -116,7 +151,7 @@ export default function TransactionsDetail() {
       setIsCollectingSignatures(true)
       try {
         console.log('[Bridge] Collecting validator signatures...')
-        const eventIndex = direction === 'eth_to_starcoin' ? await getEvmEventIndex(txnHash) : await getEvmEventIndex(txnHash)
+        const eventIndex = direction === 'eth_to_starcoin' ? await getEvmEventIndex(txnHash) : 0
         console.log('[Bridge] Event index:', eventIndex)
         const sigs = await collectSignatures(direction, txnHash, eventIndex, { validatorCount: 3 })
         console.log('[Bridge] Signatures collected:', sigs.length)
@@ -137,8 +172,9 @@ export default function TransactionsDetail() {
   useEffect(() => {
     if (bridgeStatus !== BridgeStatus.CollectingValidatorSignatures) return
     if (signatures.length < 3) return
+    if (!isApprovalWalletConnected) return
     submitApprove()
-  }, [bridgeStatus, signatures.length, submitApprove])
+  }, [bridgeStatus, signatures.length, isApprovalWalletConnected, submitApprove])
 
   const progressValue = useMemo(() => {
     if (bridgeError) return 0

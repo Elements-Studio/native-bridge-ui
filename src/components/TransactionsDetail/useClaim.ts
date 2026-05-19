@@ -4,6 +4,7 @@ import { getMetaMask } from '@/lib/evmProvider'
 import { bytesToHex, serializeScriptFunctionPayload, serializeU64, serializeU8 } from '@/lib/starcoinBcs'
 import { sleep } from '@/lib/utils'
 import { getBridgeStatus, getQuota } from '@/services'
+import { useGlobalStore } from '@/stores/globalStore'
 import { BrowserProvider, Interface, getAddress } from 'ethers'
 import { useCallback, useEffect, useRef } from 'react'
 import { BridgeStatus, useTransactionsDetailStore } from './store'
@@ -147,8 +148,11 @@ export function useClaim() {
   const setBridgeError = useTransactionsDetailStore(state => state.setBridgeError)
   const setClaimDelaySeconds = useTransactionsDetailStore(state => state.setClaimDelaySeconds)
   const setClaimFailed = useTransactionsDetailStore(state => state.setClaimFailed)
+  const evmWalletInfo = useGlobalStore(state => state.evmWalletInfo)
+  const starcoinWalletInfo = useGlobalStore(state => state.starcoinWalletInfo)
 
   const { sendTransaction } = useStarcoinTools()
+  const isClaimWalletConnected = direction === 'eth_to_starcoin' ? Boolean(starcoinWalletInfo?.address) : Boolean(evmWalletInfo?.address)
 
   // 获取 nonce
   const nonce = transferData?.procedure?.nonce ?? null
@@ -168,6 +172,7 @@ export function useClaim() {
       console.error('[Bridge][Claim] No nonce available')
       return
     }
+    if (!isClaimWalletConnected) return
 
     claimingRef.current = true
 
@@ -275,6 +280,7 @@ export function useClaim() {
     direction,
     nonce,
     sourceChainId,
+    isClaimWalletConnected,
     claimDelaySeconds,
     transferData,
     txnHash,
@@ -301,6 +307,7 @@ export function useClaim() {
     if (bridgeStatus !== BridgeStatus.SubmittingClaim) return
     if (claimingRef.current) return
     if (nonce === null) return
+    if (!isClaimWalletConnected) return
 
     // 检查是否已经 claimed
     if (transferData?.procedure?.current_status === 'claimed' || transferData?.procedure?.is_complete) {
@@ -318,6 +325,7 @@ export function useClaim() {
   }, [
     bridgeStatus,
     nonce,
+    isClaimWalletConnected,
     claimFailed,
     transferData?.procedure?.current_status,
     transferData?.procedure?.is_complete,
